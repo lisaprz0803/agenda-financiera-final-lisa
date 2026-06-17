@@ -1091,6 +1091,7 @@ function AppShell({ auth }) {
   const pageIndex = order.indexOf(current);
   const activeSection = current === "cover" ? "mapa" : current;
   const progress = Math.round(((pageIndex + 1) / order.length) * 100);
+  const theme = current === "cover" ? "cover" : activeSection;
 
   function changeMonth(delta) {
     setMonth((value) => {
@@ -1113,7 +1114,7 @@ function AppShell({ auth }) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell theme-${theme}`}>
       <header className="topbar">
         <div className="brand">
           <Sparkles size={16} />
