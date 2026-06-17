@@ -10,7 +10,7 @@ Para activarla:
 4. Crea una credencial de tipo "OAuth client ID" para "Web application".
 5. Agrega este origen autorizado:
    `https://lisaprz0803.github.io`
-6. Edita `auth-config.js`:
+6. Edita `public/auth-config.js`:
    - `googleClientId`: pega el Client ID de Google.
    - `allowedEmails`: deja solo el correo Google que puede entrar.
 
