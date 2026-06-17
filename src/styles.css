@@ -1033,8 +1033,14 @@ select {
 
 .visual-note img {
   width: 100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 16 / 8;
+  max-height: 260px;
   object-fit: cover;
+}
+
+.visual-note.wide img {
+  aspect-ratio: 4 / 3;
+  max-height: none;
 }
 
 .visual-note div {
