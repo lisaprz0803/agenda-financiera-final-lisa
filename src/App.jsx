@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,16 +8,27 @@ import {
   CircleDollarSign,
   Download,
   Heart,
+  Loader2,
   LayoutDashboard,
   LogOut,
   PiggyBank,
   Plus,
+  RefreshCw,
+  Save,
   Sparkles,
   TrendingDown
 } from "lucide-react";
 import deskCover from "../assets/desk-cover.png";
 
 const STORAGE_KEY = "agenda_financiera_google_user";
+const DEFAULT_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+const DEFAULT_SPREADSHEET_ID = "1GRYY_e_2jf9525UWyZO_gPm9_BE8dZuWf7XWwn7iMEk";
+const RANGE_MAP = {
+  ingresos: "Ingresos!A4:E8",
+  pagos: "'Pagos Mensuales'!A4:H16",
+  gastos: "'Gastos Diarios'!A4:F200",
+  ahorros: "Ahorros!A4:E9"
+};
 const monthNames = [
   "Enero",
   "Febrero",
@@ -134,10 +145,14 @@ function decodeJwtPayload(token) {
 }
 
 function useGoogleGate() {
+  const tokenClientRef = useRef(null);
+  const configRef = useRef(null);
   const [auth, setAuth] = useState({
     ready: false,
     configured: false,
     user: null,
+    accessToken: "",
+    spreadsheetId: DEFAULT_SPREADSHEET_ID,
     message: "Preparando acceso..."
   });
 
@@ -148,6 +163,7 @@ function useGoogleGate() {
       try {
         await loadScript(`${import.meta.env.BASE_URL}auth-config.js`);
         const config = window.AGENDA_AUTH_CONFIG || {};
+        configRef.current = config;
         const configured = isConfigured(config);
 
         if (!configured) {
@@ -169,6 +185,8 @@ function useGoogleGate() {
             ready: true,
             configured: true,
             user: storedIsAllowed ? stored : null,
+            accessToken: "",
+            spreadsheetId: config.spreadsheetId || DEFAULT_SPREADSHEET_ID,
             message: storedIsAllowed ? "" : "Inicia sesión para entrar."
           });
         }
@@ -189,7 +207,14 @@ function useGoogleGate() {
                   picture: profile.picture || ""
                 };
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
-                setAuth({ ready: true, configured: true, user: nextUser, message: "" });
+                setAuth({
+                  ready: true,
+                  configured: true,
+                  user: nextUser,
+                  accessToken: "",
+                  spreadsheetId: config.spreadsheetId || DEFAULT_SPREADSHEET_ID,
+                  message: ""
+                });
                 return;
               }
               localStorage.removeItem(STORAGE_KEY);
@@ -217,6 +242,26 @@ function useGoogleGate() {
           shape: "pill",
           width: 280
         });
+
+        tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+          client_id: config.googleClientId,
+          scope: config.sheetsScope || DEFAULT_SHEETS_SCOPE,
+          callback: (response) => {
+            if (response.error) {
+              setAuth((current) => ({
+                ...current,
+                accessToken: "",
+                message: "No se pudo autorizar Google Sheets."
+              }));
+              return;
+            }
+            setAuth((current) => ({
+              ...current,
+              accessToken: response.access_token || "",
+              message: response.access_token ? "" : "No se recibió token de Google Sheets."
+            }));
+          }
+        });
       } catch {
         if (active) {
           setAuth({
@@ -239,10 +284,193 @@ function useGoogleGate() {
   function signOut() {
     localStorage.removeItem(STORAGE_KEY);
     if (window.google?.accounts?.id) window.google.accounts.id.disableAutoSelect();
-    setAuth((current) => ({ ...current, user: null, message: "Sesión cerrada." }));
+    setAuth((current) => ({ ...current, user: null, accessToken: "", message: "Sesión cerrada." }));
   }
 
-  return { ...auth, signOut };
+  function requestSheetsAccess() {
+    if (!tokenClientRef.current) {
+      setAuth((current) => ({ ...current, message: "Google Sheets aún se está preparando. Intenta nuevamente." }));
+      return;
+    }
+    tokenClientRef.current.requestAccessToken({ prompt: auth.accessToken ? "" : "consent" });
+  }
+
+  return { ...auth, signOut, requestSheetsAccess, config: configRef.current };
+}
+
+function emptySheetData() {
+  return {
+    ingresos: [],
+    pagos: [],
+    gastos: [],
+    ahorros: []
+  };
+}
+
+function normalizeRows(rows = [], length = 0) {
+  return rows.map((row) => Array.from({ length }, (_, index) => row[index] ?? ""));
+}
+
+function parseSheetValues(payload) {
+  const ranges = payload.valueRanges || [];
+  return {
+    ingresos: normalizeRows(ranges[0]?.values?.slice(1), 5),
+    pagos: normalizeRows(ranges[1]?.values?.slice(1), 8),
+    gastos: normalizeRows(ranges[2]?.values?.slice(1), 6).filter((row) => row.some(Boolean)),
+    ahorros: normalizeRows(ranges[3]?.values?.slice(1), 5)
+  };
+}
+
+async function sheetsRequest({ accessToken, spreadsheetId, path, method = "GET", body }) {
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(message || `Google Sheets respondió ${response.status}`);
+  }
+
+  return response.json();
+}
+
+function useSheetDatabase(auth) {
+  const [sheetData, setSheetData] = useState(emptySheetData);
+  const [draft, setDraft] = useState(emptySheetData);
+  const [status, setStatus] = useState({
+    loading: false,
+    saving: false,
+    loaded: false,
+    message: "Conecta Google Sheets para cargar tus datos.",
+    error: ""
+  });
+
+  async function loadData() {
+    if (!auth.accessToken) {
+      setStatus((current) => ({ ...current, message: "Primero conecta Google Sheets.", error: "" }));
+      return;
+    }
+
+    setStatus((current) => ({ ...current, loading: true, error: "", message: "Cargando datos desde Google Sheets..." }));
+    try {
+      const params = Object.values(RANGE_MAP)
+        .map((range) => `ranges=${encodeURIComponent(range)}`)
+        .join("&");
+      const payload = await sheetsRequest({
+        accessToken: auth.accessToken,
+        spreadsheetId: auth.spreadsheetId,
+        path: `values:batchGet?${params}&valueRenderOption=FORMATTED_VALUE`
+      });
+      const nextData = parseSheetValues(payload);
+      setSheetData(nextData);
+      setDraft(nextData);
+      setStatus({
+        loading: false,
+        saving: false,
+        loaded: true,
+        message: "Datos sincronizados con Google Sheets.",
+        error: ""
+      });
+    } catch (error) {
+      setStatus({
+        loading: false,
+        saving: false,
+        loaded: false,
+        message: "No se pudieron cargar los datos.",
+        error: "Revisa permisos de Sheets o vuelve a conectar la cuenta."
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (auth.accessToken) {
+      loadData();
+    }
+  }, [auth.accessToken]);
+
+  function updateCell(section, rowIndex, columnIndex, value) {
+    setDraft((current) => ({
+      ...current,
+      [section]: current[section].map((row, index) =>
+        index === rowIndex ? row.map((cell, cellIndex) => (cellIndex === columnIndex ? value : cell)) : row
+      )
+    }));
+  }
+
+  async function saveRange(section, range, values) {
+    await sheetsRequest({
+      accessToken: auth.accessToken,
+      spreadsheetId: auth.spreadsheetId,
+      path: `values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
+      method: "PUT",
+      body: { values }
+    });
+    setSheetData((current) => ({ ...current, [section]: values }));
+  }
+
+  async function saveSection(section) {
+    if (!auth.accessToken) return;
+    setStatus((current) => ({ ...current, saving: true, error: "", message: "Guardando en Google Sheets..." }));
+    try {
+      const rangeBySection = {
+        ingresos: "Ingresos!A5:E8",
+        pagos: "'Pagos Mensuales'!A5:H16",
+        ahorros: "Ahorros!A5:E9"
+      };
+      await saveRange(section, rangeBySection[section], draft[section]);
+      setStatus((current) => ({
+        ...current,
+        saving: false,
+        loaded: true,
+        message: "Cambios guardados en Google Sheets.",
+        error: ""
+      }));
+    } catch {
+      setStatus((current) => ({
+        ...current,
+        saving: false,
+        error: "No se pudo guardar. Vuelve a conectar Google Sheets e intenta otra vez.",
+        message: "Error al guardar."
+      }));
+    }
+  }
+
+  async function appendDailyExpense(expense) {
+    if (!auth.accessToken) return;
+    const values = [[expense.date, expense.concept, expense.category, expense.amount, expense.method, expense.note]];
+    setStatus((current) => ({ ...current, saving: true, error: "", message: "Agregando gasto diario..." }));
+    try {
+      await sheetsRequest({
+        accessToken: auth.accessToken,
+        spreadsheetId: auth.spreadsheetId,
+        path: `values/${encodeURIComponent("'Gastos Diarios'!A5:F5")}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,
+        method: "POST",
+        body: { values }
+      });
+      await loadData();
+      setStatus((current) => ({
+        ...current,
+        saving: false,
+        loaded: true,
+        message: "Gasto agregado en Google Sheets.",
+        error: ""
+      }));
+    } catch {
+      setStatus((current) => ({
+        ...current,
+        saving: false,
+        error: "No se pudo agregar el gasto.",
+        message: "Error al guardar."
+      }));
+    }
+  }
+
+  return { sheetData, draft, status, loadData, updateCell, saveSection, appendDailyExpense };
 }
 
 function AuthGate({ auth }) {
@@ -270,10 +498,18 @@ function AuthGate({ auth }) {
   );
 }
 
-function StatStrip() {
+function StatStrip({ sheetDb }) {
+  const incomeTotal = sheetDb.draft.ingresos[0]?.[2] || "$";
+  const savingsProgress = sheetDb.draft.ahorros[0]?.[3] || "0%";
+  const paymentsDone = sheetDb.draft.pagos.filter((row) => String(row[6] || "").toLowerCase().includes("pagado")).length;
+  const liveStats = [
+    { label: "Ingreso base", value: incomeTotal, helper: "Desde hoja Ingresos" },
+    { label: "Ahorro", value: savingsProgress, helper: "Objetivo principal" },
+    { label: "Pagos", value: `${paymentsDone}/${sheetDb.draft.pagos.length || 0}`, helper: "Marcados como pagados" }
+  ];
   return (
     <div className="stat-strip" aria-label="Resumen">
-      {quickStats.map((stat) => (
+      {(sheetDb.status.loaded ? liveStats : quickStats).map((stat) => (
         <div className="stat" key={stat.label}>
           <span>{stat.label}</span>
           <strong>{stat.value}</strong>
@@ -357,7 +593,7 @@ function Sidebar({ activeSection, month, year, progress, onMonth, onSection }) {
   );
 }
 
-function PlannerPanel({ activeSection, onSection }) {
+function PlannerPanel({ activeSection, onSection, auth, sheetDb }) {
   const section = sections.find((item) => item.id === activeSection);
   const Icon = section.icon;
 
@@ -373,22 +609,50 @@ function PlannerPanel({ activeSection, onSection }) {
             <p>{section.description}</p>
           </div>
         </div>
-        <button className="utility-button" type="button" onClick={() => window.print()}>
-          <Download size={16} />
-          Imprimir
-        </button>
+        <div className="panel-actions">
+          {!auth.accessToken ? (
+            <button className="utility-button" type="button" onClick={auth.requestSheetsAccess}>
+              <RefreshCw size={16} />
+              Conectar Sheet
+            </button>
+          ) : (
+            <button className="utility-button" type="button" onClick={sheetDb.loadData} disabled={sheetDb.status.loading}>
+              {sheetDb.status.loading ? <Loader2 className="spin" size={16} /> : <RefreshCw size={16} />}
+              Refrescar
+            </button>
+          )}
+          <button className="utility-button" type="button" onClick={() => window.print()}>
+            <Download size={16} />
+            Imprimir
+          </button>
+        </div>
       </header>
+
+      <SyncBanner auth={auth} sheetDb={sheetDb} />
 
       <div className="panel-body">
         {activeSection === "mapa" ? <MapSection onSection={onSection} /> : null}
-        {activeSection === "ingresos" ? <IncomeSection /> : null}
-        {activeSection === "pagos" ? <PaymentsSection /> : null}
-        {activeSection === "presupuesto" ? <BudgetSection /> : null}
-        {activeSection === "ahorro" ? <SavingsSection /> : null}
-        {activeSection === "deudas" ? <DebtSection /> : null}
-        {activeSection === "cierre" ? <CloseSection /> : null}
+        {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
+        {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
+        {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} /> : null}
+        {activeSection === "ahorro" ? <SavingsSection sheetDb={sheetDb} /> : null}
+        {activeSection === "deudas" ? <DebtSection sheetDb={sheetDb} /> : null}
+        {activeSection === "cierre" ? <CloseSection sheetDb={sheetDb} /> : null}
       </div>
     </article>
+  );
+}
+
+function SyncBanner({ auth, sheetDb }) {
+  return (
+    <div className={sheetDb.status.error ? "sync-banner error" : "sync-banner"}>
+      <span>{sheetDb.status.error || sheetDb.status.message}</span>
+      {!auth.accessToken ? (
+        <button type="button" onClick={auth.requestSheetsAccess}>
+          Conectar Google Sheets
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -411,69 +675,116 @@ function MapSection({ onSection }) {
   );
 }
 
-function IncomeSection() {
-  const rows = ["Sueldo / honorarios", "Ventas / servicios", "Ingreso extra"];
+function IncomeSection({ sheetDb }) {
+  const rows = sheetDb.draft.ingresos.length ? sheetDb.draft.ingresos : [["", "", "", "", ""]];
   return (
     <div className="stack">
-      <div className="soft-table header">
+      <div className="soft-table income-table header">
         <strong>Fuente</strong>
-        <strong>Monto</strong>
-        <strong>Fecha</strong>
+        <strong>Tipo</strong>
+        <strong>Monto mensual</strong>
+        <strong>Estado</strong>
+        <strong>Notas</strong>
       </div>
-      {rows.map((row, index) => (
-        <div className="soft-table" key={row}>
-          <span>{row}</span>
-          <input aria-label={`Monto ${row}`} placeholder="$" inputMode="decimal" />
-          <input aria-label={`Fecha ${row}`} placeholder={index === 0 ? "05" : "--"} />
+      {rows.map((row, rowIndex) => (
+        <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
+          {row.map((cell, columnIndex) => (
+            <input
+              aria-label={`Ingreso fila ${rowIndex + 1} columna ${columnIndex + 1}`}
+              key={columnIndex}
+              value={cell}
+              onChange={(event) => sheetDb.updateCell("ingresos", rowIndex, columnIndex, event.target.value)}
+            />
+          ))}
         </div>
       ))}
       <div className="total-card">
-        <span>Total estimado</span>
-        <strong>$</strong>
+        <span>Fuente principal</span>
+        <strong>{rows[0]?.[2] || "$"}</strong>
       </div>
+      <SaveButton label="Guardar ingresos" onClick={() => sheetDb.saveSection("ingresos")} saving={sheetDb.status.saving} />
     </div>
   );
 }
 
-function PaymentsSection() {
-  const payments = ["Arriendo / dividendo", "Luz, agua y gas", "Internet y teléfono", "Tarjetas / créditos", "Otros compromisos"];
+function PaymentsSection({ sheetDb }) {
+  const payments = sheetDb.draft.pagos.length ? sheetDb.draft.pagos : [["", "", "", "", "", "", "", ""]];
   return (
     <div className="stack">
-      {payments.map((payment, index) => (
-        <label className="check-row" key={payment}>
-          <input type="checkbox" defaultChecked={index === 0} />
-          <span>{payment}</span>
-          <input aria-label={`Monto ${payment}`} placeholder="$" inputMode="decimal" />
-        </label>
+      <div className="soft-table payments-table header">
+        <strong>Categoría</strong>
+        <strong>Concepto</strong>
+        <strong>Fecha</strong>
+        <strong>Total</strong>
+        <strong>Mi parte</strong>
+        <strong>Catriel</strong>
+        <strong>Estado</strong>
+        <strong>Nota</strong>
+      </div>
+      {payments.map((row, rowIndex) => (
+        <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
+          {row.map((cell, columnIndex) => (
+            <input
+              aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
+              key={columnIndex}
+              value={cell}
+              onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+            />
+          ))}
+        </div>
       ))}
+      <SaveButton label="Guardar pagos" onClick={() => sheetDb.saveSection("pagos")} saving={sheetDb.status.saving} />
     </div>
   );
 }
 
-function BudgetSection() {
+function BudgetSection({ sheetDb }) {
+  const totalIncome = sheetDb.draft.ingresos[0]?.[2] || "$";
+  const fixedPayments = sheetDb.draft.pagos.filter((row) => row.some(Boolean)).length;
+  const dailyExpenses = sheetDb.draft.gastos.length;
   return (
     <div className="form-grid">
-      <Field label="Ingresos esperados" placeholder="$" />
-      <Field label="Gastos fijos" placeholder="$" />
-      <Field label="Gastos variables" placeholder="$" />
-      <Field label="Meta del mes" placeholder="Ej: ahorrar 10%" />
-      <Field label="Notas importantes" placeholder="Recordatorios, fechas o decisiones" wide />
+      <ReadOnlyCard label="Ingresos esperados" value={totalIncome} helper="Tomado de Ingresos" />
+      <ReadOnlyCard label="Pagos mensuales" value={`${fixedPayments} items`} helper="Tomado de Pagos Mensuales" />
+      <ReadOnlyCard label="Gastos diarios" value={`${dailyExpenses} registros`} helper="Tomado de Gastos Diarios" />
+      <ReadOnlyCard label="Meta de ahorro" value={sheetDb.draft.ahorros[0]?.[1] || "$"} helper="Tomado de Ahorros" />
+      <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
     </div>
   );
 }
 
-function SavingsSection() {
-  const [filled, setFilled] = useState(4);
+function SavingsSection({ sheetDb }) {
+  const rows = sheetDb.draft.ahorros.length ? sheetDb.draft.ahorros : [["", "", "", "", ""]];
+  const progressNumber = Number(String(rows[0]?.[3] || "0").replace("%", "")) || 0;
+  const filled = Math.max(0, Math.min(10, Math.round(progressNumber / 10)));
   return (
     <div className="savings-layout">
-      <Field label="Objetivo de ahorro" placeholder="Ej: fondo de emergencia" wide />
+      <div className="soft-table income-table header">
+        <strong>Objetivo</strong>
+        <strong>Meta mensual</strong>
+        <strong>Separado</strong>
+        <strong>Avance</strong>
+        <strong>Notas</strong>
+      </div>
+      {rows.map((row, rowIndex) => (
+        <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
+          {row.map((cell, columnIndex) => (
+            <input
+              aria-label={`Ahorro fila ${rowIndex + 1} columna ${columnIndex + 1}`}
+              key={columnIndex}
+              value={cell}
+              onChange={(event) => sheetDb.updateCell("ahorros", rowIndex, columnIndex, event.target.value)}
+            />
+          ))}
+        </div>
+      ))}
       <div className="coin-grid" aria-label="Progreso de ahorro">
         {Array.from({ length: 10 }, (_, index) => (
           <button
             className={index < filled ? "coin filled" : "coin"}
             key={index}
             type="button"
-            onClick={() => setFilled(index + 1)}
+            onClick={() => sheetDb.updateCell("ahorros", 0, 3, `${(index + 1) * 10}%`)}
             aria-label={`Marcar ahorro ${index + 1}`}
           />
         ))}
@@ -482,12 +793,15 @@ function SavingsSection() {
         <PiggyBank size={20} />
         <span>{filled * 10}% de avance visual</span>
       </div>
+      <SaveButton label="Guardar ahorros" onClick={() => sheetDb.saveSection("ahorros")} saving={sheetDb.status.saving} />
     </div>
   );
 }
 
-function DebtSection() {
-  const rows = ["Tarjeta principal", "Crédito / préstamo", "Compra en cuotas"];
+function DebtSection({ sheetDb }) {
+  const rows = sheetDb.draft.pagos.filter((row) =>
+    ["tarjeta", "crédito", "credito", "cuota"].some((word) => String(row.join(" ")).toLowerCase().includes(word))
+  );
   return (
     <div className="stack">
       <div className="soft-table header">
@@ -495,11 +809,11 @@ function DebtSection() {
         <strong>Cuota</strong>
         <strong>Estado</strong>
       </div>
-      {rows.map((row) => (
-        <div className="soft-table" key={row}>
-          <span>{row}</span>
-          <input aria-label={`Cuota ${row}`} placeholder="$" inputMode="decimal" />
-          <span className="pill">Revisar</span>
+      {(rows.length ? rows : [["Sin deudas detectadas", "", ""]]).map((row, index) => (
+        <div className="soft-table" key={`${row[1]}-${index}`}>
+          <span>{row[1] || row[0]}</span>
+          <span>{row[4] || row[3] || "$"}</span>
+          <span className="pill">{row[6] || "Revisar"}</span>
         </div>
       ))}
       <Field label="Prioridad del mes" placeholder="Ej: pagar tarjeta antes del 20" wide />
@@ -507,7 +821,7 @@ function DebtSection() {
   );
 }
 
-function CloseSection() {
+function CloseSection({ sheetDb }) {
   return (
     <div className="stack">
       <textarea className="reflection" placeholder="Este mes me sentí..." />
@@ -516,6 +830,89 @@ function CloseSection() {
         <Field label="Ajuste para el próximo mes" placeholder="Algo que quiero cambiar" />
       </div>
     </div>
+  );
+}
+
+function SaveButton({ label, onClick, saving, type = "button" }) {
+  return (
+    <button className="primary-action save-action" type={type} onClick={onClick} disabled={saving}>
+      {saving ? <Loader2 className="spin" size={16} /> : <Save size={16} />}
+      {label}
+    </button>
+  );
+}
+
+function ReadOnlyCard({ label, value, helper }) {
+  return (
+    <div className="field readonly">
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <small>{helper}</small>
+    </div>
+  );
+}
+
+function DailyExpenseForm({ onSubmit, saving }) {
+  const today = new Date().toLocaleDateString("es-CL");
+  const [expense, setExpense] = useState({
+    date: today,
+    concept: "",
+    category: "",
+    amount: "",
+    method: "",
+    note: ""
+  });
+
+  function update(field, value) {
+    setExpense((current) => ({ ...current, [field]: value }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+    await onSubmit(expense);
+    setExpense({ date: today, concept: "", category: "", amount: "", method: "", note: "" });
+  }
+
+  return (
+    <form className="daily-form wide" onSubmit={submit}>
+      <h3>Agregar gasto diario</h3>
+      <div className="daily-grid">
+        <input value={expense.date} onChange={(event) => update("date", event.target.value)} aria-label="Fecha" />
+        <input
+          value={expense.concept}
+          onChange={(event) => update("concept", event.target.value)}
+          placeholder="Concepto"
+          aria-label="Concepto"
+          required
+        />
+        <input
+          value={expense.category}
+          onChange={(event) => update("category", event.target.value)}
+          placeholder="Categoría"
+          aria-label="Categoría"
+        />
+        <input
+          value={expense.amount}
+          onChange={(event) => update("amount", event.target.value)}
+          placeholder="$"
+          aria-label="Monto"
+          required
+        />
+        <input
+          value={expense.method}
+          onChange={(event) => update("method", event.target.value)}
+          placeholder="Método"
+          aria-label="Método"
+        />
+        <input
+          value={expense.note}
+          onChange={(event) => update("note", event.target.value)}
+          placeholder="Nota amable"
+          aria-label="Nota amable"
+        />
+      </div>
+      <SaveButton label="Agregar a Gastos Diarios" saving={saving} type="submit" />
+    </form>
   );
 }
 
@@ -532,6 +929,7 @@ function AppShell({ auth }) {
   const [current, setCurrent] = useState("cover");
   const [month, setMonth] = useState(5);
   const [year, setYear] = useState(2026);
+  const sheetDb = useSheetDatabase(auth);
 
   const order = useMemo(() => ["cover", ...sections.map((section) => section.id)], []);
   const pageIndex = order.indexOf(current);
@@ -584,6 +982,11 @@ function AppShell({ auth }) {
           </button>
         </nav>
         <div className="session">
+          {!auth.accessToken ? (
+            <button className="connect-mini" type="button" onClick={auth.requestSheetsAccess}>
+              Sheet
+            </button>
+          ) : null}
           <span>{auth.user?.email}</span>
           <button type="button" onClick={auth.signOut} aria-label="Cerrar sesión">
             <LogOut size={15} />
@@ -595,7 +998,8 @@ function AppShell({ auth }) {
         {current === "cover" ? (
           <>
             <Cover onStart={() => setCurrent("mapa")} />
-            <StatStrip />
+            <SyncBanner auth={auth} sheetDb={sheetDb} />
+            <StatStrip sheetDb={sheetDb} />
           </>
         ) : (
           <section className="planner-grid">
@@ -607,7 +1011,7 @@ function AppShell({ auth }) {
               onMonth={changeMonth}
               onSection={setCurrent}
             />
-            <PlannerPanel activeSection={activeSection} onSection={setCurrent} />
+            <PlannerPanel activeSection={activeSection} onSection={setCurrent} auth={auth} sheetDb={sheetDb} />
           </section>
         )}
       </main>

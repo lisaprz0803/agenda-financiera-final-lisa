@@ -245,6 +245,12 @@ code {
   color: #b86b8d;
 }
 
+.session .connect-mini {
+  width: auto;
+  padding: 0 10px;
+  font-weight: 800;
+}
+
 .workspace {
   width: min(1180px, calc(100% - 28px));
   margin: 0 auto;
@@ -524,6 +530,60 @@ code {
   box-shadow: 0 10px 22px rgba(106, 72, 88, 0.08);
 }
 
+.utility-button:disabled,
+.primary-action:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sync-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 24px 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(217, 121, 161, 0.2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.sync-banner.error {
+  border-color: rgba(184, 94, 128, 0.35);
+  color: #a94f73;
+}
+
+.sync-banner button {
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #b86b8d;
+  padding: 8px 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(106, 72, 88, 0.08);
+}
+
+.spin {
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .panel-body {
   padding: 24px;
 }
@@ -610,6 +670,15 @@ code {
   font-weight: 800;
 }
 
+.field.readonly strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+}
+
+.field.readonly small {
+  color: var(--muted);
+}
+
 input,
 textarea {
   width: 100%;
@@ -627,6 +696,16 @@ textarea {
   align-items: center;
   gap: 12px;
   padding: 9px 12px;
+}
+
+.soft-table.income-table {
+  grid-template-columns: minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr) minmax(150px, 1.1fr);
+}
+
+.soft-table.payments-table {
+  grid-template-columns:
+    minmax(110px, 0.8fr) minmax(150px, 1.3fr) minmax(90px, 0.8fr) minmax(100px, 0.8fr)
+    minmax(100px, 0.8fr) minmax(100px, 0.8fr) minmax(90px, 0.7fr) minmax(140px, 1.1fr);
 }
 
 .soft-table.header {
@@ -712,6 +791,32 @@ textarea {
   line-height: 1.6;
 }
 
+.save-action {
+  margin-top: 4px;
+}
+
+.daily-form {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+  padding: 16px;
+}
+
+.daily-form h3 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+}
+
+.daily-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .pager {
   min-height: 40px;
   display: flex;
@@ -761,6 +866,19 @@ textarea {
 
   .panel-header {
     flex-direction: column;
+  }
+
+  .panel-actions {
+    justify-content: flex-start;
+  }
+
+  .soft-table.payments-table,
+  .soft-table.income-table {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-grid {
+    grid-template-columns: 1fr;
   }
 }
 
