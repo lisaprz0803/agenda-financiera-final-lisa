@@ -634,6 +634,7 @@ code {
 .stack {
   display: grid;
   gap: 12px;
+  min-width: 0;
 }
 
 .form-grid {
@@ -698,14 +699,41 @@ textarea {
   padding: 9px 12px;
 }
 
+.table-scroll {
+  display: grid;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 6px;
+  scrollbar-color: rgba(184, 107, 141, 0.42) rgba(255, 255, 255, 0.55);
+  scrollbar-width: thin;
+}
+
+.table-scroll::-webkit-scrollbar {
+  height: 9px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(184, 107, 141, 0.42);
+}
+
 .soft-table.income-table {
   grid-template-columns: minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr) minmax(150px, 1.1fr);
 }
 
 .soft-table.payments-table {
+  width: max(100%, 1120px);
   grid-template-columns:
-    minmax(110px, 0.8fr) minmax(150px, 1.3fr) minmax(90px, 0.8fr) minmax(100px, 0.8fr)
-    minmax(100px, 0.8fr) minmax(100px, 0.8fr) minmax(90px, 0.7fr) minmax(140px, 1.1fr);
+    minmax(140px, 0.9fr) minmax(210px, 1.25fr) minmax(120px, 0.75fr) minmax(120px, 0.75fr)
+    minmax(120px, 0.75fr) minmax(120px, 0.75fr) minmax(120px, 0.75fr) minmax(170px, 1fr);
 }
 
 .soft-table.header {
@@ -872,7 +900,6 @@ textarea {
     justify-content: flex-start;
   }
 
-  .soft-table.payments-table,
   .soft-table.income-table {
     grid-template-columns: 1fr;
   }
@@ -906,8 +933,11 @@ textarea {
   }
 
   .form-grid,
-  .soft-table,
   .check-row {
+    grid-template-columns: 1fr;
+  }
+
+  .soft-table:not(.payments-table) {
     grid-template-columns: 1fr;
   }
 

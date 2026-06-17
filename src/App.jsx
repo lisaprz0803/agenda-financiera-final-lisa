@@ -711,28 +711,30 @@ function PaymentsSection({ sheetDb }) {
   const payments = sheetDb.draft.pagos.length ? sheetDb.draft.pagos : [["", "", "", "", "", "", "", ""]];
   return (
     <div className="stack">
-      <div className="soft-table payments-table header">
-        <strong>Categoría</strong>
-        <strong>Concepto</strong>
-        <strong>Fecha</strong>
-        <strong>Total</strong>
-        <strong>Mi parte</strong>
-        <strong>Catriel</strong>
-        <strong>Estado</strong>
-        <strong>Nota</strong>
-      </div>
-      {payments.map((row, rowIndex) => (
-        <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
-          {row.map((cell, columnIndex) => (
-            <input
-              aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
-              key={columnIndex}
-              value={cell}
-              onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-            />
-          ))}
+      <div className="table-scroll" aria-label="Pagos mensuales">
+        <div className="soft-table payments-table header">
+          <strong>Categoría</strong>
+          <strong>Concepto</strong>
+          <strong>Fecha</strong>
+          <strong>Total</strong>
+          <strong>Mi parte</strong>
+          <strong>Catriel</strong>
+          <strong>Estado</strong>
+          <strong>Nota</strong>
         </div>
-      ))}
+        {payments.map((row, rowIndex) => (
+          <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
+            {row.map((cell, columnIndex) => (
+              <input
+                aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
+                key={columnIndex}
+                value={cell}
+                onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
       <SaveButton label="Guardar pagos" onClick={() => sheetDb.saveSection("pagos")} saving={sheetDb.status.saving} />
     </div>
   );
