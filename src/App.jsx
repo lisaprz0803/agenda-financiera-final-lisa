@@ -18,13 +18,13 @@ import {
   Sparkles,
   TrendingDown
 } from "lucide-react";
-import cardTerminal from "../assets/card-terminal.jpeg";
-import deskCover from "../assets/desk-cover.png";
-import financePlan from "../assets/finance-plan.jpeg";
-import moneyHandoff from "../assets/money-handoff.jpeg";
-import piggyCalculator from "../assets/piggy-calculator.jpeg";
-import piggyPink from "../assets/piggy-pink.jpeg";
-import piggyPlant from "../assets/piggy-plant.jpeg";
+import heroPlanner from "../assets/hero-planner.svg";
+import visualBudget from "../assets/visual-budget.svg";
+import visualChecklist from "../assets/visual-checklist.svg";
+import visualClose from "../assets/visual-close.svg";
+import visualMap from "../assets/visual-map.svg";
+import visualPayments from "../assets/visual-payments.svg";
+import visualSavings from "../assets/visual-savings.svg";
 
 const STORAGE_KEY = "agenda_financiera_google_user";
 const CHECKLIST_STORAGE_KEY = "agenda_financiera_checklist";
@@ -512,7 +512,7 @@ function AuthGate({ auth }) {
   return (
     <main className="auth-page">
       <section className="auth-card" aria-label="Acceso privado">
-        <img src={deskCover} alt="Papelería rosada con flores, lápiz y símbolos financieros" />
+        <img src={heroPlanner} alt="Agenda financiera con cuaderno, calculadora y alcancía" />
         <div className="eyebrow">
           <Sparkles size={14} />
           Acceso privado
@@ -559,7 +559,7 @@ function Cover({ onStart }) {
   return (
     <section className="cover-screen">
       <div className="cover-media">
-        <img src={financePlan} alt="Agenda financiera con cuaderno, calculadora, café y gráficos" />
+        <img src={heroPlanner} alt="Agenda financiera con cuaderno, calculadora y alcancía" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
@@ -709,7 +709,7 @@ function MapSection({ onSection }) {
   return (
     <div className="map-layout">
       <div className="month-intention">
-        <img src={financePlan} alt="Agenda financiera con café, calculadora y gráficos" />
+        <img src={visualMap} alt="Vista mensual con notas, gráfico e intención financiera" />
         <div>
           <span>Vista del mes</span>
           <strong>Elige una intención sencilla.</strong>
@@ -771,8 +771,8 @@ function ChecklistSection() {
         </div>
       </div>
       <VisualNote
-        image={piggyPlant}
-        alt="Alcancía con plantas, monedas y gráficos"
+        image={visualChecklist}
+        alt="Checklist financiero en tonos lila"
         title="Celebrar un avance también cuenta"
         text="Aunque sea pequeño, deja registro de lo que sí hiciste esta semana."
       />
@@ -816,6 +816,13 @@ function PaymentsSection({ sheetDb }) {
   const payments = sheetDb.draft.pagos.length ? sheetDb.draft.pagos : [["", "", "", "", "", "", "", ""]];
   return (
     <div className="stack">
+      <VisualNote
+        image={visualPayments}
+        alt="Calendario de pagos con tarjeta, recibo y monedas"
+        title="Calendario de pagos"
+        text="Ten tus pagos a la vista para evitar sorpresas y decidir con más calma."
+        wide
+      />
       <div className="table-scroll" aria-label="Pagos mensuales">
         <div className="soft-table payments-table header">
           <strong>Categoría</strong>
@@ -873,8 +880,8 @@ function BudgetSection({ sheetDb }) {
       <ReadOnlyCard label="Gastos diarios" value={`${dailyExpenses} registros`} helper="Tomado de Gastos Diarios" />
       <ReadOnlyCard label="Meta de ahorro" value={sheetDb.draft.ahorros[0]?.[1] || "$"} helper="Tomado de Ahorros" />
       <VisualNote
-        image={cardTerminal}
-        alt="Terminal de pago con tarjeta, monedas y billetes"
+        image={visualBudget}
+        alt="Presupuesto con gráfico y distribución de gastos"
         title="Distribuye según tus prioridades reales"
         text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
         wide
@@ -925,8 +932,8 @@ function SavingsSection({ sheetDb }) {
         <span>{filled * 10}% de avance visual</span>
       </div>
       <VisualNote
-        image={piggyPink}
-        alt="Alcancía rosada sobre gráficos financieros"
+        image={visualSavings}
+        alt="Alcancía pastel con monedas y meta de ahorro"
         title="Bloque de ahorro"
         text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
       />
@@ -962,8 +969,8 @@ function CloseSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={moneyHandoff}
-        alt="Manos entregando dinero"
+        image={visualClose}
+        alt="Hoja de cierre mensual con estrella y líneas de reflexión"
         title="Haz un cierre amable"
         text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
       />
@@ -1155,11 +1162,11 @@ function AppShell({ auth }) {
 
       <main className="workspace">
         <div className="side-visual left" aria-hidden="true">
-          <img src={piggyCalculator} alt="" />
+          <img src={visualPayments} alt="" />
           <span>mirar con calma</span>
         </div>
         <div className="side-visual right" aria-hidden="true">
-          <img src={piggyPlant} alt="" />
+          <img src={visualSavings} alt="" />
           <span>avance amable</span>
         </div>
         {current === "cover" ? (

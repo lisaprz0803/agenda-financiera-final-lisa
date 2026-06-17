@@ -177,8 +177,7 @@ code {
   transition: background 260ms ease;
 }
 
-.theme-cover,
-.theme-mapa {
+.theme-cover {
   --theme-bg-1: #fff8f3;
   --theme-bg-2: #f8dce8;
   --theme-bg-3: #f1d0e0;
@@ -189,10 +188,21 @@ code {
   --theme-line: rgba(217, 121, 161, 0.24);
 }
 
+.theme-mapa {
+  --theme-bg-1: #fff9ef;
+  --theme-bg-2: #f8ecd9;
+  --theme-bg-3: #f3dfc7;
+  --theme-tint: rgba(248, 226, 188, 0.82);
+  --theme-orb: rgba(230, 196, 155, 0.42);
+  --theme-accent: #d69a67;
+  --theme-accent-2: #e7b887;
+  --theme-line: rgba(214, 154, 103, 0.32);
+}
+
 .theme-checklist {
-  --theme-bg-1: #fff8fb;
-  --theme-bg-2: #f4ecf8;
-  --theme-bg-3: #eadff2;
+  --theme-bg-1: #fbf7ff;
+  --theme-bg-2: #eadff4;
+  --theme-bg-3: #dac8ea;
   --theme-tint: rgba(236, 224, 243, 0.8);
   --theme-orb: rgba(199, 169, 224, 0.42);
   --theme-accent: #b692d2;
@@ -203,9 +213,9 @@ code {
 .theme-ingresos,
 .theme-ahorro,
 .theme-deudas {
-  --theme-bg-1: #fffaf1;
-  --theme-bg-2: #eef7ed;
-  --theme-bg-3: #dfeee2;
+  --theme-bg-1: #fbfff8;
+  --theme-bg-2: #e0f0df;
+  --theme-bg-3: #cde4d1;
   --theme-tint: rgba(216, 235, 217, 0.78);
   --theme-orb: rgba(156, 195, 168, 0.38);
   --theme-accent: #86b797;
@@ -214,9 +224,9 @@ code {
 }
 
 .theme-pagos {
-  --theme-bg-1: #fff9f0;
-  --theme-bg-2: #edf4fb;
-  --theme-bg-3: #dfeaf5;
+  --theme-bg-1: #f8fbff;
+  --theme-bg-2: #ddebf7;
+  --theme-bg-3: #cbdff1;
   --theme-tint: rgba(222, 235, 247, 0.8);
   --theme-orb: rgba(174, 203, 228, 0.48);
   --theme-accent: #9bbbd6;
@@ -226,8 +236,8 @@ code {
 
 .theme-presupuesto {
   --theme-bg-1: #fff9ef;
-  --theme-bg-2: #fbefd9;
-  --theme-bg-3: #f6e7c8;
+  --theme-bg-2: #f8e7c8;
+  --theme-bg-3: #efd4a9;
   --theme-tint: rgba(248, 226, 188, 0.75);
   --theme-orb: rgba(224, 170, 105, 0.34);
   --theme-accent: #dda66c;
@@ -236,9 +246,9 @@ code {
 }
 
 .theme-cierre {
-  --theme-bg-1: #fff8f5;
-  --theme-bg-2: #fae9ee;
-  --theme-bg-3: #f5dce8;
+  --theme-bg-1: #fff7f9;
+  --theme-bg-2: #f6dfe8;
+  --theme-bg-3: #edc8dc;
   --theme-tint: rgba(248, 219, 228, 0.8);
   --theme-orb: rgba(235, 171, 203, 0.38);
   --theme-accent: #e58db8;
@@ -247,14 +257,14 @@ code {
 }
 
 .topbar {
-  min-height: 56px;
+  min-height: 68px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 18px;
-  padding: 10px 18px;
+  padding: 12px 22px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.66);
-  background: rgba(255, 252, 248, 0.75);
+  background: rgba(255, 252, 248, 0.86);
   backdrop-filter: blur(18px);
   position: sticky;
   top: 0;
@@ -264,14 +274,15 @@ code {
 .brand {
   gap: 8px;
   color: var(--theme-accent);
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 850;
   white-space: nowrap;
 }
 
 .topnav {
   display: flex;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   overflow-x: auto;
 }
 
@@ -288,21 +299,24 @@ code {
 }
 
 .topnav button {
-  min-height: 34px;
+  min-height: 42px;
+  border: 1px solid var(--theme-line);
   border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink-soft);
+  padding: 0 18px;
   white-space: nowrap;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .topnav button.active,
 .topnav button:hover,
 .session button,
 .round-button {
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 8px 20px rgba(106, 72, 88, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), color-mix(in srgb, var(--theme-bg-2) 58%, white));
+  color: var(--theme-accent);
+  box-shadow: 0 10px 24px var(--theme-shadow);
 }
 
 .session {
@@ -519,9 +533,9 @@ code {
 
 .sidebar,
 .planner-panel {
-  border: 1px solid rgba(255, 255, 255, 0.76);
+  border: 1px solid color-mix(in srgb, var(--theme-line) 72%, white);
   border-radius: var(--radius);
-  background: rgba(255, 253, 249, 0.82);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.9), color-mix(in srgb, var(--theme-bg-1) 78%, white));
   box-shadow: 0 18px 45px var(--theme-shadow);
   backdrop-filter: blur(18px);
 }
@@ -627,7 +641,8 @@ code {
   justify-content: space-between;
   gap: 18px;
   padding: 24px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--theme-line);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), color-mix(in srgb, var(--theme-bg-2) 38%, transparent));
 }
 
 .title-lockup {
@@ -744,6 +759,8 @@ code {
 
 .panel-body {
   padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), color-mix(in srgb, var(--theme-bg-1) 28%, transparent));
 }
 
 .tile-grid {
@@ -764,7 +781,7 @@ code {
   align-items: center;
   border: 1px solid var(--theme-line);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.6);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), color-mix(in srgb, var(--theme-bg-2) 34%, transparent));
   padding: 12px;
 }
 
@@ -795,7 +812,7 @@ code {
   align-content: start;
   border: 1px solid var(--theme-line);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.56);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), color-mix(in srgb, var(--theme-bg-2) 24%, transparent));
   padding: 17px;
   text-align: left;
   box-shadow: 0 12px 26px rgba(106, 72, 88, 0.08);
@@ -844,7 +861,7 @@ code {
 .insight-card {
   border: 1px solid color-mix(in srgb, var(--theme-line) 72%, rgba(82, 59, 56, 0.08));
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.66);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), color-mix(in srgb, var(--theme-bg-1) 34%, white));
 }
 
 .field {
@@ -996,7 +1013,7 @@ select {
 .visual-note {
   border: 1px solid var(--theme-line);
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.58);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.84), color-mix(in srgb, var(--theme-bg-2) 34%, white));
   box-shadow: 0 12px 26px rgba(106, 72, 88, 0.08);
 }
 
@@ -1196,22 +1213,28 @@ select {
 }
 
 .pager {
-  min-height: 40px;
+  min-height: 66px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 0 18px;
-  background: rgba(255, 252, 248, 0.72);
+  padding: 8px 22px;
+  background: rgba(255, 252, 248, 0.86);
+  border-top: 1px solid var(--theme-line);
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .pager button {
-  gap: 6px;
-  border: 0;
-  background: transparent;
-  color: inherit;
+  min-height: 46px;
+  gap: 9px;
+  border: 1px solid var(--theme-line);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), color-mix(in srgb, var(--theme-bg-2) 48%, white));
+  color: var(--theme-accent);
+  padding: 0 20px;
+  box-shadow: 0 10px 24px var(--theme-shadow);
 }
 
 @media (max-width: 900px) {
