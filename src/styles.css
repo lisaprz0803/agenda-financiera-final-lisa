@@ -730,10 +730,14 @@ textarea {
 }
 
 .soft-table.payments-table {
-  width: max(100%, 1120px);
+  width: 100%;
+  min-width: 812px;
   grid-template-columns:
-    minmax(140px, 0.9fr) minmax(210px, 1.25fr) minmax(120px, 0.75fr) minmax(120px, 0.75fr)
-    minmax(120px, 0.75fr) minmax(120px, 0.75fr) minmax(120px, 0.75fr) minmax(170px, 1fr);
+    minmax(84px, 0.8fr) minmax(132px, 1.35fr) minmax(72px, 0.72fr) minmax(84px, 0.8fr)
+    minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(112px, 1fr);
+  gap: 8px;
+  padding: 8px;
+  font-size: 14px;
 }
 
 .soft-table.header {
@@ -742,6 +746,7 @@ textarea {
 }
 
 .soft-table input {
+  min-width: 0;
   min-height: 30px;
 }
 
