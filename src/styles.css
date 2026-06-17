@@ -985,15 +985,28 @@ select {
 }
 
 .soft-table.income-table {
-  grid-template-columns: minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr) minmax(150px, 1.1fr);
+  grid-template-columns:
+    minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr)
+    minmax(150px, 1.1fr) 42px;
 }
 
 .soft-table.payments-table {
   width: 100%;
-  min-width: 812px;
+  min-width: 900px;
   grid-template-columns:
     minmax(84px, 0.8fr) minmax(132px, 1.35fr) minmax(72px, 0.72fr) minmax(84px, 0.8fr)
-    minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(112px, 1fr);
+    minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(112px, 1fr) 42px;
+  gap: 8px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.soft-table.daily-table {
+  width: 100%;
+  min-width: 860px;
+  grid-template-columns:
+    minmax(82px, 0.72fr) minmax(134px, 1.2fr) minmax(112px, 0.9fr) minmax(92px, 0.72fr)
+    minmax(116px, 0.92fr) minmax(140px, 1fr) 42px;
   gap: 8px;
   padding: 8px;
   font-size: 14px;
@@ -1026,6 +1039,93 @@ select {
 .formula-note span {
   color: var(--muted);
   line-height: 1.5;
+}
+
+.delete-row {
+  width: 34px;
+  min-height: 34px;
+  display: inline-grid;
+  place-items: center;
+  justify-self: center;
+  border: 1px solid rgba(205, 91, 91, 0.34);
+  border-radius: 999px;
+  background: rgba(232, 133, 133, 0.16);
+  color: #a84c4c;
+  cursor: pointer;
+}
+
+.delete-row:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.budget-chart,
+.daily-list {
+  grid-column: 1 / -1;
+  border: 1px solid color-mix(in srgb, var(--theme-line) 72%, rgba(82, 59, 56, 0.08));
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), color-mix(in srgb, var(--theme-bg-2) 38%, white));
+  padding: 16px;
+}
+
+.budget-chart {
+  display: grid;
+  gap: 14px;
+}
+
+.budget-chart span,
+.list-heading span {
+  color: var(--theme-accent);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.budget-chart strong,
+.list-heading h3 {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.chart-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) minmax(106px, auto);
+  align-items: center;
+  gap: 10px;
+}
+
+.chart-track {
+  height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.chart-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--theme-accent), var(--theme-accent-2));
+}
+
+.daily-list {
+  display: grid;
+  gap: 12px;
+}
+
+.list-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.list-heading h3 {
+  margin: 0;
+  font-size: 24px;
 }
 
 .checklist-layout {

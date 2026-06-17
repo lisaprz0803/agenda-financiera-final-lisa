@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Save,
   Sparkles,
+  Trash2,
   TrendingDown
 } from "lucide-react";
 import heroPlanner from "../assets/hero-planner.svg";
@@ -35,6 +36,12 @@ const RANGE_MAP = {
   pagos: "'Pagos Mensuales'!A4:H16",
   gastos: "'Gastos Diarios'!A4:F200",
   ahorros: "Ahorros!A4:E9"
+};
+const SHEET_TITLES = {
+  ingresos: "Ingresos",
+  pagos: "Pagos Mensuales",
+  gastos: "Gastos Diarios",
+  ahorros: "Ahorros"
 };
 const monthNames = [
   "Enero",
@@ -444,7 +451,8 @@ function parseSheetValues(payload) {
 }
 
 async function sheetsRequest({ accessToken, spreadsheetId, path, method = "GET", body }) {
-  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/${path}`, {
+  const separator = path.startsWith(":") || path.startsWith("?") ? "" : "/";
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}${separator}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -524,6 +532,71 @@ function useSheetDatabase(auth) {
     }));
   }
 
+  function removeLocalRow(section, rowIndex) {
+    setDraft((current) => ({
+      ...current,
+      [section]: current[section].filter((_, index) => index !== rowIndex)
+    }));
+  }
+
+  async function getSheetId(section) {
+    const title = SHEET_TITLES[section];
+    const payload = await sheetsRequest({
+      accessToken: auth.accessToken,
+      spreadsheetId: auth.spreadsheetId,
+      path: "?fields=sheets(properties(sheetId,title))"
+    });
+    return payload.sheets?.find((sheet) => sheet.properties?.title === title)?.properties?.sheetId;
+  }
+
+  async function deleteRow(section, rowIndex) {
+    if (!auth.accessToken) {
+      removeLocalRow(section, rowIndex);
+      return;
+    }
+
+    setStatus((current) => ({ ...current, saving: true, error: "", message: "Eliminando línea en Google Sheets..." }));
+    try {
+      const sheetId = await getSheetId(section);
+      if (sheetId === undefined) throw new Error("No se encontró la hoja.");
+      await sheetsRequest({
+        accessToken: auth.accessToken,
+        spreadsheetId: auth.spreadsheetId,
+        path: ":batchUpdate",
+        method: "POST",
+        body: {
+          requests: [
+            {
+              deleteDimension: {
+                range: {
+                  sheetId,
+                  dimension: "ROWS",
+                  startIndex: 4 + rowIndex,
+                  endIndex: 5 + rowIndex
+                }
+              }
+            }
+          ]
+        }
+      });
+      await loadData();
+      setStatus((current) => ({
+        ...current,
+        saving: false,
+        loaded: true,
+        message: "Línea eliminada en Google Sheets.",
+        error: ""
+      }));
+    } catch {
+      setStatus((current) => ({
+        ...current,
+        saving: false,
+        error: "No se pudo eliminar la línea. Revisa permisos de Sheets e intenta otra vez.",
+        message: "Error al eliminar."
+      }));
+    }
+  }
+
   async function saveRange(section, range, values) {
     await sheetsRequest({
       accessToken: auth.accessToken,
@@ -592,7 +665,7 @@ function useSheetDatabase(auth) {
     }
   }
 
-  return { sheetData, draft, status, loadData, updateCell, saveSection, appendDailyExpense };
+  return { sheetData, draft, status, loadData, updateCell, saveSection, appendDailyExpense, deleteRow };
 }
 
 function AuthGate({ auth }) {
@@ -604,7 +677,7 @@ function AuthGate({ auth }) {
           <Sparkles size={14} />
           Acceso privado
         </div>
-        <h1>Finanzas en Calma</h1>
+        <h1>¿DÓNDE SE FUE MI PLATA?</h1>
         <p>Inicia sesión con el correo Google autorizado para entrar a tu agenda interactiva.</p>
         <div id="googleSignInButton" className="google-slot" />
         <p className="auth-message">{auth.message}</p>
@@ -653,8 +726,8 @@ function Cover({ onStart }) {
           <Sparkles size={18} />
           <Heart size={18} />
         </div>
-        <h1>Finanzas en Calma</h1>
-        <p className="subtitle">Agenda financiera personal</p>
+        <h1>¿DÓNDE SE FUE MI PLATA?</h1>
+        <p className="subtitle">Agenda interactiva para darle forma a tu dinero.</p>
         <p className="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
         <p className="intro">Un espacio para mirar tu dinero con más claridad, calma y confianza.</p>
         <div className="mini-note">
@@ -876,6 +949,7 @@ function IncomeSection({ sheetDb }) {
         <strong>Monto mensual</strong>
         <strong>Estado</strong>
         <strong>Notas</strong>
+        <strong>Eliminar</strong>
       </div>
       {rows.map((row, rowIndex) => (
         <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
@@ -887,6 +961,11 @@ function IncomeSection({ sheetDb }) {
               onChange={(event) => sheetDb.updateCell("ingresos", rowIndex, columnIndex, event.target.value)}
             />
           ))}
+          <DeleteRowButton
+            label={`Eliminar ingreso fila ${rowIndex + 1}`}
+            disabled={sheetDb.status.saving}
+            onClick={() => sheetDb.deleteRow("ingresos", rowIndex)}
+          />
         </div>
       ))}
       <div className="total-card">
@@ -920,6 +999,7 @@ function PaymentsSection({ sheetDb }) {
           <strong>Catriel</strong>
           <strong>Estado</strong>
           <strong>Forma de pago</strong>
+          <strong>Eliminar</strong>
         </div>
         {payments.map((row, rowIndex) => (
           <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
@@ -985,6 +1065,11 @@ function PaymentsSection({ sheetDb }) {
                 />
               );
             })}
+            <DeleteRowButton
+              label={`Eliminar pago fila ${rowIndex + 1}`}
+              disabled={sheetDb.status.saving}
+              onClick={() => sheetDb.deleteRow("pagos", rowIndex)}
+            />
           </div>
         ))}
       </div>
@@ -1006,6 +1091,7 @@ function BudgetSection({ sheetDb }) {
       <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Suma de Mi parte" />
       <ReadOnlyCard label="Gastos diarios" value={formatCurrency(summary.dailyExpenses)} helper={`${dailyExpenses} registros`} />
       <ReadOnlyCard label="Meta de ahorro" value={formatCurrency(summary.savingsTarget)} helper="Suma de metas de Ahorros" />
+      <BudgetChart summary={summary} />
       <ReadOnlyCard
         label="Saldo proyectado"
         value={formatCurrency(summary.projectedBalance)}
@@ -1021,6 +1107,7 @@ function BudgetSection({ sheetDb }) {
         wide
       />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
+      <DailyExpensesList sheetDb={sheetDb} />
     </div>
   );
 }
@@ -1038,6 +1125,7 @@ function SavingsSection({ sheetDb }) {
         <strong>Separado este mes</strong>
         <strong>Avance</strong>
         <strong>Notas</strong>
+        <strong>Eliminar</strong>
       </div>
       {rows.map((row, rowIndex) => (
         <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
@@ -1049,6 +1137,11 @@ function SavingsSection({ sheetDb }) {
               onChange={(event) => sheetDb.updateCell("ahorros", rowIndex, columnIndex, event.target.value)}
             />
           ))}
+          <DeleteRowButton
+            label={`Eliminar ahorro fila ${rowIndex + 1}`}
+            disabled={sheetDb.status.saving}
+            onClick={() => sheetDb.deleteRow("ahorros", rowIndex)}
+          />
         </div>
       ))}
       <div className="coin-grid" aria-label="Progreso de ahorro">
@@ -1174,6 +1267,83 @@ function ReadOnlyCard({ label, value, helper, wide = false }) {
   );
 }
 
+function BudgetChart({ summary }) {
+  const items = [
+    { label: "Pagos", value: summary.monthlyPayments },
+    { label: "Gastos", value: summary.dailyExpenses },
+    { label: "Ahorro", value: summary.savingsTarget }
+  ];
+  const maxValue = Math.max(...items.map((item) => item.value), 1);
+
+  return (
+    <div className="budget-chart">
+      <div>
+        <span>Gráfico del mes</span>
+        <strong>¿A dónde se está yendo?</strong>
+      </div>
+      <div className="chart-bars" aria-label="Distribución de presupuesto">
+        {items.map((item) => (
+          <div className="chart-row" key={item.label}>
+            <span>{item.label}</span>
+            <div className="chart-track">
+              <i style={{ width: `${Math.max(6, (item.value / maxValue) * 100)}%` }} />
+            </div>
+            <strong>{formatCurrency(item.value)}</strong>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DailyExpensesList({ sheetDb }) {
+  const rows = sheetDb.draft.gastos;
+
+  return (
+    <div className="daily-list wide">
+      <div className="list-heading">
+        <h3>Gastos del mes</h3>
+        <span>{rows.length} líneas registradas</span>
+      </div>
+      <div className="table-scroll" aria-label="Gastos diarios registrados">
+        <div className="soft-table daily-table header">
+          <strong>Fecha</strong>
+          <strong>Concepto</strong>
+          <strong>Categoría</strong>
+          <strong>Monto</strong>
+          <strong>Forma de pago</strong>
+          <strong>Nota</strong>
+          <strong>Eliminar</strong>
+        </div>
+        {(rows.length ? rows : [["", "Sin gastos registrados", "", "", "", ""]]).map((row, rowIndex) => (
+          <div className="soft-table daily-table" key={`${row[1]}-${rowIndex}`}>
+            {row.map((cell, columnIndex) => (
+              <span key={columnIndex}>{cell || "-"}</span>
+            ))}
+            {rows.length ? (
+              <DeleteRowButton
+                label={`Eliminar gasto fila ${rowIndex + 1}`}
+                disabled={sheetDb.status.saving}
+                onClick={() => sheetDb.deleteRow("gastos", rowIndex)}
+              />
+            ) : (
+              <span />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DeleteRowButton({ label, onClick, disabled }) {
+  return (
+    <button className="delete-row" type="button" onClick={onClick} disabled={disabled} aria-label={label} title={label}>
+      <Trash2 size={15} />
+    </button>
+  );
+}
+
 function DailyExpenseForm({ onSubmit, saving }) {
   const today = new Date().toLocaleDateString("es-CL");
   const [expense, setExpense] = useState({
@@ -1295,7 +1465,7 @@ function AppShell({ auth }) {
       <header className="topbar">
         <div className="brand">
           <Sparkles size={16} />
-          Finanzas en Calma
+          ¿DÓNDE SE FUE MI PLATA?
         </div>
         <nav className="topnav" aria-label="Navegación principal">
           <button className={current === "cover" ? "active" : ""} type="button" onClick={() => setCurrent("cover")}>
