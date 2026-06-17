@@ -39,9 +39,87 @@
         linear-gradient(155deg, #fff8f3 0%, #f7dce8 51%, #f1d3e2 100%);
     }
 
+    body.app-locked .shell {
+      display: none;
+    }
+
     button,
     input {
       font: inherit;
+    }
+
+    .auth-gate {
+      min-height: 100vh;
+      display: none;
+      place-items: center;
+      padding: 24px;
+    }
+
+    body.app-locked .auth-gate {
+      display: grid;
+    }
+
+    .auth-panel {
+      width: min(440px, 100%);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      background: rgba(255, 253, 249, 0.82);
+      box-shadow: var(--shadow);
+      padding: 28px;
+      text-align: center;
+      backdrop-filter: blur(16px);
+    }
+
+    .auth-panel img {
+      width: min(260px, 78vw);
+      aspect-ratio: 222 / 168;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(112, 74, 89, 0.16);
+      margin-bottom: 18px;
+    }
+
+    .auth-panel h1 {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .auth-panel p {
+      margin: 0 auto 16px;
+      max-width: 340px;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 14px;
+    }
+
+    .auth-message {
+      min-height: 22px;
+      color: #b45d7e;
+      font-size: 13px;
+      margin-top: 14px;
+      line-height: 1.45;
+    }
+
+    .auth-setup {
+      display: none;
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(217, 137, 167, 0.12);
+      color: #7d5a52;
+      text-align: left;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .auth-setup code {
+      background: rgba(255, 255, 255, 0.72);
+      border-radius: 4px;
+      padding: 1px 4px;
+    }
+
+    body.auth-not-configured .auth-setup {
+      display: block;
     }
 
     .shell {
@@ -70,6 +148,24 @@
       font-size: 13px;
       font-weight: 700;
       white-space: nowrap;
+    }
+
+    .session {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #a88d88;
+      font-size: 11px;
+    }
+
+    .session button {
+      border: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.7);
+      color: #b86b8d;
+      cursor: pointer;
+      padding: 7px 9px;
+      line-height: 1;
     }
 
     .nav {
@@ -554,6 +650,11 @@
         padding-bottom: 2px;
       }
 
+      .session {
+        width: 100%;
+        justify-content: space-between;
+      }
+
       .cover {
         min-height: calc(100vh - 112px);
         padding-top: 12px;
@@ -628,7 +729,20 @@
     }
   </style>
 </head>
-<body>
+<body class="app-locked">
+  <section class="auth-gate" aria-label="Acceso privado">
+    <div class="auth-panel">
+      <img src="assets/desk-cover.png" alt="Papelería rosada con flores, lápiz y símbolos financieros">
+      <h1>Finanzas en Calma</h1>
+      <p>Esta agenda es privada. Inicia sesión con el correo Google autorizado para continuar.</p>
+      <div id="googleSignInButton"></div>
+      <div class="auth-message" data-auth-message>Preparando acceso...</div>
+      <div class="auth-setup">
+        Configura <code>auth-config.js</code> con tu <code>googleClientId</code> y tu correo en <code>allowedEmails</code>. En Google Cloud, agrega <code>https://lisaprz0803.github.io</code> como origen autorizado.
+      </div>
+    </div>
+  </section>
+
   <div class="shell">
     <header class="topbar">
       <div class="brand">Finanzas en Calma ✨</div>
@@ -639,6 +753,10 @@
         <button type="button" data-nav="ahorro">Ahorro</button>
         <button type="button" data-nav="cierre">Cierre</button>
       </nav>
+      <div class="session">
+        <span data-user-email></span>
+        <button type="button" data-sign-out>Cerrar sesión</button>
+      </div>
     </header>
 
     <main class="workspace">
@@ -780,7 +898,117 @@
     </footer>
   </div>
 
+  <script src="auth-config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
+    const AUTH_STORAGE_KEY = "agenda_financiera_google_user";
+    const authConfig = window.AGENDA_AUTH_CONFIG || {};
+    const authMessage = document.querySelector("[data-auth-message]");
+    const userEmail = document.querySelector("[data-user-email]");
+
+    function getAllowedEmails() {
+      return Array.isArray(authConfig.allowedEmails)
+        ? authConfig.allowedEmails.map((email) => String(email).trim().toLowerCase()).filter(Boolean)
+        : [];
+    }
+
+    function isAuthConfigured() {
+      const clientId = String(authConfig.googleClientId || "");
+      const emails = getAllowedEmails();
+      return clientId && !clientId.includes("PEGA_AQUI") && emails.length > 0 && !emails.includes("tu-correo@gmail.com");
+    }
+
+    function decodeJwtPayload(token) {
+      const payload = token.split(".")[1] || "";
+      const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const json = decodeURIComponent(atob(normalized).split("").map((char) => {
+        return "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2);
+      }).join(""));
+      return JSON.parse(json);
+    }
+
+    function setAuthMessage(message) {
+      authMessage.textContent = message;
+    }
+
+    function unlockAgenda(profile) {
+      document.body.classList.remove("app-locked", "auth-not-configured");
+      userEmail.textContent = profile.email;
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({
+        email: profile.email,
+        name: profile.name || "",
+        picture: profile.picture || ""
+      }));
+    }
+
+    function lockAgenda(message) {
+      document.body.classList.add("app-locked");
+      if (message) {
+        setAuthMessage(message);
+      }
+    }
+
+    function isAllowed(profile) {
+      return getAllowedEmails().includes(String(profile.email || "").toLowerCase());
+    }
+
+    function authorizeProfile(profile) {
+      if (profile && profile.email && isAllowed(profile)) {
+        unlockAgenda(profile);
+        return;
+      }
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      lockAgenda("Ese correo no tiene acceso a esta agenda.");
+    }
+
+    window.handleGoogleCredential = (response) => {
+      try {
+        authorizeProfile(decodeJwtPayload(response.credential));
+      } catch (error) {
+        lockAgenda("No se pudo validar el inicio de sesión. Intenta nuevamente.");
+      }
+    };
+
+    function initAuth() {
+      if (!isAuthConfigured()) {
+        document.body.classList.add("auth-not-configured");
+        lockAgenda("Falta configurar Google Client ID y correo autorizado.");
+        return;
+      }
+
+      const storedProfile = JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || "null");
+      if (storedProfile && isAllowed(storedProfile)) {
+        unlockAgenda(storedProfile);
+      } else {
+        lockAgenda("Inicia sesión para entrar.");
+      }
+
+      if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+        setTimeout(initAuth, 150);
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: authConfig.googleClientId,
+        callback: window.handleGoogleCredential
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("googleSignInButton"),
+        { theme: "outline", size: "large", text: "continue_with", shape: "pill", width: 260 }
+      );
+    }
+
+    document.querySelector("[data-sign-out]").addEventListener("click", () => {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      userEmail.textContent = "";
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        window.google.accounts.id.disableAutoSelect();
+      }
+      lockAgenda("Sesión cerrada.");
+    });
+
+    window.addEventListener("load", initAuth);
+
     const tabs = ["mapa", "ingresos", "pagos", "presupuesto", "ahorro", "deudas", "cierre"];
     const labels = {
       mapa: ["Mapa de la agenda", "Elige una sección o usa Siguiente para recorrer el prototipo completo."],
