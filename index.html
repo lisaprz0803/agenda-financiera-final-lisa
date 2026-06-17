@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finanzas en Calma</title>
+  <style>
+    :root {
+      --rose-50: #fff7f8;
+      --rose-100: #f9e2e8;
+      --rose-200: #efc8d5;
+      --rose-400: #d989a7;
+      --lilac: #ddc8ea;
+      --mint: #d9eee6;
+      --paper: #fffdf9;
+      --ink: #5f403b;
+      --muted: #9c7f79;
+      --gold: #d4a72c;
+      --line: rgba(95, 64, 59, 0.14);
+      --shadow: 0 20px 50px rgba(112, 74, 89, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      background:
+        radial-gradient(circle at 4% 24%, rgba(244, 207, 214, 0.72) 0 7rem, transparent 7.1rem),
+        radial-gradient(circle at 96% 78%, rgba(221, 200, 234, 0.72) 0 4.5rem, transparent 4.6rem),
+        linear-gradient(155deg, #fff8f3 0%, #f7dce8 51%, #f1d3e2 100%);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .topbar {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 0 18px;
+      background: rgba(255, 253, 249, 0.78);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.58);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .brand {
+      color: #c96f90;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav button,
+    .icon-button,
+    .primary,
+    .ghost {
+      border: 0;
+      cursor: pointer;
+      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+    }
+
+    .nav button {
+      color: #a88d88;
+      background: transparent;
+      border-radius: 999px;
+      padding: 7px 9px;
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .nav button[aria-current="page"] {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    .nav button:hover,
+    .icon-button:hover,
+    .primary:hover,
+    .ghost:hover {
+      transform: translateY(-1px);
+    }
+
+    .workspace {
+      width: min(1120px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 26px;
+    }
+
+    .cover {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+      text-align: center;
+      min-height: calc(100vh - 86px);
+      align-content: center;
+      gap: 18px;
+    }
+
+    .mini-icons {
+      display: flex;
+      gap: 12px;
+      color: #c66c95;
+      font-size: 18px;
+      align-items: center;
+    }
+
+    .hero-image {
+      width: min(445px, 88vw);
+      aspect-ratio: 222 / 168;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      background: var(--paper);
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--ink);
+      font-size: clamp(30px, 5vw, 44px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: #cfafda;
+      font-size: clamp(16px, 2.3vw, 20px);
+    }
+
+    .quote {
+      margin: 10px 0 0;
+      max-width: 560px;
+      color: #7d5a52;
+      font-size: 13px;
+      font-style: italic;
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .intro {
+      margin: 0;
+      max-width: 570px;
+      color: #a98680;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-width: 136px;
+      min-height: 42px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #df93b2, #c78bd7);
+      color: white;
+      box-shadow: 0 14px 28px rgba(160, 92, 148, 0.23);
+      padding: 0 18px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .planner {
+      display: none;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      min-height: calc(100vh - 96px);
+      padding: 16px 0 28px;
+    }
+
+    .planner.is-visible {
+      display: grid;
+    }
+
+    .side-panel,
+    .sheet {
+      background: rgba(255, 253, 249, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.76);
+      box-shadow: 0 18px 45px rgba(128, 88, 102, 0.13);
+      backdrop-filter: blur(16px);
+      border-radius: 8px;
+    }
+
+    .side-panel {
+      padding: 16px;
+      position: sticky;
+      top: 62px;
+    }
+
+    .month-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .month-label strong {
+      font-size: 17px;
+    }
+
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #fff;
+      color: #c56b91;
+      box-shadow: 0 6px 14px rgba(128, 88, 102, 0.12);
+    }
+
+    .section-menu {
+      display: grid;
+      gap: 7px;
+      margin: 14px 0;
+    }
+
+    .section-menu button {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      text-align: left;
+      padding: 10px 11px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 40px;
+    }
+
+    .section-menu button[aria-selected="true"] {
+      color: var(--ink);
+      background: #fff;
+      border-color: rgba(217, 137, 167, 0.28);
+      box-shadow: 0 8px 18px rgba(128, 88, 102, 0.1);
+    }
+
+    .progress {
+      display: grid;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .bar {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(95, 64, 59, 0.1);
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 42%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #e59eb7, #d8bd62);
+    }
+
+    .sheet {
+      overflow: hidden;
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .sheet-header h2 {
+      margin: 0 0 7px;
+      font-size: clamp(24px, 3.6vw, 34px);
+      line-height: 1.1;
+    }
+
+    .sheet-header p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      max-width: 650px;
+    }
+
+    .ghost {
+      min-height: 36px;
+      border-radius: 999px;
+      padding: 0 14px;
+      color: #b86b8d;
+      background: #fff;
+      box-shadow: 0 8px 18px rgba(128, 88, 102, 0.1);
+      white-space: nowrap;
+    }
+
+    .panel {
+      display: none;
+      padding: 22px 24px 26px;
+    }
+
+    .panel.is-active {
+      display: block;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .field {
+      min-height: 86px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.57);
+      border-radius: 8px;
+      padding: 13px;
+    }
+
+    .field label {
+      display: block;
+      color: #b0728c;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .field input {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid rgba(95, 64, 59, 0.18);
+      background: transparent;
+      color: var(--ink);
+      min-height: 34px;
+      outline: 0;
+    }
+
+    .wide {
+      grid-column: 1 / -1;
+    }
+
+    .check-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .check-row {
+      min-height: 42px;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) 112px;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.54);
+    }
+
+    .check-row input[type="checkbox"] {
+      accent-color: #d989a7;
+      width: 18px;
+      height: 18px;
+    }
+
+    .amount {
+      text-align: right;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .saving-meter {
+      display: grid;
+      gap: 14px;
+    }
+
+    .coins {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(20px, 1fr));
+      gap: 8px;
+    }
+
+    .coin {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 2px solid rgba(212, 167, 44, 0.42);
+      background: rgba(255, 255, 255, 0.56);
+      cursor: pointer;
+    }
+
+    .coin.is-filled {
+      background: radial-gradient(circle at 35% 35%, #ffe9a8, #d4a72c 72%);
+      box-shadow: 0 5px 12px rgba(177, 133, 24, 0.2);
+    }
+
+    .reflection {
+      min-height: 132px;
+      width: 100%;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.58);
+      color: var(--ink);
+      padding: 14px;
+      outline: 0;
+      font: 15px/1.6 Georgia, "Times New Roman", serif;
+    }
+
+    .choice-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .tile {
+      min-height: 138px;
+      border: 1px solid rgba(217, 137, 167, 0.26);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.57);
+      color: var(--ink);
+      padding: 16px;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 10px 22px rgba(128, 88, 102, 0.08);
+    }
+
+    .tile strong {
+      display: block;
+      margin: 10px 0 8px;
+      font-size: 19px;
+    }
+
+    .tile span {
+      color: #b86b8d;
+      font-size: 24px;
+    }
+
+    .tile p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .mini-table {
+      display: grid;
+      gap: 8px;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(94px, 0.7fr) minmax(86px, 0.6fr);
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.54);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .table-row strong {
+      color: var(--ink);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      border-radius: 999px;
+      padding: 0 10px;
+      background: rgba(217, 137, 167, 0.18);
+      color: #a85f7d;
+      white-space: nowrap;
+    }
+
+    .total-row {
+      margin-top: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(212, 167, 44, 0.28);
+      font-weight: 700;
+    }
+
+    .pager {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #a78a84;
+      font-size: 11px;
+      padding: 0 16px;
+      background: rgba(255, 253, 249, 0.68);
+    }
+
+    .pager button {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+
+    @media (max-width: 800px) {
+      .topbar {
+        height: auto;
+        min-height: 52px;
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 10px 14px;
+      }
+
+      .nav {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 2px;
+      }
+
+      .cover {
+        min-height: calc(100vh - 112px);
+        padding-top: 12px;
+      }
+
+      .planner,
+      .planner.is-visible {
+        grid-template-columns: 1fr;
+      }
+
+      .side-panel {
+        position: static;
+      }
+
+      .section-menu {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .sheet-header {
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .choice-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-row {
+        grid-template-columns: 1fr;
+      }
+
+      .check-row {
+        grid-template-columns: 24px minmax(0, 1fr);
+      }
+
+      .amount {
+        grid-column: 2;
+        text-align: left;
+      }
+    }
+
+    @media print {
+      .topbar,
+      .side-panel,
+      .pager,
+      .primary,
+      .ghost {
+        display: none;
+      }
+
+      body {
+        background: white;
+      }
+
+      .cover {
+        min-height: auto;
+        padding: 20px 0;
+      }
+
+      .planner,
+      .planner.is-visible {
+        display: block;
+      }
+
+      .sheet {
+        box-shadow: none;
+        border-color: #ddd;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">Finanzas en Calma ✨</div>
+      <nav class="nav" aria-label="Secciones">
+        <button type="button" data-nav="cover" aria-current="page">Inicio</button>
+        <button type="button" data-nav="pagos">Pagos</button>
+        <button type="button" data-nav="presupuesto">Presupuesto</button>
+        <button type="button" data-nav="ahorro">Ahorro</button>
+        <button type="button" data-nav="cierre">Cierre</button>
+      </nav>
+    </header>
+
+    <main class="workspace">
+      <section class="cover" id="cover">
+        <div class="mini-icons" aria-hidden="true">
+          <span>☷</span>
+          <span>☀</span>
+          <span>♡</span>
+        </div>
+        <img class="hero-image" src="assets/desk-cover.png" alt="Papelería rosada con flores, lápiz y símbolos financieros">
+        <h1>Finanzas en Calma</h1>
+        <p class="subtitle">Agenda financiera personal</p>
+        <p class="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
+        <p class="intro">Un espacio para mirar tu dinero con más claridad, calma y confianza.</p>
+        <button class="primary" type="button" data-start>✦ Comenzar</button>
+      </section>
+
+      <section class="planner" id="planner" aria-label="Agenda financiera interactiva">
+        <aside class="side-panel">
+          <div class="month-label">
+            <button class="icon-button" type="button" title="Mes anterior" data-month="-1">‹</button>
+            <strong data-month-label>Junio 2026</strong>
+            <button class="icon-button" type="button" title="Mes siguiente" data-month="1">›</button>
+          </div>
+
+          <div class="section-menu" role="tablist" aria-label="Páginas de la agenda">
+            <button type="button" role="tab" aria-selected="true" data-tab="mapa">☷ Mapa</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="ingresos">＋ Ingresos</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="pagos">☑ Pagos</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="presupuesto">$ Presupuesto</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="ahorro"># Ahorro</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="deudas">↘ Deudas</button>
+            <button type="button" role="tab" aria-selected="false" data-tab="cierre">♡ Cierre</button>
+          </div>
+
+          <div class="progress">
+            <span>Avance mensual</span>
+            <div class="bar" aria-hidden="true"><span data-progress></span></div>
+            <span data-progress-text>42% completado</span>
+          </div>
+        </aside>
+
+        <article class="sheet">
+          <div class="sheet-header">
+            <div>
+              <h2 data-title>Mapa de la agenda</h2>
+              <p data-description>Elige una sección o usa Siguiente para recorrer el prototipo completo.</p>
+            </div>
+            <button class="ghost" type="button" onclick="window.print()">Imprimir</button>
+          </div>
+
+          <section class="panel is-active" data-panel="mapa">
+            <div class="choice-grid">
+              <button class="tile" type="button" data-jump="ingresos"><span>＋</span><strong>Ingresos</strong><p>Registra entradas de dinero y fechas importantes.</p></button>
+              <button class="tile" type="button" data-jump="pagos"><span>☑</span><strong>Pagos</strong><p>Marca cuentas y compromisos mensuales.</p></button>
+              <button class="tile" type="button" data-jump="presupuesto"><span>$</span><strong>Presupuesto</strong><p>Distribuye el dinero antes de gastarlo.</p></button>
+              <button class="tile" type="button" data-jump="ahorro"><span>#</span><strong>Ahorro</strong><p>Visualiza tu avance hacia la meta.</p></button>
+              <button class="tile" type="button" data-jump="deudas"><span>↘</span><strong>Deudas</strong><p>Ordena saldos, cuotas y prioridades.</p></button>
+              <button class="tile" type="button" data-jump="cierre"><span>♡</span><strong>Cierre</strong><p>Revisa aprendizajes y ajusta el próximo mes.</p></button>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="ingresos">
+            <div class="mini-table">
+              <div class="table-row"><strong>Fuente</strong><strong>Monto</strong><strong>Fecha</strong></div>
+              <div class="table-row"><span>Sueldo / honorarios</span><span class="badge">$</span><span>05</span></div>
+              <div class="table-row"><span>Ventas / servicios</span><span class="badge">$</span><span>15</span></div>
+              <div class="table-row"><span>Ingreso extra</span><span class="badge">$</span><span>--</span></div>
+            </div>
+            <div class="total-row"><span>Total estimado</span><span>$</span></div>
+          </section>
+
+          <section class="panel" data-panel="pagos">
+            <div class="check-list">
+              <label class="check-row"><input type="checkbox" checked><span>Arriendo / dividendo</span><span class="amount">$</span></label>
+              <label class="check-row"><input type="checkbox"><span>Luz, agua y gas</span><span class="amount">$</span></label>
+              <label class="check-row"><input type="checkbox"><span>Internet y teléfono</span><span class="amount">$</span></label>
+              <label class="check-row"><input type="checkbox"><span>Tarjetas / créditos</span><span class="amount">$</span></label>
+              <label class="check-row"><input type="checkbox"><span>Otros compromisos</span><span class="amount">$</span></label>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="presupuesto">
+            <div class="grid">
+              <div class="field"><label for="ingresos">Ingresos esperados</label><input id="ingresos" inputmode="decimal" placeholder="$"></div>
+              <div class="field"><label for="gastos">Gastos fijos</label><input id="gastos" inputmode="decimal" placeholder="$"></div>
+              <div class="field"><label for="variables">Gastos variables</label><input id="variables" inputmode="decimal" placeholder="$"></div>
+              <div class="field"><label for="meta">Meta del mes</label><input id="meta" placeholder="Ej: ahorrar 10%"></div>
+              <div class="field wide"><label for="notas">Notas importantes</label><input id="notas" placeholder="Recordatorios, fechas o decisiones"></div>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="ahorro">
+            <div class="saving-meter">
+              <div class="field wide">
+                <label for="objetivo">Objetivo de ahorro</label>
+                <input id="objetivo" placeholder="Ej: fondo de emergencia">
+              </div>
+              <div class="coins" aria-label="Progreso de ahorro">
+                <button class="coin is-filled" type="button" title="Ahorro 1"></button>
+                <button class="coin is-filled" type="button" title="Ahorro 2"></button>
+                <button class="coin is-filled" type="button" title="Ahorro 3"></button>
+                <button class="coin is-filled" type="button" title="Ahorro 4"></button>
+                <button class="coin" type="button" title="Ahorro 5"></button>
+                <button class="coin" type="button" title="Ahorro 6"></button>
+                <button class="coin" type="button" title="Ahorro 7"></button>
+                <button class="coin" type="button" title="Ahorro 8"></button>
+                <button class="coin" type="button" title="Ahorro 9"></button>
+                <button class="coin" type="button" title="Ahorro 10"></button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="deudas">
+            <div class="mini-table">
+              <div class="table-row"><strong>Deuda</strong><strong>Cuota</strong><strong>Estado</strong></div>
+              <div class="table-row"><span>Tarjeta principal</span><span class="badge">$</span><span>Activa</span></div>
+              <div class="table-row"><span>Crédito / préstamo</span><span class="badge">$</span><span>Revisar</span></div>
+              <div class="table-row"><span>Compra en cuotas</span><span class="badge">$</span><span>Pendiente</span></div>
+            </div>
+            <div class="field wide" style="margin-top: 14px;"><label for="prioridad-deuda">Prioridad del mes</label><input id="prioridad-deuda" placeholder="Ej: pagar tarjeta antes del 20"></div>
+          </section>
+
+          <section class="panel" data-panel="cierre">
+            <textarea class="reflection" placeholder="Este mes me sentí..."></textarea>
+            <div class="grid" style="margin-top: 14px;">
+              <div class="field"><label for="logro">Logro financiero</label><input id="logro" placeholder="Lo que sí funcionó"></div>
+              <div class="field"><label for="ajuste">Ajuste para el próximo mes</label><input id="ajuste" placeholder="Algo que quiero cambiar"></div>
+            </div>
+          </section>
+        </article>
+      </section>
+    </main>
+
+    <footer class="pager">
+      <button type="button" data-prev>← Anterior</button>
+      <span data-page>1 / 8</span>
+      <button type="button" data-next>Siguiente →</button>
+    </footer>
+  </div>
+
+  <script>
+    const tabs = ["mapa", "ingresos", "pagos", "presupuesto", "ahorro", "deudas", "cierre"];
+    const labels = {
+      mapa: ["Mapa de la agenda", "Elige una sección o usa Siguiente para recorrer el prototipo completo."],
+      ingresos: ["Ingresos", "Anota tus entradas de dinero y las fechas en que esperas recibirlas."],
+      pagos: ["Pagos del mes", "Marca lo que ya está pagado y deja a la vista lo que necesita atención."],
+      presupuesto: ["Presupuesto", "Ordena ingresos, gastos y decisiones antes de que el mes tome velocidad."],
+      ahorro: ["Ahorro", "Visualiza tu meta y celebra cada avance pequeño sin perder la calma."],
+      deudas: ["Deudas", "Mira tus compromisos con calma y define cuál atender primero."],
+      cierre: ["Cierre mensual", "Registra aprendizajes, logros y ajustes para el próximo ciclo."]
+    };
+    const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    let current = "cover";
+    let month = 5;
+    let year = 2026;
+
+    const cover = document.querySelector("#cover");
+    const planner = document.querySelector("#planner");
+    const navButtons = document.querySelectorAll("[data-nav]");
+    const tabButtons = document.querySelectorAll("[data-tab]");
+    const panels = document.querySelectorAll("[data-panel]");
+    const title = document.querySelector("[data-title]");
+    const description = document.querySelector("[data-description]");
+    const page = document.querySelector("[data-page]");
+    const progress = document.querySelector("[data-progress]");
+    const progressText = document.querySelector("[data-progress-text]");
+    const monthLabel = document.querySelector("[data-month-label]");
+
+    function showSection(name) {
+      current = name;
+      const isCover = name === "cover";
+      cover.style.display = isCover ? "grid" : "none";
+      planner.classList.toggle("is-visible", !isCover);
+
+      navButtons.forEach((button) => {
+        button.setAttribute("aria-current", button.dataset.nav === name ? "page" : "false");
+      });
+
+      if (!isCover) {
+        tabButtons.forEach((button) => {
+          button.setAttribute("aria-selected", button.dataset.tab === name ? "true" : "false");
+        });
+        panels.forEach((panel) => {
+          panel.classList.toggle("is-active", panel.dataset.panel === name);
+        });
+        title.textContent = labels[name][0];
+        description.textContent = labels[name][1];
+      }
+
+      const index = isCover ? 0 : tabs.indexOf(name) + 1;
+      const percent = Math.round(((index + 1) / 8) * 100);
+      page.textContent = `${index + 1} / 8`;
+      progress.style.width = `${percent}%`;
+      progressText.textContent = `${percent}% completado`;
+    }
+
+    function move(delta) {
+      const order = ["cover", ...tabs];
+      const nextIndex = Math.max(0, Math.min(order.length - 1, order.indexOf(current) + delta));
+      showSection(order[nextIndex]);
+    }
+
+    navButtons.forEach((button) => button.addEventListener("click", () => showSection(button.dataset.nav)));
+    tabButtons.forEach((button) => button.addEventListener("click", () => showSection(button.dataset.tab)));
+    document.querySelectorAll("[data-jump]").forEach((button) => button.addEventListener("click", () => showSection(button.dataset.jump)));
+    document.querySelector("[data-start]").addEventListener("click", () => showSection("mapa"));
+    document.querySelector("[data-prev]").addEventListener("click", () => move(-1));
+    document.querySelector("[data-next]").addEventListener("click", () => move(1));
+
+    document.querySelectorAll("[data-month]").forEach((button) => {
+      button.addEventListener("click", () => {
+        month += Number(button.dataset.month);
+        if (month < 0) {
+          month = 11;
+          year -= 1;
+        }
+        if (month > 11) {
+          month = 0;
+          year += 1;
+        }
+        monthLabel.textContent = `${monthNames[month]} ${year}`;
+      });
+    });
+
+    document.querySelectorAll(".coin").forEach((coin) => {
+      coin.addEventListener("click", () => coin.classList.toggle("is-filled"));
+    });
+  </script>
+</body>
+</html>
