@@ -559,7 +559,7 @@ function Cover({ onStart }) {
   return (
     <section className="cover-screen">
       <div className="cover-media">
-        <img src={deskCover} alt="Papelería rosada con flores, lápiz y símbolos financieros" />
+        <img src={financePlan} alt="Agenda financiera con cuaderno, calculadora, café y gráficos" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
@@ -829,12 +829,14 @@ function PaymentsSection({ sheetDb }) {
         </div>
         {payments.map((row, rowIndex) => (
           <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
-            {row.map((cell, columnIndex) => (
-              columnIndex === 6 ? (
+            {row.map((cell, columnIndex) => {
+              const statusValue = statusOptions.includes(String(cell).trim()) ? String(cell).trim() : "Revisar";
+              return columnIndex === 6 ? (
                 <select
                   aria-label={`Estado pago fila ${rowIndex + 1}`}
+                  className={`status-select status-${statusValue.toLowerCase()}`}
                   key={columnIndex}
-                  value={statusOptions.includes(String(cell).trim()) ? String(cell).trim() : "Revisar"}
+                  value={statusValue}
                   onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
                 >
                   {statusOptions.map((option) => (
@@ -850,8 +852,8 @@ function PaymentsSection({ sheetDb }) {
                   value={cell}
                   onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
                 />
-              )
-            ))}
+              );
+            })}
           </div>
         ))}
       </div>

@@ -363,7 +363,8 @@ code {
 .side-visual img {
   width: 100%;
   aspect-ratio: 1;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.6);
   border: 5px solid rgba(255, 255, 255, 0.66);
   border-radius: 50%;
   box-shadow: 0 14px 36px rgba(106, 72, 88, 0.14);
@@ -407,7 +408,8 @@ code {
   position: relative;
   width: 100%;
   aspect-ratio: 222 / 168;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.64);
   border-radius: 14px;
   box-shadow: var(--shadow);
 }
@@ -769,7 +771,8 @@ code {
 .month-intention img {
   width: 100%;
   aspect-ratio: 16 / 10;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.62);
   border-radius: var(--radius);
 }
 
@@ -889,6 +892,37 @@ select {
   padding: 0 8px;
   color: var(--ink);
   font-weight: 750;
+}
+
+.status-select {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  min-height: 32px;
+  text-align: center;
+}
+
+.status-pagado {
+  background: rgba(134, 183, 151, 0.22);
+  border-color: rgba(89, 153, 111, 0.42);
+  color: #3f7d56;
+}
+
+.status-pendiente {
+  background: rgba(232, 133, 133, 0.2);
+  border-color: rgba(205, 91, 91, 0.42);
+  color: #a84c4c;
+}
+
+.status-parcial {
+  background: rgba(236, 198, 91, 0.24);
+  border-color: rgba(213, 166, 45, 0.42);
+  color: #8d6b12;
+}
+
+.status-revisar {
+  background: rgba(182, 146, 210, 0.22);
+  border-color: rgba(147, 105, 182, 0.42);
+  color: #76549a;
 }
 
 .soft-table {
@@ -1035,7 +1069,8 @@ select {
   width: 100%;
   aspect-ratio: 16 / 8;
   max-height: 260px;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .visual-note.wide img {
