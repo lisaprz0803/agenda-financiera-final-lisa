@@ -887,6 +887,13 @@ code {
   font-size: 28px;
 }
 
+.field.readonly.wide {
+  grid-column: 1 / -1;
+  min-height: 112px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), color-mix(in srgb, var(--theme-accent) 12%, white));
+}
+
 .field.readonly small {
   color: var(--muted);
 }
@@ -1000,6 +1007,25 @@ select {
 .soft-table input {
   min-width: 0;
   min-height: 30px;
+}
+
+.formula-note {
+  display: grid;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 24%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--theme-bg-2) 44%, rgba(255, 255, 255, 0.78));
+  padding: 14px 16px;
+  color: var(--ink);
+}
+
+.formula-note strong {
+  color: var(--theme-accent);
+}
+
+.formula-note span {
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .checklist-layout {
@@ -1186,6 +1212,33 @@ select {
   line-height: 1.6;
 }
 
+.close-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sticker-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 22%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--theme-bg-2) 44%, rgba(255, 255, 255, 0.72));
+  padding: 12px;
+}
+
+.sticker-board button {
+  min-height: 38px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 30%, transparent);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--theme-accent);
+  padding: 0 14px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
 .save-action {
   margin-top: 4px;
 }
@@ -1271,6 +1324,7 @@ select {
 
   .month-intention,
   .checklist-layout,
+  .close-summary,
   .visual-note.wide {
     grid-template-columns: 1fr;
   }

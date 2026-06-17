@@ -136,6 +136,31 @@ const checklistItems = [
 ];
 
 const statusOptions = ["Pagado", "Pendiente", "Revisar", "Parcial"];
+const categoryOptions = [
+  "Vivienda",
+  "Servicios",
+  "Supermercado",
+  "Transporte",
+  "Familia",
+  "Familia / hijos",
+  "Bebé",
+  "Personal",
+  "Ahorro",
+  "Salud",
+  "Educación",
+  "Deudas",
+  "Otro"
+];
+const paymentMethodOptions = ["Transferencia", "Débito", "Crédito", "Efectivo", "Cheques", "Pago web", "Otro"];
+const progressStickers = [
+  "Avance pequeño",
+  "Pagado a tiempo",
+  "Ahorro separado",
+  "Gasto consciente",
+  "Pendiente importante",
+  "Mejorar próximo mes",
+  "Celebrar logro"
+];
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -346,6 +371,68 @@ function normalizeRows(rows = [], length = 0) {
   return rows.map((row) => Array.from({ length }, (_, index) => row[index] ?? ""));
 }
 
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function findOption(value, options, fallback = "Otro") {
+  const normalized = normalizeText(value);
+  return options.find((option) => normalizeText(option) === normalized) || fallback;
+}
+
+function detectPaymentMethod(value) {
+  const text = normalizeText(value);
+  if (!text) return "Transferencia";
+  if (text.includes("transfer")) return "Transferencia";
+  if (text.includes("debito")) return "Débito";
+  if (text.includes("credito") || text.includes("tc") || text.includes("lider")) return "Crédito";
+  if (text.includes("efectivo")) return "Efectivo";
+  if (text.includes("cheque")) return "Cheques";
+  if (text.includes("web") || text.includes("unired")) return "Pago web";
+  return findOption(value, paymentMethodOptions, "Otro");
+}
+
+function parseMoney(value) {
+  const cleaned = String(value || "").replace(/[^\d-]/g, "");
+  return Number(cleaned) || 0;
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("es-CL", {
+    style: "currency",
+    currency: "CLP",
+    maximumFractionDigits: 0
+  }).format(Number(value) || 0);
+}
+
+function getFinancialSummary(draft) {
+  const incomeTotal = draft.ingresos.reduce((sum, row) => sum + parseMoney(row[2]), 0);
+  const monthlyPayments = draft.pagos.reduce((sum, row) => sum + parseMoney(row[4] || row[3]), 0);
+  const dailyExpenses = draft.gastos.reduce((sum, row) => sum + parseMoney(row[3]), 0);
+  const savingsTarget = draft.ahorros.reduce((sum, row) => sum + parseMoney(row[1]), 0);
+  const savingsSaved = draft.ahorros.reduce((sum, row) => sum + parseMoney(row[2]), 0);
+  const projectedBalance = incomeTotal - monthlyPayments - dailyExpenses - savingsTarget;
+  const savingsGap = Math.max(0, savingsTarget - savingsSaved);
+  const savingsProgress = savingsTarget
+    ? Math.min(100, Math.round((savingsSaved / savingsTarget) * 100))
+    : Number(String(draft.ahorros[0]?.[3] || "0").replace("%", "")) || 0;
+
+  return {
+    incomeTotal,
+    monthlyPayments,
+    dailyExpenses,
+    savingsTarget,
+    savingsSaved,
+    savingsGap,
+    savingsProgress,
+    projectedBalance
+  };
+}
+
 function parseSheetValues(payload) {
   const ranges = payload.valueRanges || [];
   return {
@@ -534,13 +621,12 @@ function AuthGate({ auth }) {
 }
 
 function StatStrip({ sheetDb }) {
-  const incomeTotal = sheetDb.draft.ingresos[0]?.[2] || "$";
-  const savingsProgress = sheetDb.draft.ahorros[0]?.[3] || "0%";
+  const summary = getFinancialSummary(sheetDb.draft);
   const paymentsDone = sheetDb.draft.pagos.filter((row) => String(row[6] || "").toLowerCase().includes("pagado")).length;
   const liveStats = [
-    { label: "Ingreso base", value: incomeTotal, helper: "Desde hoja Ingresos" },
-    { label: "Ahorro", value: savingsProgress, helper: "Objetivo principal" },
-    { label: "Pagos", value: `${paymentsDone}/${sheetDb.draft.pagos.length || 0}`, helper: "Marcados como pagados" }
+    { label: "Ingreso base", value: formatCurrency(summary.incomeTotal), helper: "Desde hoja Ingresos" },
+    { label: "Ahorro", value: `${summary.savingsProgress}%`, helper: "Meta vs. separado" },
+    { label: "Saldo proyectado", value: formatCurrency(summary.projectedBalance), helper: `${paymentsDone} pagos marcados` }
   ];
   return (
     <div className="stat-strip" aria-label="Resumen">
@@ -814,6 +900,7 @@ function IncomeSection({ sheetDb }) {
 
 function PaymentsSection({ sheetDb }) {
   const payments = sheetDb.draft.pagos.length ? sheetDb.draft.pagos : [["", "", "", "", "", "", "", ""]];
+  const summary = getFinancialSummary(sheetDb.draft);
   return (
     <div className="stack">
       <VisualNote
@@ -832,13 +919,31 @@ function PaymentsSection({ sheetDb }) {
           <strong>Mi parte</strong>
           <strong>Catriel</strong>
           <strong>Estado</strong>
-          <strong>Nota</strong>
+          <strong>Forma de pago</strong>
         </div>
         {payments.map((row, rowIndex) => (
           <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
             {row.map((cell, columnIndex) => {
               const statusValue = statusOptions.includes(String(cell).trim()) ? String(cell).trim() : "Revisar";
-              return columnIndex === 6 ? (
+              if (columnIndex === 0) {
+                const categoryValue = findOption(cell, categoryOptions);
+                return (
+                  <select
+                    aria-label={`Categoría pago fila ${rowIndex + 1}`}
+                    key={columnIndex}
+                    value={categoryValue}
+                    onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+                  >
+                    {categoryOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                );
+              }
+              if (columnIndex === 6) {
+                return (
                 <select
                   aria-label={`Estado pago fila ${rowIndex + 1}`}
                   className={`status-select status-${statusValue.toLowerCase()}`}
@@ -852,7 +957,26 @@ function PaymentsSection({ sheetDb }) {
                     </option>
                   ))}
                 </select>
-              ) : (
+                );
+              }
+              if (columnIndex === 7) {
+                const methodValue = detectPaymentMethod(cell);
+                return (
+                  <select
+                    aria-label={`Forma de pago fila ${rowIndex + 1}`}
+                    key={columnIndex}
+                    value={methodValue}
+                    onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+                  >
+                    {paymentMethodOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                );
+              }
+              return (
                 <input
                   aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
                   key={columnIndex}
@@ -864,21 +988,31 @@ function PaymentsSection({ sheetDb }) {
           </div>
         ))}
       </div>
+      <div className="formula-note">
+        <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
+        <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
+      </div>
       <SaveButton label="Guardar pagos" onClick={() => sheetDb.saveSection("pagos")} saving={sheetDb.status.saving} />
     </div>
   );
 }
 
 function BudgetSection({ sheetDb }) {
-  const totalIncome = sheetDb.draft.ingresos[0]?.[2] || "$";
-  const fixedPayments = sheetDb.draft.pagos.filter((row) => row.some(Boolean)).length;
+  const summary = getFinancialSummary(sheetDb.draft);
   const dailyExpenses = sheetDb.draft.gastos.length;
   return (
     <div className="form-grid">
-      <ReadOnlyCard label="Ingresos esperados" value={totalIncome} helper="Tomado de Ingresos" />
-      <ReadOnlyCard label="Pagos mensuales" value={`${fixedPayments} items`} helper="Tomado de Pagos Mensuales" />
-      <ReadOnlyCard label="Gastos diarios" value={`${dailyExpenses} registros`} helper="Tomado de Gastos Diarios" />
-      <ReadOnlyCard label="Meta de ahorro" value={sheetDb.draft.ahorros[0]?.[1] || "$"} helper="Tomado de Ahorros" />
+      <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Suma de Ingresos" />
+      <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Suma de Mi parte" />
+      <ReadOnlyCard label="Gastos diarios" value={formatCurrency(summary.dailyExpenses)} helper={`${dailyExpenses} registros`} />
+      <ReadOnlyCard label="Meta de ahorro" value={formatCurrency(summary.savingsTarget)} helper="Suma de metas de Ahorros" />
+      <ReadOnlyCard
+        label="Saldo proyectado"
+        value={formatCurrency(summary.projectedBalance)}
+        helper="Ingresos - pagos - gastos - ahorro"
+        wide
+      />
+      <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
       <VisualNote
         image={visualBudget}
         alt="Presupuesto con gráfico y distribución de gastos"
@@ -893,14 +1027,15 @@ function BudgetSection({ sheetDb }) {
 
 function SavingsSection({ sheetDb }) {
   const rows = sheetDb.draft.ahorros.length ? sheetDb.draft.ahorros : [["", "", "", "", ""]];
-  const progressNumber = Number(String(rows[0]?.[3] || "0").replace("%", "")) || 0;
+  const summary = getFinancialSummary(sheetDb.draft);
+  const progressNumber = summary.savingsProgress;
   const filled = Math.max(0, Math.min(10, Math.round(progressNumber / 10)));
   return (
     <div className="savings-layout">
       <div className="soft-table income-table header">
         <strong>Objetivo</strong>
         <strong>Meta mensual</strong>
-        <strong>Separado</strong>
+        <strong>Separado este mes</strong>
         <strong>Avance</strong>
         <strong>Notas</strong>
       </div>
@@ -929,7 +1064,7 @@ function SavingsSection({ sheetDb }) {
       </div>
       <div className="insight-card">
         <PiggyBank size={20} />
-        <span>{filled * 10}% de avance visual</span>
+        <span><strong>{progressNumber}%</strong> de avance calculado. Falta <strong>{formatCurrency(summary.savingsGap)}</strong>.</span>
       </div>
       <VisualNote
         image={visualSavings}
@@ -966,6 +1101,13 @@ function DebtSection({ sheetDb }) {
 }
 
 function CloseSection({ sheetDb }) {
+  const [reflection, setReflection] = useState("");
+  const summary = getFinancialSummary(sheetDb.draft);
+
+  function addSticker(sticker) {
+    setReflection((current) => (current ? `${current}\n${sticker}: ` : `${sticker}: `));
+  }
+
   return (
     <div className="stack">
       <VisualNote
@@ -974,7 +1116,23 @@ function CloseSection({ sheetDb }) {
         title="Haz un cierre amable"
         text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
       />
-      <textarea className="reflection" placeholder="Este mes me sentí..." />
+      <div className="close-summary">
+        <ReadOnlyCard label="Saldo proyectado" value={formatCurrency(summary.projectedBalance)} helper="Resumen del mes" />
+        <ReadOnlyCard label="Ahorro separado" value={formatCurrency(summary.savingsSaved)} helper={`${summary.savingsProgress}% de avance`} />
+      </div>
+      <div className="sticker-board" aria-label="Stickers de progreso">
+        {progressStickers.map((sticker) => (
+          <button key={sticker} type="button" onClick={() => addSticker(sticker)}>
+            {sticker}
+          </button>
+        ))}
+      </div>
+      <textarea
+        className="reflection"
+        placeholder="Este mes me sentí..."
+        value={reflection}
+        onChange={(event) => setReflection(event.target.value)}
+      />
       <div className="form-grid">
         <Field label="Logro financiero" placeholder="Lo que sí funcionó" />
         <Field label="Ajuste para el próximo mes" placeholder="Algo que quiero cambiar" />
@@ -1006,9 +1164,9 @@ function SaveButton({ label, onClick, saving, type = "button" }) {
   );
 }
 
-function ReadOnlyCard({ label, value, helper }) {
+function ReadOnlyCard({ label, value, helper, wide = false }) {
   return (
-    <div className="field readonly">
+    <div className={wide ? "field readonly wide" : "field readonly"}>
       <span>{label}</span>
       <strong>{value}</strong>
       <small>{helper}</small>
@@ -1021,9 +1179,9 @@ function DailyExpenseForm({ onSubmit, saving }) {
   const [expense, setExpense] = useState({
     date: today,
     concept: "",
-    category: "",
+    category: "Servicios",
     amount: "",
-    method: "",
+    method: "Transferencia",
     note: ""
   });
 
@@ -1034,7 +1192,7 @@ function DailyExpenseForm({ onSubmit, saving }) {
   async function submit(event) {
     event.preventDefault();
     await onSubmit(expense);
-    setExpense({ date: today, concept: "", category: "", amount: "", method: "", note: "" });
+    setExpense({ date: today, concept: "", category: "Servicios", amount: "", method: "Transferencia", note: "" });
   }
 
   return (
@@ -1049,12 +1207,17 @@ function DailyExpenseForm({ onSubmit, saving }) {
           aria-label="Concepto"
           required
         />
-        <input
+        <select
           value={expense.category}
           onChange={(event) => update("category", event.target.value)}
-          placeholder="Categoría"
           aria-label="Categoría"
-        />
+        >
+          {categoryOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
         <input
           value={expense.amount}
           onChange={(event) => update("amount", event.target.value)}
@@ -1062,12 +1225,17 @@ function DailyExpenseForm({ onSubmit, saving }) {
           aria-label="Monto"
           required
         />
-        <input
+        <select
           value={expense.method}
           onChange={(event) => update("method", event.target.value)}
-          placeholder="Método"
-          aria-label="Método"
-        />
+          aria-label="Forma de pago"
+        >
+          {paymentMethodOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
         <input
           value={expense.note}
           onChange={(event) => update("note", event.target.value)}
