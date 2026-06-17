@@ -55,6 +55,7 @@ button {
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible {
   outline: 3px solid rgba(217, 121, 161, 0.34);
   outline-offset: 2px;
@@ -252,12 +253,55 @@ code {
 }
 
 .workspace {
+  position: relative;
   width: min(1180px, calc(100% - 28px));
   margin: 0 auto;
   padding: 30px 0 28px;
 }
 
+.side-visual {
+  position: fixed;
+  z-index: 0;
+  display: grid;
+  gap: 8px;
+  width: 132px;
+  pointer-events: none;
+  opacity: 0.86;
+}
+
+.side-visual.left {
+  left: max(16px, calc((100vw - 1370px) / 2));
+  top: 128px;
+}
+
+.side-visual.right {
+  right: max(16px, calc((100vw - 1370px) / 2));
+  bottom: 86px;
+}
+
+.side-visual img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border: 5px solid rgba(255, 255, 255, 0.66);
+  border-radius: 50%;
+  box-shadow: 0 14px 36px rgba(106, 72, 88, 0.14);
+}
+
+.side-visual span {
+  justify-self: center;
+  border-radius: 999px;
+  background: rgba(255, 252, 248, 0.78);
+  padding: 6px 10px;
+  color: #b86b8d;
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: 0 10px 22px rgba(106, 72, 88, 0.08);
+}
+
 .cover-screen {
+  position: relative;
+  z-index: 1;
   min-height: calc(100vh - 210px);
   display: grid;
   grid-template-columns: minmax(280px, 0.95fr) minmax(300px, 1.05fr);
@@ -325,6 +369,16 @@ code {
   line-height: 1.65;
 }
 
+.mini-note {
+  max-width: 520px;
+  border-left: 4px solid rgba(217, 121, 161, 0.46);
+  padding: 10px 12px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
 .primary-action {
   width: fit-content;
   min-height: 46px;
@@ -373,6 +427,8 @@ code {
 }
 
 .planner-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   gap: 18px;
@@ -558,6 +614,25 @@ code {
   font-size: 13px;
 }
 
+.quote-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 24px 0;
+  padding: 11px 14px;
+  border: 1px solid rgba(212, 167, 44, 0.2);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255, 252, 248, 0.78), rgba(217, 238, 230, 0.42));
+  color: var(--ink-soft);
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+}
+
+.quote-card svg {
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+
 .sync-banner.error {
   border-color: rgba(184, 94, 128, 0.35);
   color: #a94f73;
@@ -592,6 +667,41 @@ code {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
+}
+
+.map-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.month-intention {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  border: 1px solid rgba(217, 121, 161, 0.2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 12px;
+}
+
+.month-intention img {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.month-intention span,
+.month-intention p {
+  color: var(--muted);
+}
+
+.month-intention strong {
+  display: block;
+  margin: 4px 0 6px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
 }
 
 .feature-tile {
@@ -681,6 +791,7 @@ code {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 0;
@@ -688,6 +799,15 @@ textarea {
   background: transparent;
   min-height: 36px;
   outline: 0;
+}
+
+select {
+  border-radius: 6px;
+  border-bottom-color: rgba(217, 121, 161, 0.3);
+  background: rgba(255, 255, 255, 0.48);
+  padding: 0 8px;
+  color: #7d4e62;
+  font-weight: 750;
 }
 
 .soft-table {
@@ -748,6 +868,109 @@ textarea {
 .soft-table input {
   min-width: 0;
   min-height: 30px;
+}
+
+.checklist-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.48fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.checklist-card,
+.visual-note {
+  border: 1px solid rgba(217, 121, 161, 0.2);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 12px 26px rgba(106, 72, 88, 0.08);
+}
+
+.checklist-card {
+  padding: 18px;
+}
+
+.checklist-summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.checklist-summary strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 36px;
+}
+
+.checklist-summary span,
+.checklist-card p {
+  color: var(--muted);
+}
+
+.checklist-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.task {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(82, 59, 56, 0.1);
+  border-radius: var(--radius);
+  background: rgba(255, 252, 248, 0.64);
+  padding: 9px 11px;
+}
+
+.task input {
+  width: 18px;
+  min-height: 18px;
+  accent-color: #d979a1;
+}
+
+.task.checked {
+  border-color: rgba(217, 121, 161, 0.34);
+  background: rgba(247, 220, 231, 0.48);
+}
+
+.task.checked span {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.visual-note {
+  overflow: hidden;
+}
+
+.visual-note.wide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(170px, 0.35fr) minmax(0, 1fr);
+  align-items: center;
+}
+
+.visual-note img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.visual-note div {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+
+.visual-note strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 21px;
+}
+
+.visual-note p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
 }
 
 .total-card {
@@ -870,6 +1093,10 @@ textarea {
 }
 
 @media (max-width: 900px) {
+  .side-visual {
+    display: none;
+  }
+
   .topbar {
     grid-template-columns: 1fr auto;
   }
@@ -894,6 +1121,16 @@ textarea {
 
   .tile-grid,
   .stat-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .month-intention,
+  .checklist-layout,
+  .visual-note.wide {
+    grid-template-columns: 1fr;
+  }
+
+  .checklist-items {
     grid-template-columns: 1fr;
   }
 
@@ -957,6 +1194,12 @@ textarea {
   .panel-body,
   .panel-header {
     padding: 18px;
+  }
+}
+
+@media (max-width: 1500px) {
+  .side-visual {
+    display: none;
   }
 }
 

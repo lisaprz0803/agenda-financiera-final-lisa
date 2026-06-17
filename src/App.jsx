@@ -18,9 +18,16 @@ import {
   Sparkles,
   TrendingDown
 } from "lucide-react";
+import cardTerminal from "../assets/card-terminal.jpeg";
 import deskCover from "../assets/desk-cover.png";
+import financePlan from "../assets/finance-plan.jpeg";
+import moneyHandoff from "../assets/money-handoff.jpeg";
+import piggyCalculator from "../assets/piggy-calculator.jpeg";
+import piggyPink from "../assets/piggy-pink.jpeg";
+import piggyPlant from "../assets/piggy-plant.jpeg";
 
 const STORAGE_KEY = "agenda_financiera_google_user";
+const CHECKLIST_STORAGE_KEY = "agenda_financiera_checklist";
 const DEFAULT_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const DEFAULT_SPREADSHEET_ID = "1GRYY_e_2jf9525UWyZO_gPm9_BE8dZuWf7XWwn7iMEk";
 const RANGE_MAP = {
@@ -50,57 +57,85 @@ const sections = [
     label: "Mapa",
     icon: LayoutDashboard,
     title: "Mapa de la agenda",
-    description: "Elige una sección o usa Siguiente para recorrer el prototipo completo."
+    description: "Elige una sección o usa Siguiente para recorrer el prototipo completo.",
+    message: "No necesitas tener todo resuelto. Solo necesitas empezar con claridad."
+  },
+  {
+    id: "checklist",
+    label: "Checklist",
+    icon: CheckCircle2,
+    title: "Checklist del mes",
+    description: "Marca cada paso con calma y deja visible lo que ya avanzaste.",
+    message: "Pequeñas acciones repetidas también construyen estabilidad."
   },
   {
     id: "ingresos",
     label: "Ingresos",
     icon: Plus,
     title: "Ingresos",
-    description: "Anota tus entradas de dinero y las fechas en que esperas recibirlas."
+    description: "Anota tus entradas de dinero y las fechas en que esperas recibirlas.",
+    message: "Este mes quiero mirar mi dinero con calma, no con miedo."
   },
   {
     id: "pagos",
     label: "Pagos",
     icon: CheckCircle2,
     title: "Pagos del mes",
-    description: "Marca lo que ya está pagado y deja a la vista lo que necesita atención."
+    description: "Marca lo que ya está pagado y deja a la vista lo que necesita atención.",
+    message: "Lo que se anota deja de dar vueltas en la cabeza."
   },
   {
     id: "presupuesto",
     label: "Presupuesto",
     icon: CircleDollarSign,
     title: "Presupuesto",
-    description: "Ordena ingresos, gastos y decisiones antes de que el mes tome velocidad."
+    description: "Ordena ingresos, gastos y decisiones antes de que el mes tome velocidad.",
+    message: "Un presupuesto no es una restricción, es una guía para cuidarte mejor."
   },
   {
     id: "ahorro",
     label: "Ahorro",
     icon: PiggyBank,
     title: "Ahorro",
-    description: "Visualiza tu meta y celebra cada avance pequeño sin perder la calma."
+    description: "Visualiza tu meta y celebra cada avance pequeño sin perder la calma.",
+    message: "Ahorrar aunque sea poco sigue siendo elegirte."
   },
   {
     id: "deudas",
     label: "Deudas",
     icon: TrendingDown,
     title: "Deudas",
-    description: "Mira tus compromisos con calma y define cuál atender primero."
+    description: "Mira tus compromisos con calma y define cuál atender primero.",
+    message: "Cada gasto cuenta una historia. Mirarlo con honestidad también es avanzar."
   },
   {
     id: "cierre",
     label: "Cierre",
     icon: Heart,
     title: "Cierre mensual",
-    description: "Registra aprendizajes, logros y ajustes para el próximo ciclo."
+    description: "Registra aprendizajes, logros y ajustes para el próximo ciclo.",
+    message: "Mirar hacia atrás también te ayuda a avanzar."
   }
 ];
 
 const quickStats = [
-  { label: "Avance", value: "62%", helper: "4 secciones activas" },
+  { label: "Avance", value: "62%", helper: "7 secciones activas" },
   { label: "Meta", value: "$", helper: "Ahorro del mes" },
   { label: "Foco", value: "Calma", helper: "Decidir con claridad" }
 ];
+
+const checklistItems = [
+  "Revisar ingresos",
+  "Registrar pagos importantes",
+  "Revisar gastos diarios",
+  "Separar ahorro",
+  "Revisar suscripciones",
+  "Hacer balance del mes",
+  "Anotar pendientes",
+  "Celebrar un avance"
+];
+
+const statusOptions = ["Pagado", "Pendiente", "Revisar", "Parcial"];
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -536,6 +571,9 @@ function Cover({ onStart }) {
         <p className="subtitle">Agenda financiera personal</p>
         <p className="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
         <p className="intro">Un espacio para mirar tu dinero con más claridad, calma y confianza.</p>
+        <div className="mini-note">
+          Esta agenda ordena tu mes visualmente; Google Sheets guarda los números, cálculos y seguimiento.
+        </div>
         <button className="primary-action" type="button" onClick={onStart}>
           <Sparkles size={16} />
           Comenzar
@@ -629,9 +667,11 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb }) {
       </header>
 
       <SyncBanner auth={auth} sheetDb={sheetDb} />
+      <QuoteCard text={section.message} />
 
       <div className="panel-body">
         {activeSection === "mapa" ? <MapSection onSection={onSection} /> : null}
+        {activeSection === "checklist" ? <ChecklistSection /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
         {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} /> : null}
@@ -640,6 +680,15 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb }) {
         {activeSection === "cierre" ? <CloseSection sheetDb={sheetDb} /> : null}
       </div>
     </article>
+  );
+}
+
+function QuoteCard({ text }) {
+  return (
+    <div className="quote-card">
+      <Sparkles size={16} />
+      <span>{text}</span>
+    </div>
   );
 }
 
@@ -658,19 +707,75 @@ function SyncBanner({ auth, sheetDb }) {
 
 function MapSection({ onSection }) {
   return (
-    <div className="tile-grid">
-      {sections.slice(1).map((section) => {
-        const Icon = section.icon;
-        return (
-          <button className="feature-tile" key={section.id} type="button" onClick={() => onSection(section.id)}>
-            <span>
-              <Icon size={24} />
-            </span>
-            <strong>{section.label}</strong>
-            <p>{section.description}</p>
-          </button>
-        );
-      })}
+    <div className="map-layout">
+      <div className="month-intention">
+        <img src={financePlan} alt="Agenda financiera con café, calculadora y gráficos" />
+        <div>
+          <span>Vista del mes</span>
+          <strong>Elige una intención sencilla.</strong>
+          <p>Ordenar un poco también cuenta. Usa este mapa para moverte por tu agenda sin perder el hilo.</p>
+        </div>
+      </div>
+      <div className="tile-grid">
+        {sections.slice(1).map((section) => {
+          const Icon = section.icon;
+          return (
+            <button className="feature-tile" key={section.id} type="button" onClick={() => onSection(section.id)}>
+              <span>
+                <Icon size={24} />
+              </span>
+              <strong>{section.label}</strong>
+              <p>{section.description}</p>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChecklistSection() {
+  const [checked, setChecked] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  function toggle(item) {
+    setChecked((current) => {
+      const next = { ...current, [item]: !current[item] };
+      localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+
+  const done = checklistItems.filter((item) => checked[item]).length;
+
+  return (
+    <div className="checklist-layout">
+      <div className="checklist-card">
+        <div className="checklist-summary">
+          <strong>{done}/{checklistItems.length}</strong>
+          <span>pasos completados</span>
+        </div>
+        <p>Marca cada paso con calma. No se trata de hacerlo perfecto, se trata de hacerlo visible.</p>
+        <div className="checklist-items">
+          {checklistItems.map((item) => (
+            <label className={checked[item] ? "task checked" : "task"} key={item}>
+              <input type="checkbox" checked={Boolean(checked[item])} onChange={() => toggle(item)} />
+              <span>{item}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+      <VisualNote
+        image={piggyPlant}
+        alt="Alcancía con plantas, monedas y gráficos"
+        title="Celebrar un avance también cuenta"
+        text="Aunque sea pequeño, deja registro de lo que sí hiciste esta semana."
+      />
     </div>
   );
 }
@@ -725,12 +830,27 @@ function PaymentsSection({ sheetDb }) {
         {payments.map((row, rowIndex) => (
           <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
             {row.map((cell, columnIndex) => (
-              <input
-                aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
-                key={columnIndex}
-                value={cell}
-                onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-              />
+              columnIndex === 6 ? (
+                <select
+                  aria-label={`Estado pago fila ${rowIndex + 1}`}
+                  key={columnIndex}
+                  value={statusOptions.includes(String(cell).trim()) ? String(cell).trim() : "Revisar"}
+                  onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
+                  key={columnIndex}
+                  value={cell}
+                  onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+                />
+              )
             ))}
           </div>
         ))}
@@ -750,6 +870,13 @@ function BudgetSection({ sheetDb }) {
       <ReadOnlyCard label="Pagos mensuales" value={`${fixedPayments} items`} helper="Tomado de Pagos Mensuales" />
       <ReadOnlyCard label="Gastos diarios" value={`${dailyExpenses} registros`} helper="Tomado de Gastos Diarios" />
       <ReadOnlyCard label="Meta de ahorro" value={sheetDb.draft.ahorros[0]?.[1] || "$"} helper="Tomado de Ahorros" />
+      <VisualNote
+        image={cardTerminal}
+        alt="Terminal de pago con tarjeta, monedas y billetes"
+        title="Distribuye según tus prioridades reales"
+        text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
+        wide
+      />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
     </div>
   );
@@ -795,6 +922,12 @@ function SavingsSection({ sheetDb }) {
         <PiggyBank size={20} />
         <span>{filled * 10}% de avance visual</span>
       </div>
+      <VisualNote
+        image={piggyPink}
+        alt="Alcancía rosada sobre gráficos financieros"
+        title="Bloque de ahorro"
+        text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
+      />
       <SaveButton label="Guardar ahorros" onClick={() => sheetDb.saveSection("ahorros")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -826,10 +959,30 @@ function DebtSection({ sheetDb }) {
 function CloseSection({ sheetDb }) {
   return (
     <div className="stack">
+      <VisualNote
+        image={moneyHandoff}
+        alt="Manos entregando dinero"
+        title="Haz un cierre amable"
+        text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
+      />
       <textarea className="reflection" placeholder="Este mes me sentí..." />
       <div className="form-grid">
         <Field label="Logro financiero" placeholder="Lo que sí funcionó" />
         <Field label="Ajuste para el próximo mes" placeholder="Algo que quiero cambiar" />
+        <Field label="Un gasto que valió la pena" placeholder="Algo que disfruté o me ayudó" />
+        <Field label="El próximo mes quiero" placeholder="Una intención sencilla" />
+      </div>
+    </div>
+  );
+}
+
+function VisualNote({ image, alt, title, text, wide = false }) {
+  return (
+    <div className={wide ? "visual-note wide" : "visual-note"}>
+      <img src={image} alt={alt} />
+      <div>
+        <strong>{title}</strong>
+        <p>{text}</p>
       </div>
     </div>
   );
@@ -934,6 +1087,7 @@ function AppShell({ auth }) {
   const sheetDb = useSheetDatabase(auth);
 
   const order = useMemo(() => ["cover", ...sections.map((section) => section.id)], []);
+  const topNavIds = ["pagos", "presupuesto", "ahorro", "checklist"];
   const pageIndex = order.indexOf(current);
   const activeSection = current === "cover" ? "mapa" : current;
   const progress = Math.round(((pageIndex + 1) / order.length) * 100);
@@ -969,7 +1123,7 @@ function AppShell({ auth }) {
           <button className={current === "cover" ? "active" : ""} type="button" onClick={() => setCurrent("cover")}>
             Inicio
           </button>
-          {sections.slice(2, 5).map((section) => (
+          {topNavIds.map((id) => sections.find((section) => section.id === id)).map((section) => (
             <button
               className={current === section.id ? "active" : ""}
               key={section.id}
@@ -997,6 +1151,14 @@ function AppShell({ auth }) {
       </header>
 
       <main className="workspace">
+        <div className="side-visual left" aria-hidden="true">
+          <img src={piggyCalculator} alt="" />
+          <span>mirar con calma</span>
+        </div>
+        <div className="side-visual right" aria-hidden="true">
+          <img src={piggyPlant} alt="" />
+          <span>avance amable</span>
+        </div>
         {current === "cover" ? (
           <>
             <Cover onStart={() => setCurrent("mapa")} />
