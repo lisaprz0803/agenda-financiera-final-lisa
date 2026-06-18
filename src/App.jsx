@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { initializeApp, getApps } from "firebase/app";
+import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,7 +21,7 @@ import {
   Trash2,
   TrendingDown
 } from "lucide-react";
-import heroPlanner from "../assets/hero-planner.svg";
+import heroPlanner from "../assets/hero-plata.jpg";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -29,6 +31,7 @@ import visualSavings from "../assets/visual-savings.svg";
 
 const STORAGE_KEY = "agenda_financiera_google_user";
 const CHECKLIST_STORAGE_KEY = "agenda_financiera_checklist";
+const MONTHLY_STORE_KEY = "agenda_financiera_monthly_data";
 const DEFAULT_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const DEFAULT_SPREADSHEET_ID = "1GRYY_e_2jf9525UWyZO_gPm9_BE8dZuWf7XWwn7iMEk";
 const RANGE_MAP = {
@@ -159,15 +162,34 @@ const categoryOptions = [
   "Otro"
 ];
 const paymentMethodOptions = ["Transferencia", "Débito", "Crédito", "Efectivo", "Cheques", "Pago web", "Otro"];
-const progressStickers = [
-  "Avance pequeño",
-  "Pagado a tiempo",
-  "Ahorro separado",
-  "Gasto consciente",
-  "Pendiente importante",
-  "Mejorar próximo mes",
-  "Celebrar logro"
+const paymentDateOptions = [
+  "Día 1",
+  "Día 5",
+  "Día 10",
+  "Día 15",
+  "Día 20",
+  "Día 25",
+  "Día 30",
+  "Quincena",
+  "Automático",
+  "Variable"
 ];
+const progressStickers = [
+  { icon: "🌸", label: "Avance suave" },
+  { icon: "💸", label: "Pagado a tiempo" },
+  { icon: "🐷", label: "Ahorro separado" },
+  { icon: "✨", label: "Logro bonito" },
+  { icon: "⚠️", label: "Pendiente importante" },
+  { icon: "💜", label: "Me cuidé" },
+  { icon: "🎯", label: "Meta clara" }
+];
+const reminderStickers = ["💸", "⚠️", "✅", "🎯", "💜", "🌸", "🧾", "🐷"];
+const rowTemplates = {
+  ingresos: ["", "Mensual", "", "Revisar", ""],
+  pagos: ["Servicios", "", "Día 1", "", "", "", "Pendiente", "Transferencia"],
+  ahorros: ["", "", "", "0%", ""],
+  gastos: [new Date().toLocaleDateString("es-CL"), "", "Servicios", "", "Transferencia", ""]
+};
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -197,6 +219,45 @@ function isConfigured(config) {
   const clientId = String(config?.googleClientId || "");
   const emails = normalizeEmails(config);
   return clientId && !clientId.includes("PEGA_AQUI") && emails.length > 0 && !emails.includes("tu-correo@gmail.com");
+}
+
+function isFirebaseConfigured(config) {
+  return Boolean(config?.apiKey && config?.projectId && !String(config.apiKey).includes("PEGA_AQUI"));
+}
+
+async function getFirebaseDb() {
+  await loadScript(`${import.meta.env.BASE_URL}firebase-config.js`).catch(() => {});
+  const config = window.AGENDA_FIREBASE_CONFIG || {};
+  if (!isFirebaseConfigured(config)) return null;
+  const app = getApps().length ? getApps()[0] : initializeApp(config);
+  return getFirestore(app);
+}
+
+function getMonthKey(month, year) {
+  return `${year}-${String(month + 1).padStart(2, "0")}`;
+}
+
+function getUserKey(auth) {
+  return String(auth.user?.email || "demo").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+}
+
+function readLocalMonth(userKey, monthKey) {
+  try {
+    const allData = JSON.parse(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+    return allData[userKey]?.[monthKey] || null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalMonth(userKey, monthKey, payload) {
+  try {
+    const allData = JSON.parse(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+    const userData = allData[userKey] || {};
+    localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify({ ...allData, [userKey]: { ...userData, [monthKey]: payload } }));
+  } catch {
+    // Local persistence is best effort.
+  }
 }
 
 function decodeJwtPayload(token) {
@@ -442,11 +503,22 @@ function getFinancialSummary(draft) {
 
 function parseSheetValues(payload) {
   const ranges = payload.valueRanges || [];
-  return {
+  return cleanDraftData({
     ingresos: normalizeRows(ranges[0]?.values?.slice(1), 5),
     pagos: normalizeRows(ranges[1]?.values?.slice(1), 8),
     gastos: normalizeRows(ranges[2]?.values?.slice(1), 6).filter((row) => row.some(Boolean)),
     ahorros: normalizeRows(ranges[3]?.values?.slice(1), 5)
+  });
+}
+
+function cleanDraftData(data = emptySheetData()) {
+  return {
+    ingresos: normalizeRows(data.ingresos || [], 5),
+    pagos: normalizeRows(data.pagos || [], 8).filter(
+      (row) => !normalizeText(row.join(" ")).includes("transferencia a mama")
+    ),
+    gastos: normalizeRows(data.gastos || [], 6).filter((row) => row.some(Boolean)),
+    ahorros: normalizeRows(data.ahorros || [], 5)
   };
 }
 
@@ -469,24 +541,88 @@ async function sheetsRequest({ accessToken, spreadsheetId, path, method = "GET",
   return response.json();
 }
 
-function useSheetDatabase(auth) {
+function useSheetDatabase(auth, monthKey) {
   const [sheetData, setSheetData] = useState(emptySheetData);
   const [draft, setDraft] = useState(emptySheetData);
+  const [calendar, setCalendar] = useState({});
+  const [reflection, setReflection] = useState("");
   const [status, setStatus] = useState({
     loading: false,
     saving: false,
     loaded: false,
-    message: "Conecta Google Sheets para cargar tus datos.",
+    message: "Mes listo para registrar tus datos.",
     error: ""
   });
+  const storeRef = useRef({ db: null, ready: false });
+
+  async function persistMonth(nextDraft = draft, nextCalendar = calendar, nextReflection = reflection) {
+    const userKey = getUserKey(auth);
+    const payload = {
+      draft: nextDraft,
+      calendar: nextCalendar,
+      reflection: nextReflection,
+      updatedAt: new Date().toISOString()
+    };
+    writeLocalMonth(userKey, monthKey, payload);
+    if (!storeRef.current.ready) {
+      storeRef.current.db = await getFirebaseDb();
+      storeRef.current.ready = true;
+    }
+    if (storeRef.current.db) {
+      await setDoc(doc(storeRef.current.db, "agendaUsers", userKey, "months", monthKey), payload, { merge: true });
+    }
+  }
+
+  async function loadMonthData() {
+    const userKey = getUserKey(auth);
+    setStatus((current) => ({ ...current, loading: true, error: "", message: "Cargando mes..." }));
+    try {
+      if (!storeRef.current.ready) {
+        storeRef.current.db = await getFirebaseDb();
+        storeRef.current.ready = true;
+      }
+      let payload = null;
+      if (storeRef.current.db) {
+        const snapshot = await getDoc(doc(storeRef.current.db, "agendaUsers", userKey, "months", monthKey));
+        payload = snapshot.exists() ? snapshot.data() : null;
+      }
+      payload = payload || readLocalMonth(userKey, monthKey);
+      const nextDraft = cleanDraftData(payload?.draft || emptySheetData());
+      setSheetData(nextDraft);
+      setDraft(nextDraft);
+      setCalendar(payload?.calendar || {});
+      setReflection(payload?.reflection || "");
+      setStatus({
+        loading: false,
+        saving: false,
+        loaded: Boolean(payload),
+        message: payload ? "Mes cargado desde Firebase/local." : "Mes nuevo listo para registrar datos.",
+        error: ""
+      });
+    } catch {
+      const payload = readLocalMonth(userKey, monthKey);
+      const nextDraft = cleanDraftData(payload?.draft || emptySheetData());
+      setSheetData(nextDraft);
+      setDraft(nextDraft);
+      setCalendar(payload?.calendar || {});
+      setReflection(payload?.reflection || "");
+      setStatus({
+        loading: false,
+        saving: false,
+        loaded: Boolean(payload),
+        message: "Usando respaldo local del mes.",
+        error: ""
+      });
+    }
+  }
 
   async function loadData() {
     if (!auth.accessToken) {
-      setStatus((current) => ({ ...current, message: "Primero conecta Google Sheets.", error: "" }));
+      setStatus((current) => ({ ...current, message: "Primero conecta Google Sheets si quieres importar desde la hoja.", error: "" }));
       return;
     }
 
-    setStatus((current) => ({ ...current, loading: true, error: "", message: "Cargando datos desde Google Sheets..." }));
+    setStatus((current) => ({ ...current, loading: true, error: "", message: "Importando datos desde Google Sheets..." }));
     try {
       const params = Object.values(RANGE_MAP)
         .map((range) => `ranges=${encodeURIComponent(range)}`)
@@ -499,11 +635,12 @@ function useSheetDatabase(auth) {
       const nextData = parseSheetValues(payload);
       setSheetData(nextData);
       setDraft(nextData);
+      await persistMonth(nextData, calendar, reflection);
       setStatus({
         loading: false,
         saving: false,
         loaded: true,
-        message: "Datos sincronizados con Google Sheets.",
+        message: "Datos importados y guardados para este mes.",
         error: ""
       });
     } catch (error) {
@@ -518,25 +655,39 @@ function useSheetDatabase(auth) {
   }
 
   useEffect(() => {
-    if (auth.accessToken) {
-      loadData();
-    }
-  }, [auth.accessToken]);
+    loadMonthData();
+  }, [auth.user?.email, monthKey]);
 
   function updateCell(section, rowIndex, columnIndex, value) {
-    setDraft((current) => ({
-      ...current,
-      [section]: current[section].map((row, index) =>
-        index === rowIndex ? row.map((cell, cellIndex) => (cellIndex === columnIndex ? value : cell)) : row
-      )
-    }));
+    setDraft((current) => {
+      const nextDraft = {
+        ...current,
+        [section]: current[section].map((row, index) =>
+          index === rowIndex ? row.map((cell, cellIndex) => (cellIndex === columnIndex ? value : cell)) : row
+        )
+      };
+      persistMonth(nextDraft);
+      return nextDraft;
+    });
+  }
+
+  function addRow(section, template = []) {
+    setDraft((current) => {
+      const nextDraft = { ...current, [section]: [...current[section], template] };
+      persistMonth(nextDraft);
+      return nextDraft;
+    });
   }
 
   function removeLocalRow(section, rowIndex) {
-    setDraft((current) => ({
-      ...current,
-      [section]: current[section].filter((_, index) => index !== rowIndex)
-    }));
+    setDraft((current) => {
+      const nextDraft = {
+        ...current,
+        [section]: current[section].filter((_, index) => index !== rowIndex)
+      };
+      persistMonth(nextDraft);
+      return nextDraft;
+    });
   }
 
   async function getSheetId(section) {
@@ -580,6 +731,7 @@ function useSheetDatabase(auth) {
         }
       });
       await loadData();
+      persistMonth();
       setStatus((current) => ({
         ...current,
         saving: false,
@@ -609,7 +761,11 @@ function useSheetDatabase(auth) {
   }
 
   async function saveSection(section) {
-    if (!auth.accessToken) return;
+    if (!auth.accessToken) {
+      await persistMonth();
+      setStatus((current) => ({ ...current, loaded: true, message: "Cambios guardados para este mes.", error: "" }));
+      return;
+    }
     setStatus((current) => ({ ...current, saving: true, error: "", message: "Guardando en Google Sheets..." }));
     try {
       const rangeBySection = {
@@ -618,6 +774,7 @@ function useSheetDatabase(auth) {
         ahorros: "Ahorros!A5:E9"
       };
       await saveRange(section, rangeBySection[section], draft[section]);
+      await persistMonth();
       setStatus((current) => ({
         ...current,
         saving: false,
@@ -636,8 +793,16 @@ function useSheetDatabase(auth) {
   }
 
   async function appendDailyExpense(expense) {
-    if (!auth.accessToken) return;
     const values = [[expense.date, expense.concept, expense.category, expense.amount, expense.method, expense.note]];
+    if (!auth.accessToken) {
+      setDraft((current) => {
+        const nextDraft = { ...current, gastos: [...current.gastos, values[0]] };
+        persistMonth(nextDraft);
+        return nextDraft;
+      });
+      setStatus((current) => ({ ...current, loaded: true, message: "Gasto agregado para este mes.", error: "" }));
+      return;
+    }
     setStatus((current) => ({ ...current, saving: true, error: "", message: "Agregando gasto diario..." }));
     try {
       await sheetsRequest({
@@ -648,6 +813,7 @@ function useSheetDatabase(auth) {
         body: { values }
       });
       await loadData();
+      persistMonth();
       setStatus((current) => ({
         ...current,
         saving: false,
@@ -665,7 +831,32 @@ function useSheetDatabase(auth) {
     }
   }
 
-  return { sheetData, draft, status, loadData, updateCell, saveSection, appendDailyExpense, deleteRow };
+  function updateCalendarDay(day, value) {
+    const nextCalendar = { ...calendar, [day]: value };
+    setCalendar(nextCalendar);
+    persistMonth(draft, nextCalendar, reflection);
+  }
+
+  function updateReflection(value) {
+    setReflection(value);
+    persistMonth(draft, calendar, value);
+  }
+
+  return {
+    sheetData,
+    draft,
+    status,
+    calendar,
+    reflection,
+    loadData,
+    updateCell,
+    addRow,
+    saveSection,
+    appendDailyExpense,
+    deleteRow,
+    updateCalendarDay,
+    updateReflection
+  };
 }
 
 function AuthGate({ auth }) {
@@ -790,7 +981,7 @@ function Sidebar({ activeSection, month, year, progress, onMonth, onSection }) {
   );
 }
 
-function PlannerPanel({ activeSection, onSection, auth, sheetDb }) {
+function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) {
   const section = sections.find((item) => item.id === activeSection);
   const Icon = section.icon;
 
@@ -833,7 +1024,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb }) {
         {activeSection === "checklist" ? <ChecklistSection /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
-        {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} /> : null}
+        {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} month={month} year={year} /> : null}
         {activeSection === "ahorro" ? <SavingsSection sheetDb={sheetDb} /> : null}
         {activeSection === "deudas" ? <DebtSection sheetDb={sheetDb} /> : null}
         {activeSection === "cierre" ? <CloseSection sheetDb={sheetDb} /> : null}
@@ -972,6 +1163,7 @@ function IncomeSection({ sheetDb }) {
         <span>Fuente principal</span>
         <strong>{rows[0]?.[2] || "$"}</strong>
       </div>
+      <AddRowButton label="Agregar ingreso" onClick={() => sheetDb.addRow("ingresos", rowTemplates.ingresos)} />
       <SaveButton label="Guardar ingresos" onClick={() => sheetDb.saveSection("ingresos")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -1039,6 +1231,23 @@ function PaymentsSection({ sheetDb }) {
                 </select>
                 );
               }
+              if (columnIndex === 2) {
+                const dateValue = findOption(cell, paymentDateOptions, "Variable");
+                return (
+                  <select
+                    aria-label={`Fecha pago fila ${rowIndex + 1}`}
+                    key={columnIndex}
+                    value={dateValue}
+                    onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
+                  >
+                    {paymentDateOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                );
+              }
               if (columnIndex === 7) {
                 const methodValue = detectPaymentMethod(cell);
                 return (
@@ -1077,12 +1286,13 @@ function PaymentsSection({ sheetDb }) {
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
       </div>
+      <AddRowButton label="Agregar pago" onClick={() => sheetDb.addRow("pagos", rowTemplates.pagos)} />
       <SaveButton label="Guardar pagos" onClick={() => sheetDb.saveSection("pagos")} saving={sheetDb.status.saving} />
     </div>
   );
 }
 
-function BudgetSection({ sheetDb }) {
+function BudgetSection({ sheetDb, month, year }) {
   const summary = getFinancialSummary(sheetDb.draft);
   const dailyExpenses = sheetDb.draft.gastos.length;
   return (
@@ -1107,6 +1317,7 @@ function BudgetSection({ sheetDb }) {
         wide
       />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
+      <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} />
       <DailyExpensesList sheetDb={sheetDb} />
     </div>
   );
@@ -1165,6 +1376,7 @@ function SavingsSection({ sheetDb }) {
         title="Bloque de ahorro"
         text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
       />
+      <AddRowButton label="Agregar meta de ahorro" onClick={() => sheetDb.addRow("ahorros", rowTemplates.ahorros)} />
       <SaveButton label="Guardar ahorros" onClick={() => sheetDb.saveSection("ahorros")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -1194,11 +1406,11 @@ function DebtSection({ sheetDb }) {
 }
 
 function CloseSection({ sheetDb }) {
-  const [reflection, setReflection] = useState("");
   const summary = getFinancialSummary(sheetDb.draft);
 
   function addSticker(sticker) {
-    setReflection((current) => (current ? `${current}\n${sticker}: ` : `${sticker}: `));
+    const label = `${sticker.icon} ${sticker.label}`;
+    sheetDb.updateReflection(sheetDb.reflection ? `${sheetDb.reflection}\n${label}: ` : `${label}: `);
   }
 
   return (
@@ -1215,16 +1427,17 @@ function CloseSection({ sheetDb }) {
       </div>
       <div className="sticker-board" aria-label="Stickers de progreso">
         {progressStickers.map((sticker) => (
-          <button key={sticker} type="button" onClick={() => addSticker(sticker)}>
-            {sticker}
+          <button key={sticker.label} type="button" onClick={() => addSticker(sticker)}>
+            <span>{sticker.icon}</span>
+            <strong>{sticker.label}</strong>
           </button>
         ))}
       </div>
       <textarea
         className="reflection"
         placeholder="Este mes me sentí..."
-        value={reflection}
-        onChange={(event) => setReflection(event.target.value)}
+        value={sheetDb.reflection}
+        onChange={(event) => sheetDb.updateReflection(event.target.value)}
       />
       <div className="form-grid">
         <Field label="Logro financiero" placeholder="Lo que sí funcionó" />
@@ -1296,6 +1509,53 @@ function BudgetChart({ summary }) {
   );
 }
 
+function MonthlyCalendar({ sheetDb, month, year }) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  function addSticker(day, sticker) {
+    const current = sheetDb.calendar[day] || "";
+    sheetDb.updateCalendarDay(day, current ? `${current} ${sticker}` : sticker);
+  }
+
+  return (
+    <div className="monthly-calendar wide">
+      <div className="list-heading">
+        <h3>Calendario mensual</h3>
+        <span>{monthNames[month]} {year}</span>
+      </div>
+      <p>Escribe recordatorios, pagos o alertas. Cada mes queda guardado por separado.</p>
+      <div className="calendar-stickers" aria-label="Stickers para recordatorios">
+        {reminderStickers.map((sticker) => (
+          <span key={sticker}>{sticker}</span>
+        ))}
+      </div>
+      <div className="calendar-grid">
+        {Array.from({ length: daysInMonth }, (_, index) => {
+          const day = String(index + 1);
+          return (
+            <div className="calendar-day" key={day}>
+              <strong>{day}</strong>
+              <input
+                aria-label={`Recordatorio día ${day}`}
+                value={sheetDb.calendar[day] || ""}
+                onChange={(event) => sheetDb.updateCalendarDay(day, event.target.value)}
+                placeholder="Recordatorio"
+              />
+              <div className="day-stickers">
+                {reminderStickers.slice(0, 4).map((sticker) => (
+                  <button key={sticker} type="button" onClick={() => addSticker(day, sticker)} aria-label={`Agregar ${sticker} al día ${day}`}>
+                    {sticker}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function DailyExpensesList({ sheetDb }) {
   const rows = sheetDb.draft.gastos;
 
@@ -1340,6 +1600,15 @@ function DeleteRowButton({ label, onClick, disabled }) {
   return (
     <button className="delete-row" type="button" onClick={onClick} disabled={disabled} aria-label={label} title={label}>
       <Trash2 size={15} />
+    </button>
+  );
+}
+
+function AddRowButton({ label, onClick }) {
+  return (
+    <button className="add-row" type="button" onClick={onClick}>
+      <Plus size={15} />
+      {label}
     </button>
   );
 }
@@ -1431,7 +1700,8 @@ function AppShell({ auth }) {
   const [current, setCurrent] = useState("cover");
   const [month, setMonth] = useState(5);
   const [year, setYear] = useState(2026);
-  const sheetDb = useSheetDatabase(auth);
+  const monthKey = getMonthKey(month, year);
+  const sheetDb = useSheetDatabase(auth, monthKey);
 
   const order = useMemo(() => ["cover", ...sections.map((section) => section.id)], []);
   const topNavIds = ["pagos", "presupuesto", "ahorro", "checklist"];
@@ -1523,7 +1793,14 @@ function AppShell({ auth }) {
               onMonth={changeMonth}
               onSection={setCurrent}
             />
-            <PlannerPanel activeSection={activeSection} onSection={setCurrent} auth={auth} sheetDb={sheetDb} />
+            <PlannerPanel
+              activeSection={activeSection}
+              onSection={setCurrent}
+              auth={auth}
+              sheetDb={sheetDb}
+              month={month}
+              year={year}
+            />
           </section>
         )}
       </main>
