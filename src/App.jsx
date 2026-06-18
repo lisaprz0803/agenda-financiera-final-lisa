@@ -1516,6 +1516,8 @@ function BudgetChart({ summary }) {
 
 function MonthlyCalendar({ sheetDb, month, year }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const [selectedDay, setSelectedDay] = useState("1");
+  const selectedNote = sheetDb.calendar[selectedDay] || "";
 
   function addSticker(day, sticker) {
     const current = sheetDb.calendar[day] || "";
@@ -1528,35 +1530,55 @@ function MonthlyCalendar({ sheetDb, month, year }) {
         <h3>Calendario mensual</h3>
         <span>{monthNames[month]} {year}</span>
       </div>
-      <p>Escribe recordatorios, pagos o alertas. Cada mes queda guardado por separado y el siguiente empieza limpio.</p>
-      <div className="calendar-stickers compact" aria-label="Marcadores para recordatorios">
-        <strong>Marcadores rápidos</strong>
-        {reminderStickers.map((sticker) => (
-          <span key={sticker}>{sticker}</span>
-        ))}
-      </div>
-      <div className="calendar-grid">
-        {Array.from({ length: daysInMonth }, (_, index) => {
-          const day = String(index + 1);
-          return (
-            <div className="calendar-day" key={day}>
-              <strong>{day}</strong>
-              <textarea
-                aria-label={`Recordatorio día ${day}`}
-                value={sheetDb.calendar[day] || ""}
-                onChange={(event) => sheetDb.updateCalendarDay(day, event.target.value)}
-                placeholder="Escribe aquí..."
-              />
-              <div className="day-stickers">
-                {reminderStickers.map((sticker) => (
-                  <button key={sticker} type="button" onClick={() => addSticker(day, sticker)} aria-label={`Agregar ${sticker} al día ${day}`}>
-                    {sticker}
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <p>Elige un día y escribe el recordatorio en el panel. Cada mes queda guardado por separado.</p>
+      <div className="calendar-shell">
+        <div className="calendar-grid" aria-label={`Días de ${monthNames[month]} ${year}`}>
+          {Array.from({ length: daysInMonth }, (_, index) => {
+            const day = String(index + 1);
+            const note = sheetDb.calendar[day] || "";
+            return (
+              <button
+                className={selectedDay === day ? "calendar-day active" : "calendar-day"}
+                key={day}
+                type="button"
+                onClick={() => setSelectedDay(day)}
+                aria-label={`Editar día ${day}`}
+              >
+                <strong>{day}</strong>
+                {note ? <span className="day-dot" /> : null}
+                <small>{note || "Libre"}</small>
+              </button>
+            );
+          })}
+        </div>
+        <div className="calendar-editor">
+          <div>
+            <span>Día {selectedDay}</span>
+            <strong>{selectedNote ? "Recordatorio activo" : "Sin recordatorio"}</strong>
+          </div>
+          <textarea
+            aria-label={`Recordatorio día ${selectedDay}`}
+            value={selectedNote}
+            onChange={(event) => sheetDb.updateCalendarDay(selectedDay, event.target.value)}
+            placeholder="Ej: pagar arriendo, revisar tarjeta, separar ahorro..."
+          />
+          <div className="calendar-stickers compact" aria-label="Marcadores para recordatorios">
+            <strong>Marcadores</strong>
+            {reminderStickers.map((sticker) => (
+              <button
+                key={sticker}
+                type="button"
+                onClick={() => addSticker(selectedDay, sticker)}
+                aria-label={`Agregar ${sticker} al día ${selectedDay}`}
+              >
+                {sticker}
+              </button>
+            ))}
+          </div>
+          <button className="clear-day" type="button" onClick={() => sheetDb.updateCalendarDay(selectedDay, "")}>
+            Limpiar día
+          </button>
+        </div>
       </div>
     </div>
   );
