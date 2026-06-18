@@ -84,7 +84,7 @@ const sections = [
     label: "Checklist",
     icon: CheckCircle2,
     title: "Checklist del mes",
-    description: "Marca cada paso con calma y deja visible lo que ya avanzaste.",
+    description: "Marca cada paso sin presión y deja visible lo que ya avanzaste.",
     message: "Pequeñas acciones repetidas también construyen estabilidad."
   },
   {
@@ -93,7 +93,7 @@ const sections = [
     icon: Plus,
     title: "Ingresos",
     description: "Anota tus entradas de dinero y las fechas en que esperas recibirlas.",
-    message: "Este mes quiero mirar mi dinero con calma, no con miedo."
+    message: "Este mes quiero saber dónde se fue mi plata, sin drama."
   },
   {
     id: "pagos",
@@ -116,7 +116,7 @@ const sections = [
     label: "Ahorro",
     icon: PiggyBank,
     title: "Ahorro",
-    description: "Visualiza tu meta y celebra cada avance pequeño sin perder la calma.",
+    description: "Visualiza tu meta y celebra cada avance pequeño sin perder el hilo.",
     message: "Ahorrar aunque sea poco sigue siendo elegirte."
   },
   {
@@ -124,7 +124,7 @@ const sections = [
     label: "Deudas",
     icon: TrendingDown,
     title: "Deudas",
-    description: "Mira tus compromisos con calma y define cuál atender primero.",
+    description: "Mira tus compromisos con claridad y define cuál atender primero.",
     message: "Cada gasto cuenta una historia. Mirarlo con honestidad también es avanzar."
   },
   {
@@ -140,7 +140,7 @@ const sections = [
 const quickStats = [
   { label: "Avance", value: "62%", helper: "8 secciones activas" },
   { label: "Meta", value: "$", helper: "Ahorro del mes" },
-  { label: "Foco", value: "Calma", helper: "Decidir con claridad" }
+  { label: "Tranquilidad", value: "Orden", helper: "Menos enredo mental" }
 ];
 
 const checklistItems = [
@@ -929,10 +929,6 @@ function Cover({ onStart }) {
         <h1>¿DÓNDE SE FUE MI PLATA?</h1>
         <p className="subtitle">Agenda interactiva para darle forma a tu dinero.</p>
         <p className="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
-        <p className="intro">Un espacio para mirar tu dinero con más claridad, calma y confianza.</p>
-        <div className="mini-note">
-          Esta agenda ordena tu mes visualmente; Google Sheets guarda los números, cálculos y seguimiento.
-        </div>
         <button className="primary-action" type="button" onClick={onStart}>
           <Sparkles size={16} />
           Comenzar
@@ -1120,7 +1116,7 @@ function ChecklistSection() {
           <strong>{done}/{checklistItems.length}</strong>
           <span>pasos completados</span>
         </div>
-        <p>Marca cada paso con calma. No se trata de hacerlo perfecto, se trata de hacerlo visible.</p>
+        <p>Marca cada paso sin presión. No se trata de hacerlo perfecto, se trata de hacerlo visible.</p>
         <div className="checklist-items">
           {checklistItems.map((item) => (
             <label className={checked[item] ? "task checked" : "task"} key={item}>
@@ -1188,7 +1184,7 @@ function PaymentsSection({ sheetDb }) {
         image={visualPayments}
         alt="Calendario de pagos con tarjeta, recibo y monedas"
         title="Calendario de pagos"
-        text="Ten tus pagos a la vista para evitar sorpresas y decidir con más calma."
+        text="Ten tus pagos a la vista para evitar sorpresas y decidir con menos enredo."
         wide
       />
       <div className="table-scroll" aria-label="Pagos mensuales">
@@ -1782,7 +1778,7 @@ function AppShell({ auth }) {
       <main className="workspace">
         <div className="side-visual left" aria-hidden="true">
           <img src={visualPayments} alt="" />
-          <span>mirar con calma</span>
+          <span>seguir la pista</span>
         </div>
         <div className="side-visual right" aria-hidden="true">
           <img src={visualSavings} alt="" />
