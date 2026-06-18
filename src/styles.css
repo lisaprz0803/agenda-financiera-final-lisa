@@ -282,8 +282,12 @@ code {
 .topnav {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
+  border: 1px solid var(--theme-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.54);
+  padding: 5px;
 }
 
 .topnav button,
@@ -299,12 +303,12 @@ code {
 }
 
 .topnav button {
-  min-height: 42px;
-  border: 1px solid var(--theme-line);
+  min-height: 34px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  background: transparent;
   color: var(--ink-soft);
-  padding: 0 18px;
+  padding: 0 14px;
   white-space: nowrap;
   font-size: 14px;
   font-weight: 800;
@@ -998,17 +1002,19 @@ select {
 }
 
 .soft-table.income-table {
+  width: 100%;
+  min-width: 840px;
   grid-template-columns:
     minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr)
-    minmax(150px, 1.1fr) 42px;
+    minmax(150px, 1.1fr) 64px;
 }
 
 .soft-table.payments-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 940px;
   grid-template-columns:
     minmax(84px, 0.8fr) minmax(132px, 1.35fr) minmax(72px, 0.72fr) minmax(84px, 0.8fr)
-    minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(112px, 1fr) 42px;
+    minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(112px, 1fr) 64px;
   gap: 8px;
   padding: 8px;
   font-size: 14px;
@@ -1016,10 +1022,10 @@ select {
 
 .soft-table.daily-table {
   width: 100%;
-  min-width: 860px;
+  min-width: 900px;
   grid-template-columns:
     minmax(82px, 0.72fr) minmax(134px, 1.2fr) minmax(112px, 0.9fr) minmax(92px, 0.72fr)
-    minmax(116px, 0.92fr) minmax(140px, 1fr) 42px;
+    minmax(116px, 0.92fr) minmax(140px, 1fr) 64px;
   gap: 8px;
   padding: 8px;
   font-size: 14px;
@@ -1055,7 +1061,7 @@ select {
 }
 
 .delete-row {
-  width: 34px;
+  width: 40px;
   min-height: 34px;
   display: inline-grid;
   place-items: center;
@@ -1159,13 +1165,14 @@ select {
 .day-stickers {
   display: flex;
   flex-wrap: wrap;
-  gap: 7px;
+  gap: 6px;
+  align-items: center;
 }
 
 .calendar-stickers span,
 .day-stickers button {
-  min-width: 30px;
-  min-height: 30px;
+  min-width: 28px;
+  min-height: 28px;
   display: inline-grid;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--theme-accent) 22%, transparent);
@@ -1173,16 +1180,20 @@ select {
   background: rgba(255, 255, 255, 0.78);
 }
 
+.calendar-stickers.compact strong {
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: 4px;
+}
+
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(118px, 1fr));
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 4px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .calendar-day {
-  min-height: 126px;
+  min-height: 178px;
   display: grid;
   align-content: start;
   gap: 8px;
@@ -1194,6 +1205,16 @@ select {
 
 .calendar-day strong {
   color: var(--theme-accent);
+}
+
+.calendar-day textarea {
+  min-height: 82px;
+  resize: vertical;
+  border: 1px solid color-mix(in srgb, var(--theme-line) 72%, transparent);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.64);
+  padding: 8px;
+  line-height: 1.35;
 }
 
 .list-heading {
@@ -1509,6 +1530,10 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .calendar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .month-intention,
   .checklist-layout,
   .close-summary,
@@ -1529,7 +1554,9 @@ select {
   }
 
   .soft-table.income-table {
-    grid-template-columns: 1fr;
+    grid-template-columns:
+      minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr)
+      minmax(150px, 1.1fr) 64px;
   }
 
   .daily-grid {
@@ -1554,6 +1581,10 @@ select {
   .cover-screen {
     min-height: auto;
     gap: 24px;
+  }
+
+  .calendar-grid {
+    grid-template-columns: 1fr;
   }
 
   .cover-copy h1 {

@@ -4,6 +4,7 @@ import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarDays,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -71,6 +72,14 @@ const sections = [
     message: "No necesitas tener todo resuelto. Solo necesitas empezar con claridad."
   },
   {
+    id: "calendario",
+    label: "Calendario",
+    icon: CalendarDays,
+    title: "Calendario mensual",
+    description: "Agenda recordatorios, pagos y alertas sin llenar la pantalla de ruido.",
+    message: "Lo que tiene fecha pesa menos en la cabeza."
+  },
+  {
     id: "checklist",
     label: "Checklist",
     icon: CheckCircle2,
@@ -129,7 +138,7 @@ const sections = [
 ];
 
 const quickStats = [
-  { label: "Avance", value: "62%", helper: "7 secciones activas" },
+  { label: "Avance", value: "62%", helper: "8 secciones activas" },
   { label: "Meta", value: "$", helper: "Ahorro del mes" },
   { label: "Foco", value: "Calma", helper: "Decidir con claridad" }
 ];
@@ -183,7 +192,7 @@ const progressStickers = [
   { icon: "💜", label: "Me cuidé" },
   { icon: "🎯", label: "Meta clara" }
 ];
-const reminderStickers = ["💸", "⚠️", "✅", "🎯", "💜", "🌸", "🧾", "🐷"];
+const reminderStickers = ["💸", "⚠️", "✅", "💜"];
 const rowTemplates = {
   ingresos: ["", "Mensual", "", "Revisar", ""],
   pagos: ["Servicios", "", "Día 1", "", "", "", "Pendiente", "Transferencia"],
@@ -1021,6 +1030,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
 
       <div className="panel-body">
         {activeSection === "mapa" ? <MapSection onSection={onSection} /> : null}
+        {activeSection === "calendario" ? <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} /> : null}
         {activeSection === "checklist" ? <ChecklistSection /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
@@ -1140,7 +1150,7 @@ function IncomeSection({ sheetDb }) {
         <strong>Monto mensual</strong>
         <strong>Estado</strong>
         <strong>Notas</strong>
-        <strong>Eliminar</strong>
+        <strong>Acción</strong>
       </div>
       {rows.map((row, rowIndex) => (
         <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
@@ -1191,7 +1201,7 @@ function PaymentsSection({ sheetDb }) {
           <strong>Catriel</strong>
           <strong>Estado</strong>
           <strong>Forma de pago</strong>
-          <strong>Eliminar</strong>
+          <strong>Acción</strong>
         </div>
         {payments.map((row, rowIndex) => (
           <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
@@ -1292,7 +1302,7 @@ function PaymentsSection({ sheetDb }) {
   );
 }
 
-function BudgetSection({ sheetDb, month, year }) {
+function BudgetSection({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
   const dailyExpenses = sheetDb.draft.gastos.length;
   return (
@@ -1317,7 +1327,6 @@ function BudgetSection({ sheetDb, month, year }) {
         wide
       />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
-      <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} />
       <DailyExpensesList sheetDb={sheetDb} />
     </div>
   );
@@ -1336,7 +1345,7 @@ function SavingsSection({ sheetDb }) {
         <strong>Separado este mes</strong>
         <strong>Avance</strong>
         <strong>Notas</strong>
-        <strong>Eliminar</strong>
+        <strong>Acción</strong>
       </div>
       {rows.map((row, rowIndex) => (
         <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
@@ -1523,8 +1532,9 @@ function MonthlyCalendar({ sheetDb, month, year }) {
         <h3>Calendario mensual</h3>
         <span>{monthNames[month]} {year}</span>
       </div>
-      <p>Escribe recordatorios, pagos o alertas. Cada mes queda guardado por separado.</p>
-      <div className="calendar-stickers" aria-label="Stickers para recordatorios">
+      <p>Escribe recordatorios, pagos o alertas. Cada mes queda guardado por separado y el siguiente empieza limpio.</p>
+      <div className="calendar-stickers compact" aria-label="Marcadores para recordatorios">
+        <strong>Marcadores rápidos</strong>
         {reminderStickers.map((sticker) => (
           <span key={sticker}>{sticker}</span>
         ))}
@@ -1535,14 +1545,14 @@ function MonthlyCalendar({ sheetDb, month, year }) {
           return (
             <div className="calendar-day" key={day}>
               <strong>{day}</strong>
-              <input
+              <textarea
                 aria-label={`Recordatorio día ${day}`}
                 value={sheetDb.calendar[day] || ""}
                 onChange={(event) => sheetDb.updateCalendarDay(day, event.target.value)}
-                placeholder="Recordatorio"
+                placeholder="Escribe aquí..."
               />
               <div className="day-stickers">
-                {reminderStickers.slice(0, 4).map((sticker) => (
+                {reminderStickers.map((sticker) => (
                   <button key={sticker} type="button" onClick={() => addSticker(day, sticker)} aria-label={`Agregar ${sticker} al día ${day}`}>
                     {sticker}
                   </button>
@@ -1573,7 +1583,7 @@ function DailyExpensesList({ sheetDb }) {
           <strong>Monto</strong>
           <strong>Forma de pago</strong>
           <strong>Nota</strong>
-          <strong>Eliminar</strong>
+          <strong>Acción</strong>
         </div>
         {(rows.length ? rows : [["", "Sin gastos registrados", "", "", "", ""]]).map((row, rowIndex) => (
           <div className="soft-table daily-table" key={`${row[1]}-${rowIndex}`}>
@@ -1704,7 +1714,11 @@ function AppShell({ auth }) {
   const sheetDb = useSheetDatabase(auth, monthKey);
 
   const order = useMemo(() => ["cover", ...sections.map((section) => section.id)], []);
-  const topNavIds = ["pagos", "presupuesto", "ahorro", "checklist"];
+  const topNavItems = [
+    { id: "calendario", label: "Calendario" },
+    { id: "presupuesto", label: "Resumen" },
+    { id: "cierre", label: "Cierre" }
+  ];
   const pageIndex = order.indexOf(current);
   const activeSection = current === "cover" ? "mapa" : current;
   const progress = Math.round(((pageIndex + 1) / order.length) * 100);
@@ -1741,7 +1755,7 @@ function AppShell({ auth }) {
           <button className={current === "cover" ? "active" : ""} type="button" onClick={() => setCurrent("cover")}>
             Inicio
           </button>
-          {topNavIds.map((id) => sections.find((section) => section.id === id)).map((section) => (
+          {topNavItems.map((section) => (
             <button
               className={current === section.id ? "active" : ""}
               key={section.id}
@@ -1751,9 +1765,6 @@ function AppShell({ auth }) {
               {section.label}
             </button>
           ))}
-          <button className={current === "cierre" ? "active" : ""} type="button" onClick={() => setCurrent("cierre")}>
-            Cierre
-          </button>
         </nav>
         <div className="session">
           {!auth.accessToken ? (
