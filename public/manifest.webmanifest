@@ -1,0 +1,25 @@
+{
+  "name": "¿DÓNDE SE FUE MI PLATA?",
+  "short_name": "Mi Plata",
+  "description": "Agenda interactiva para darle forma a tu dinero.",
+  "start_url": "/agenda-financiera-final-lisa/",
+  "scope": "/agenda-financiera-final-lisa/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8f6",
+  "theme_color": "#f4dce8",
+  "icons": [
+    {
+      "src": "/agenda-financiera-final-lisa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/agenda-financiera-final-lisa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
