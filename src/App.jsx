@@ -1545,6 +1545,8 @@ function HouseholdSection({ sheetDb }) {
   }
 
   const householdTotal = household.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const previewAmount = parseMoney(form.amount);
+  const previewShare = household.members.length ? Math.round(previewAmount / household.members.length) : 0;
 
   return (
     <div className="stack household-section">
@@ -1568,7 +1570,7 @@ function HouseholdSection({ sheetDb }) {
 
       <section className="member-card">
         <div className="list-heading">
-          <div><h3>Personas del hogar</h3><p>Agrega hasta cuatro y cambia sus nombres.</p></div>
+          <div><h3>1. ¿Entre quiénes se divide?</h3><p>Escribe tu nombre y el de tu pareja. Puedes agregar hasta cuatro personas.</p></div>
           <button className="add-row" type="button" onClick={addMember} disabled={household.members.length >= 4}>
             <Plus size={15} /> Agregar persona
           </button>
@@ -1589,23 +1591,33 @@ function HouseholdSection({ sheetDb }) {
       </section>
 
       <form className="shared-expense-form" onSubmit={submitExpense}>
-        <div className="list-heading"><div><h3>Agregar gasto compartido</h3><p>Se divide en partes iguales; después puedes ajustar cada aporte.</p></div></div>
+        <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>Completa estos datos. La agenda dividirá el monto automáticamente.</p></div></div>
         <div className="shared-form-grid">
-          <input value={form.date} onChange={(event) => updateForm("date", event.target.value)} aria-label="Fecha del gasto" />
-          <input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Concepto" required />
-          <select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>
+          <label><span>Fecha</span><input value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
+          <label><span>¿Qué pagaron?</span><input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Ej: supermercado" required /></label>
+          <label><span>Categoría</span><select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>
             {categoryOptions.map((option) => <option key={option}>{option}</option>)}
-          </select>
-          <input value={form.amount} onChange={(event) => updateForm("amount", event.target.value)} placeholder="Monto total" inputMode="numeric" required />
-          <select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)} aria-label="Quién pagó">
-            {household.members.map((member) => <option key={member.id} value={member.id}>Pagó {member.name}</option>)}
-          </select>
-          <SaveButton label="Agregar y calcular" type="submit" />
+          </select></label>
+          <label><span>Monto total</span><input value={form.amount} onChange={(event) => updateForm("amount", event.target.value)} placeholder="Ej: 100.000" inputMode="numeric" required /></label>
+          <label><span>¿Quién pagó?</span><select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)}>
+            {household.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+          </select></label>
         </div>
+        {household.members.length < 2 ? (
+          <div className="shared-help">Primero presiona <strong>Agregar persona</strong> y escribe el nombre de tu pareja.</div>
+        ) : previewAmount ? (
+          <div className="split-preview">
+            <span>Así quedará dividido:</span>
+            <div>{household.members.map((member, index) => <strong key={member.id}>{member.name}: {formatCurrency(index === household.members.length - 1 ? previewAmount - previewShare * (household.members.length - 1) : previewShare)}</strong>)}</div>
+          </div>
+        ) : null}
+        <button className="shared-submit" type="submit" disabled={household.members.length < 2 || !previewAmount || !form.concept.trim()}>
+          <Plus size={18} /> Dividir y agregar gasto
+        </button>
       </form>
 
       <div className="shared-list">
-        <div className="list-heading"><div><h3>Reparto del mes</h3><p>Edita cualquier aporte si el gasto no se divide por igual.</p></div></div>
+        <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Aquí verás tu parte y la de cada persona. Puedes corregir los montos si no es mitad y mitad.</p></div></div>
         {household.expenses.length ? household.expenses.map((expense) => {
           const payer = household.members.find((member) => member.id === expense.paidBy);
           const shareTotal = Object.values(expense.shares).reduce((sum, value) => sum + Number(value || 0), 0);
