@@ -23,6 +23,11 @@ import {
   TrendingDown
 } from "lucide-react";
 import heroPlanner from "../assets/hero-plata.jpg";
+import coverPiggy from "../assets/cover-piggy.jpeg";
+import paymentTerminal from "../assets/payment-terminal.jpeg";
+import sharedMoney from "../assets/shared-money.jpeg";
+import budgetDesk from "../assets/budget-desk.jpeg";
+import savingsPig from "../assets/savings-pig.jpeg";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -993,7 +998,7 @@ function Cover({ onStart }) {
   return (
     <section className="cover-screen">
       <div className="cover-media">
-        <img src={heroPlanner} alt="Agenda financiera con cuaderno, calculadora y alcancía" />
+        <img src={coverPiggy} alt="Alcancía rosada, monedas, plantas y gráficos financieros" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
@@ -1295,8 +1300,8 @@ function PaymentsSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={visualPayments}
-        alt="Calendario de pagos con tarjeta, recibo y monedas"
+        image={paymentTerminal}
+        alt="Terminal de pago con tarjeta, efectivo y recibo"
         title="Calendario de pagos"
         text="Ten tus pagos a la vista para evitar sorpresas y decidir con menos enredo."
         wide
@@ -1506,6 +1511,13 @@ function HouseholdSection({ sheetDb }) {
 
   return (
     <div className="stack household-section">
+      <VisualNote
+        image={sharedMoney}
+        alt="Una persona entregando dinero a otra"
+        title="Cuentas claras entre personas"
+        text="Registra quién pagó y deja que la agenda calcule cuánto corresponde a cada integrante."
+        wide
+      />
       <div className="household-summary">
         <ReadOnlyCard label="Gastos compartidos" value={formatCurrency(householdTotal)} helper={`${household.expenses.length} movimientos`} />
         {household.members.map((member) => (
@@ -1608,8 +1620,8 @@ function BudgetSection({ sheetDb }) {
       />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
       <VisualNote
-        image={visualBudget}
-        alt="Presupuesto con gráfico y distribución de gastos"
+        image={budgetDesk}
+        alt="Plan financiero con cuaderno, calculadora y gráficos"
         title="Distribuye según tus prioridades reales"
         text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
         wide
@@ -1677,8 +1689,8 @@ function SavingsSection({ sheetDb }) {
         <span><strong>{progressNumber}%</strong> de avance calculado. Falta <strong>{formatCurrency(summary.savingsGap)}</strong>.</span>
       </div>
       <VisualNote
-        image={visualSavings}
-        alt="Alcancía pastel con monedas y meta de ahorro"
+        image={savingsPig}
+        alt="Alcancía rosada sobre gráficos y monedas"
         title="Bloque de ahorro"
         text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
       />
