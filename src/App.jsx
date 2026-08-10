@@ -209,10 +209,7 @@ const rowTemplates = {
 };
 
 const defaultHousehold = {
-  members: [
-    { id: "lisa", name: "Lisa" },
-    { id: "catriel", name: "Catriel" }
-  ],
+  members: [{ id: "persona-1", name: "Persona 1" }],
   expenses: []
 };
 
@@ -298,7 +295,7 @@ function getMonthKey(month, year) {
 }
 
 function getUserKey(auth) {
-  return String(auth.user?.email || "demo").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+  return String(auth.user?.email || "piloto-nuevo").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
 }
 
 function readLocalMonth(userKey, monthKey) {
@@ -631,7 +628,7 @@ function useSheetDatabase(auth, monthKey) {
       updatedAt: new Date().toISOString()
     };
     writeLocalMonth(userKey, monthKey, payload);
-    if (!storeRef.current.ready) {
+    if (auth.user?.email && !storeRef.current.ready) {
       storeRef.current.db = await getFirebaseDb();
       storeRef.current.ready = true;
     }
@@ -644,7 +641,7 @@ function useSheetDatabase(auth, monthKey) {
     const userKey = getUserKey(auth);
     setStatus((current) => ({ ...current, loading: true, error: "", message: "Cargando mes..." }));
     try {
-      if (!storeRef.current.ready) {
+      if (auth.user?.email && !storeRef.current.ready) {
         storeRef.current.db = await getFirebaseDb();
         storeRef.current.ready = true;
       }
@@ -1249,7 +1246,7 @@ function PaymentsSection({ sheetDb }) {
           <strong>Fecha</strong>
           <strong>Total</strong>
           <strong>Mi parte</strong>
-          <strong>Catriel</strong>
+          <strong>Compartido (opcional)</strong>
           <strong>Estado</strong>
           <strong>Forma de pago</strong>
           <strong>Acción</strong>
@@ -1964,8 +1961,9 @@ function Field({ label, placeholder, wide = false }) {
 
 function AppShell({ auth }) {
   const [current, setCurrent] = useState("cover");
-  const [month, setMonth] = useState(5);
-  const [year, setYear] = useState(2026);
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth());
+  const [year, setYear] = useState(now.getFullYear());
   const monthKey = getMonthKey(month, year);
   const sheetDb = useSheetDatabase(auth, monthKey);
 
@@ -2023,12 +2021,7 @@ function AppShell({ auth }) {
             </button>
           ))}
         </nav>
-        <div className="session">
-          <span>{auth.user?.email}</span>
-          <button type="button" onClick={auth.signOut} aria-label="Cerrar sesión">
-            <LogOut size={15} />
-          </button>
-        </div>
+        <div className="session"><span>Modo piloto</span></div>
       </header>
 
       <main className="workspace">
@@ -2086,11 +2079,6 @@ function AppShell({ auth }) {
 }
 
 export default function App() {
-  const auth = useGoogleGate();
-
-  if (!auth.user) {
-    return <AuthGate auth={auth} />;
-  }
-
+  const auth = { user: null, accessToken: "", spreadsheetId: "", signOut() {}, requestSheetsAccess() {} };
   return <AppShell auth={auth} />;
 }
