@@ -1,4 +1,4 @@
-const CACHE_NAME = "mi-plata-v1";
+const CACHE_NAME = "mi-plata-v2";
 const BASE_PATH = "/agenda-financiera-final-lisa/";
 const APP_SHELL = [
   BASE_PATH,
