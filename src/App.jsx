@@ -104,6 +104,14 @@ const sections = [
     message: "Lo que se anota deja de dar vueltas en la cabeza."
   },
   {
+    id: "hogar",
+    label: "Compartido",
+    icon: Heart,
+    title: "Finanzas compartidas",
+    description: "Divide gastos entre una y cuatro personas y descubre quién tiene saldo pendiente o a favor.",
+    message: "Compartir las cuentas también puede sentirse claro, justo y liviano."
+  },
+  {
     id: "presupuesto",
     label: "Presupuesto",
     icon: CircleDollarSign,
@@ -199,6 +207,49 @@ const rowTemplates = {
   ahorros: ["", "", "", "0%", ""],
   gastos: [new Date().toLocaleDateString("es-CL"), "", "Servicios", "", "Transferencia", ""]
 };
+
+const defaultHousehold = {
+  members: [
+    { id: "lisa", name: "Lisa" },
+    { id: "catriel", name: "Catriel" }
+  ],
+  expenses: []
+};
+
+function normalizeHousehold(value) {
+  const members = Array.isArray(value?.members) && value.members.length
+    ? value.members.slice(0, 4).map((member, index) => ({
+        id: String(member.id || `persona-${index + 1}`),
+        name: String(member.name || `Persona ${index + 1}`)
+      }))
+    : defaultHousehold.members;
+  const memberIds = new Set(members.map((member) => member.id));
+  const expenses = Array.isArray(value?.expenses)
+    ? value.expenses.map((expense) => ({
+        id: String(expense.id || `${Date.now()}-${Math.random()}`),
+        concept: String(expense.concept || ""),
+        category: String(expense.category || "Otro"),
+        date: String(expense.date || ""),
+        amount: Number(expense.amount) || 0,
+        paidBy: memberIds.has(expense.paidBy) ? expense.paidBy : members[0].id,
+        status: String(expense.status || "Pendiente"),
+        shares: Object.fromEntries(members.map((member) => [member.id, Number(expense.shares?.[member.id]) || 0]))
+      }))
+    : [];
+  return { members, expenses };
+}
+
+function getHouseholdBalances(household) {
+  const balances = Object.fromEntries(household.members.map((member) => [member.id, 0]));
+  household.expenses.forEach((expense) => {
+    const amount = Number(expense.amount) || 0;
+    if (balances[expense.paidBy] !== undefined) balances[expense.paidBy] += amount;
+    household.members.forEach((member) => {
+      balances[member.id] -= Number(expense.shares?.[member.id]) || 0;
+    });
+  });
+  return balances;
+}
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
@@ -555,6 +606,7 @@ function useSheetDatabase(auth, monthKey) {
   const [draft, setDraft] = useState(emptySheetData);
   const [calendar, setCalendar] = useState({});
   const [reflection, setReflection] = useState("");
+  const [household, setHousehold] = useState(defaultHousehold);
   const [status, setStatus] = useState({
     loading: false,
     saving: false,
@@ -564,12 +616,18 @@ function useSheetDatabase(auth, monthKey) {
   });
   const storeRef = useRef({ db: null, ready: false });
 
-  async function persistMonth(nextDraft = draft, nextCalendar = calendar, nextReflection = reflection) {
+  async function persistMonth(
+    nextDraft = draft,
+    nextCalendar = calendar,
+    nextReflection = reflection,
+    nextHousehold = household
+  ) {
     const userKey = getUserKey(auth);
     const payload = {
       draft: nextDraft,
       calendar: nextCalendar,
       reflection: nextReflection,
+      household: nextHousehold,
       updatedAt: new Date().toISOString()
     };
     writeLocalMonth(userKey, monthKey, payload);
@@ -601,6 +659,7 @@ function useSheetDatabase(auth, monthKey) {
       setDraft(nextDraft);
       setCalendar(payload?.calendar || {});
       setReflection(payload?.reflection || "");
+      setHousehold(normalizeHousehold(payload?.household || defaultHousehold));
       setStatus({
         loading: false,
         saving: false,
@@ -615,6 +674,7 @@ function useSheetDatabase(auth, monthKey) {
       setDraft(nextDraft);
       setCalendar(payload?.calendar || {});
       setReflection(payload?.reflection || "");
+      setHousehold(normalizeHousehold(payload?.household || defaultHousehold));
       setStatus({
         loading: false,
         saving: false,
@@ -851,12 +911,21 @@ function useSheetDatabase(auth, monthKey) {
     persistMonth(draft, calendar, value);
   }
 
+  function updateHousehold(updater) {
+    setHousehold((current) => {
+      const nextHousehold = normalizeHousehold(typeof updater === "function" ? updater(current) : updater);
+      persistMonth(draft, calendar, reflection, nextHousehold);
+      return nextHousehold;
+    });
+  }
+
   return {
     sheetData,
     draft,
     status,
     calendar,
     reflection,
+    household,
     loadData,
     updateCell,
     addRow,
@@ -864,7 +933,8 @@ function useSheetDatabase(auth, monthKey) {
     appendDailyExpense,
     deleteRow,
     updateCalendarDay,
-    updateReflection
+    updateReflection,
+    updateHousehold
   };
 }
 
@@ -1003,17 +1073,6 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
           </div>
         </div>
         <div className="panel-actions">
-          {!auth.accessToken ? (
-            <button className="utility-button" type="button" onClick={auth.requestSheetsAccess}>
-              <RefreshCw size={16} />
-              Conectar Sheet
-            </button>
-          ) : (
-            <button className="utility-button" type="button" onClick={sheetDb.loadData} disabled={sheetDb.status.loading}>
-              {sheetDb.status.loading ? <Loader2 className="spin" size={16} /> : <RefreshCw size={16} />}
-              Refrescar
-            </button>
-          )}
           <button className="utility-button" type="button" onClick={() => window.print()}>
             <Download size={16} />
             Imprimir
@@ -1030,6 +1089,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
         {activeSection === "checklist" ? <ChecklistSection /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
+        {activeSection === "hogar" ? <HouseholdSection sheetDb={sheetDb} /> : null}
         {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} month={month} year={year} /> : null}
         {activeSection === "ahorro" ? <SavingsSection sheetDb={sheetDb} /> : null}
         {activeSection === "deudas" ? <DebtSection sheetDb={sheetDb} /> : null}
@@ -1051,12 +1111,7 @@ function QuoteCard({ text }) {
 function SyncBanner({ auth, sheetDb }) {
   return (
     <div className={sheetDb.status.error ? "sync-banner error" : "sync-banner"}>
-      <span>{sheetDb.status.error || sheetDb.status.message}</span>
-      {!auth.accessToken ? (
-        <button type="button" onClick={auth.requestSheetsAccess}>
-          Conectar Google Sheets
-        </button>
-      ) : null}
+      <span>{sheetDb.status.error || "✓ Guardado automático activado. No necesitas conectar Google Sheets."}</span>
     </div>
   );
 }
@@ -1298,20 +1353,198 @@ function PaymentsSection({ sheetDb }) {
   );
 }
 
+function HouseholdSection({ sheetDb }) {
+  const { household } = sheetDb;
+  const balances = getHouseholdBalances(household);
+  const [form, setForm] = useState({
+    concept: "",
+    category: "Vivienda",
+    date: new Date().toLocaleDateString("es-CL"),
+    amount: "",
+    paidBy: household.members[0]?.id || "",
+    splitMode: "equal"
+  });
+
+  useEffect(() => {
+    if (!household.members.some((member) => member.id === form.paidBy)) {
+      setForm((current) => ({ ...current, paidBy: household.members[0]?.id || "" }));
+    }
+  }, [household.members, form.paidBy]);
+
+  function addMember() {
+    if (household.members.length >= 4) return;
+    const id = `persona-${Date.now()}`;
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      members: [...current.members, { id, name: `Persona ${current.members.length + 1}` }]
+    }));
+  }
+
+  function renameMember(id, name) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      members: current.members.map((member) => member.id === id ? { ...member, name } : member)
+    }));
+  }
+
+  function removeMember(id) {
+    if (household.members.length === 1) return;
+    sheetDb.updateHousehold((current) => ({
+      members: current.members.filter((member) => member.id !== id),
+      expenses: current.expenses.filter((expense) => expense.paidBy !== id)
+    }));
+  }
+
+  function updateForm(field, value) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function submitExpense(event) {
+    event.preventDefault();
+    const amount = parseMoney(form.amount);
+    if (!amount || !form.concept.trim()) return;
+    const share = Math.round(amount / household.members.length);
+    const shares = {};
+    let assigned = 0;
+    household.members.forEach((member, index) => {
+      const value = index === household.members.length - 1 ? amount - assigned : share;
+      shares[member.id] = value;
+      assigned += value;
+    });
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      expenses: [...current.expenses, {
+        id: `${Date.now()}`,
+        concept: form.concept.trim(),
+        category: form.category,
+        date: form.date,
+        amount,
+        paidBy: form.paidBy,
+        status: "Pendiente",
+        shares
+      }]
+    }));
+    setForm((current) => ({ ...current, concept: "", amount: "" }));
+  }
+
+  function updateShare(expenseId, memberId, value) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      expenses: current.expenses.map((expense) => expense.id === expenseId
+        ? { ...expense, shares: { ...expense.shares, [memberId]: parseMoney(value) } }
+        : expense)
+    }));
+  }
+
+  function removeExpense(expenseId) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      expenses: current.expenses.filter((expense) => expense.id !== expenseId)
+    }));
+  }
+
+  const householdTotal = household.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+  return (
+    <div className="stack household-section">
+      <div className="household-summary">
+        <ReadOnlyCard label="Gastos compartidos" value={formatCurrency(householdTotal)} helper={`${household.expenses.length} movimientos`} />
+        {household.members.map((member) => (
+          <div className={`balance-card ${balances[member.id] >= 0 ? "positive" : "negative"}`} key={member.id}>
+            <span>{member.name}</span>
+            <strong>{formatCurrency(Math.abs(balances[member.id]))}</strong>
+            <small>{balances[member.id] > 0 ? "a favor" : balances[member.id] < 0 ? "pendiente" : "al día"}</small>
+          </div>
+        ))}
+      </div>
+
+      <section className="member-card">
+        <div className="list-heading">
+          <div><h3>Personas del hogar</h3><p>Agrega hasta cuatro y cambia sus nombres.</p></div>
+          <button className="add-row" type="button" onClick={addMember} disabled={household.members.length >= 4}>
+            <Plus size={15} /> Agregar persona
+          </button>
+        </div>
+        <div className="member-grid">
+          {household.members.map((member, index) => (
+            <label className="member-field" key={member.id}>
+              <span>Persona {index + 1}</span>
+              <input value={member.name} onChange={(event) => renameMember(member.id, event.target.value)} />
+              {household.members.length > 1 ? (
+                <button type="button" onClick={() => removeMember(member.id)} aria-label={`Eliminar a ${member.name}`}>
+                  <Trash2 size={14} />
+                </button>
+              ) : null}
+            </label>
+          ))}
+        </div>
+      </section>
+
+      <form className="shared-expense-form" onSubmit={submitExpense}>
+        <div className="list-heading"><div><h3>Agregar gasto compartido</h3><p>Se divide en partes iguales; después puedes ajustar cada aporte.</p></div></div>
+        <div className="shared-form-grid">
+          <input value={form.date} onChange={(event) => updateForm("date", event.target.value)} aria-label="Fecha del gasto" />
+          <input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Concepto" required />
+          <select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>
+            {categoryOptions.map((option) => <option key={option}>{option}</option>)}
+          </select>
+          <input value={form.amount} onChange={(event) => updateForm("amount", event.target.value)} placeholder="Monto total" inputMode="numeric" required />
+          <select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)} aria-label="Quién pagó">
+            {household.members.map((member) => <option key={member.id} value={member.id}>Pagó {member.name}</option>)}
+          </select>
+          <SaveButton label="Agregar y calcular" type="submit" />
+        </div>
+      </form>
+
+      <div className="shared-list">
+        <div className="list-heading"><div><h3>Reparto del mes</h3><p>Edita cualquier aporte si el gasto no se divide por igual.</p></div></div>
+        {household.expenses.length ? household.expenses.map((expense) => {
+          const payer = household.members.find((member) => member.id === expense.paidBy);
+          const shareTotal = Object.values(expense.shares).reduce((sum, value) => sum + Number(value || 0), 0);
+          return (
+            <article className="shared-row" key={expense.id}>
+              <div className="shared-row-head">
+                <div><strong>{expense.concept}</strong><span>{expense.date} · {expense.category}</span></div>
+                <div><strong>{formatCurrency(expense.amount)}</strong><span>Pagó {payer?.name || "—"}</span></div>
+                <button className="delete-row" type="button" onClick={() => removeExpense(expense.id)} aria-label={`Eliminar ${expense.concept}`}><Trash2 size={15} /></button>
+              </div>
+              <div className="share-grid">
+                {household.members.map((member) => (
+                  <label key={member.id}><span>{member.name}</span><input value={expense.shares[member.id] || ""} onChange={(event) => updateShare(expense.id, member.id, event.target.value)} inputMode="numeric" /></label>
+                ))}
+              </div>
+              <small className={shareTotal === expense.amount ? "share-ok" : "share-warning"}>
+                {shareTotal === expense.amount ? "✓ Reparto completo" : `Faltan por repartir ${formatCurrency(expense.amount - shareTotal)}`}
+              </small>
+            </article>
+          );
+        }) : <div className="empty-state">Todavía no hay gastos compartidos. Agrega el primero para ver los saldos.</div>}
+      </div>
+    </div>
+  );
+}
+
 function BudgetSection({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
   const dailyExpenses = sheetDb.draft.gastos.length;
+  const personalMember = sheetDb.household.members[0];
+  const sharedCommitment = sheetDb.household.expenses.reduce(
+    (sum, expense) => sum + (Number(expense.shares?.[personalMember?.id]) || 0),
+    0
+  );
+  const adjustedProjectedBalance = summary.projectedBalance - sharedCommitment;
   return (
     <div className="form-grid">
       <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Suma de Ingresos" />
       <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Suma de Mi parte" />
       <ReadOnlyCard label="Gastos diarios" value={formatCurrency(summary.dailyExpenses)} helper={`${dailyExpenses} registros`} />
       <ReadOnlyCard label="Meta de ahorro" value={formatCurrency(summary.savingsTarget)} helper="Suma de metas de Ahorros" />
+      <ReadOnlyCard label={`Aporte compartido · ${personalMember?.name || "Yo"}`} value={formatCurrency(sharedCommitment)} helper="Calculado desde Finanzas compartidas" />
       <BudgetChart summary={summary} />
       <ReadOnlyCard
         label="Saldo proyectado"
-        value={formatCurrency(summary.projectedBalance)}
-        helper="Ingresos - pagos - gastos - ahorro"
+        value={formatCurrency(adjustedProjectedBalance)}
+        helper="Ingresos - pagos - gastos - ahorro - aporte compartido"
         wide
       />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
@@ -1535,7 +1768,12 @@ function MonthlyCalendar({ sheetDb, month, year }) {
         <div className="calendar-grid" aria-label={`Días de ${monthNames[month]} ${year}`}>
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = String(index + 1);
-            const note = sheetDb.calendar[day] || "";
+            const scheduled = sheetDb.draft.pagos
+              .filter((row) => normalizeText(row[2]) === normalizeText(`Día ${day}`))
+              .map((row) => row[1])
+              .filter(Boolean);
+            const manualNote = sheetDb.calendar[day] || "";
+            const note = [manualNote, ...scheduled].filter(Boolean).join(" · ");
             return (
               <button
                 className={selectedDay === day ? "calendar-day active" : "calendar-day"}
@@ -1734,6 +1972,7 @@ function AppShell({ auth }) {
   const order = useMemo(() => ["cover", ...sections.map((section) => section.id)], []);
   const topNavItems = [
     { id: "calendario", label: "Calendario" },
+    { id: "hogar", label: "Compartido" },
     { id: "presupuesto", label: "Resumen" },
     { id: "cierre", label: "Cierre" }
   ];
@@ -1785,11 +2024,6 @@ function AppShell({ auth }) {
           ))}
         </nav>
         <div className="session">
-          {!auth.accessToken ? (
-            <button className="connect-mini" type="button" onClick={auth.requestSheetsAccess}>
-              Sheet
-            </button>
-          ) : null}
           <span>{auth.user?.email}</span>
           <button type="button" onClick={auth.signOut} aria-label="Cerrar sesión">
             <LogOut size={15} />
