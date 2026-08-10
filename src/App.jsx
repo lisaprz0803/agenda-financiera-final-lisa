@@ -28,6 +28,11 @@ import paymentTerminal from "../assets/payment-terminal.jpeg";
 import sharedMoney from "../assets/shared-money.jpeg";
 import budgetDesk from "../assets/budget-desk.jpeg";
 import savingsPig from "../assets/savings-pig.jpeg";
+import financePlan from "../assets/finance-plan.jpeg";
+import moneyHandoff from "../assets/money-handoff.jpeg";
+import cardTerminal from "../assets/card-terminal.jpeg";
+import piggyCalculator from "../assets/piggy-calculator.jpeg";
+import piggyPlant from "../assets/piggy-plant.jpeg";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -739,9 +744,13 @@ function useSheetDatabase(auth, monthKey) {
 
   function updateCell(section, rowIndex, columnIndex, value) {
     setDraft((current) => {
+      const existingRows = [...(current[section] || [])];
+      while (existingRows.length <= rowIndex) {
+        existingRows.push([...(rowTemplates[section] || [])]);
+      }
       const nextDraft = {
         ...current,
-        [section]: current[section].map((row, index) =>
+        [section]: existingRows.map((row, index) =>
           index === rowIndex ? row.map((cell, cellIndex) => (cellIndex === columnIndex ? value : cell)) : row
         )
       };
@@ -1095,7 +1104,18 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
 
       <div className="panel-body">
         {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={() => onSection("ingresos")} /> : null}
-        {activeSection === "calendario" ? <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} /> : null}
+        {activeSection === "calendario" ? (
+          <div className="stack">
+            <VisualNote
+              image={piggyPlant}
+              alt="Alcancía junto a plantas, monedas y gráficos"
+              title="Ponle fecha a lo importante"
+              text="Tus pagos registrados aparecerán aquí para que puedas anticiparte con calma."
+              wide
+            />
+            <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} />
+          </div>
+        ) : null}
         {activeSection === "checklist" ? <ChecklistSection /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
@@ -1186,6 +1206,13 @@ function SetupSection({ sheetDb, onContinue }) {
   return (
     <div className="setup-flow">
       <div className="step-badge">Paso 1 de 11</div>
+      <VisualNote
+        image={financePlan}
+        alt="Plan financiero con café, cuaderno y gráficos"
+        title="Empieza con una vista clara"
+        text="Primero configura tu espacio; después la agenda te acompañará paso a paso."
+        wide
+      />
       <div className="setup-card">
         <h3>¿Quién usará esta agenda?</h3>
         <p>Empieza contigo. Si compartirás gastos, agrega a las demás personas ahora o hazlo después.</p>
@@ -1259,6 +1286,13 @@ function IncomeSection({ sheetDb }) {
   const rows = sheetDb.draft.ingresos.length ? sheetDb.draft.ingresos : [["", "", "", "", ""]];
   return (
     <div className="stack">
+      <VisualNote
+        image={moneyHandoff}
+        alt="Entrega de dinero entre dos personas"
+        title="Todo comienza por lo que entra"
+        text="Registra tu sueldo y cualquier ingreso adicional antes de organizar tus compromisos."
+        wide
+      />
       <div className="soft-table income-table header">
         <strong>Fuente</strong>
         <strong>Tipo</strong>
@@ -1634,6 +1668,13 @@ function DailySpendingSection({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
   return (
     <div className="form-grid">
+      <VisualNote
+        image={piggyCalculator}
+        alt="Alcancía con calculadora y planificación financiera"
+        title="Los gastos pequeños también cuentan"
+        text="Anótalos sin culpa para entender el ritmo real de tu mes."
+        wide
+      />
       <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
       <DailyExpensesList sheetDb={sheetDb} />
@@ -1706,6 +1747,13 @@ function DebtSection({ sheetDb }) {
   );
   return (
     <div className="stack">
+      <VisualNote
+        image={cardTerminal}
+        alt="Tarjeta, dinero y terminal de pago"
+        title="Mira tus compromisos de frente"
+        text="Ordenar cuotas y saldos pendientes te ayuda a decidir cuál atender primero."
+        wide
+      />
       <div className="soft-table header">
         <strong>Deuda</strong>
         <strong>Cuota</strong>

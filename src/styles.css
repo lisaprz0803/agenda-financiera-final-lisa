@@ -427,6 +427,7 @@ code {
   width: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
+  object-position: center 58%;
   background: rgba(255, 255, 255, 0.64);
   border-radius: 14px;
   box-shadow: var(--shadow);
@@ -1367,21 +1368,23 @@ select {
 .visual-note.wide {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: minmax(170px, 0.35fr) minmax(0, 1fr);
+  grid-template-columns: 1fr;
   align-items: center;
+  text-align: center;
 }
 
 .visual-note img {
   width: 100%;
   aspect-ratio: 16 / 8;
   max-height: 260px;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   background: rgba(255, 255, 255, 0.62);
 }
 
 .visual-note.wide img {
-  aspect-ratio: 4 / 3;
-  max-height: none;
+  aspect-ratio: 16 / 7;
+  max-height: 340px;
 }
 
 .visual-note div {
