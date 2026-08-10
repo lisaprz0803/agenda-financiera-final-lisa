@@ -425,8 +425,9 @@ code {
 .cover-media img {
   position: relative;
   width: 100%;
+  aspect-ratio: 16 / 7;
   max-height: 620px;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   background: rgba(255, 255, 255, 0.64);
   border-radius: 14px;
@@ -981,7 +982,7 @@ select {
   gap: 12px;
   max-width: 100%;
   min-width: 0;
-  overflow-x: auto;
+  overflow-x: visible;
   overflow-y: hidden;
   padding-bottom: 6px;
   scrollbar-color: color-mix(in srgb, var(--theme-accent) 42%, transparent) rgba(255, 255, 255, 0.55);
@@ -1004,18 +1005,14 @@ select {
 
 .soft-table.income-table {
   width: 100%;
-  min-width: 840px;
-  grid-template-columns:
-    minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr)
-    minmax(150px, 1.1fr) 64px;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .soft-table.payments-table {
   width: 100%;
-  min-width: 940px;
-  grid-template-columns:
-    minmax(84px, 0.8fr) minmax(132px, 1.35fr) minmax(72px, 0.72fr) minmax(84px, 0.8fr)
-    minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(84px, 0.8fr) minmax(112px, 1fr) 64px;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 8px;
   font-size: 14px;
@@ -1023,10 +1020,8 @@ select {
 
 .soft-table.daily-table {
   width: 100%;
-  min-width: 900px;
-  grid-template-columns:
-    minmax(82px, 0.72fr) minmax(134px, 1.2fr) minmax(112px, 0.9fr) minmax(92px, 0.72fr)
-    minmax(116px, 0.92fr) minmax(140px, 1fr) 64px;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 8px;
   font-size: 14px;
@@ -1383,13 +1378,77 @@ select {
 }
 
 .visual-note.wide img {
-  width: min(100%, 680px);
-  height: auto;
-  aspect-ratio: auto;
-  max-height: 560px;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  max-height: none;
   margin: 0 auto;
-  object-fit: contain;
+  object-fit: cover;
 }
+
+.piggy-progress-card {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 0.65fr) minmax(260px, 1fr);
+  align-items: center;
+  gap: 24px;
+  border: 1px solid rgba(229, 141, 184, 0.32);
+  border-radius: 26px;
+  background: linear-gradient(135deg, #fff8fb, #f1e8fb 52%, #e5f5ee);
+  padding: 24px;
+  overflow: hidden;
+}
+
+.piggy-copy { display: grid; gap: 7px; }
+.piggy-copy span { color: #8f6684; font-weight: 850; }
+.piggy-copy strong { color: #d66f9f; font-size: clamp(42px, 7vw, 74px); line-height: 1; }
+.piggy-copy p { margin: 0; color: var(--muted); }
+
+.piggy-scene {
+  position: relative;
+  width: min(100%, 360px);
+  height: 230px;
+  margin: 0 auto;
+}
+
+.piggy-body {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  width: 270px;
+  height: 180px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  border: 7px solid #d97ca7;
+  border-radius: 48% 50% 45% 46%;
+  background: rgba(255,255,255,.78);
+  box-shadow: inset 0 0 0 5px rgba(255,255,255,.7), 0 18px 36px rgba(170,102,139,.18);
+}
+
+.piggy-fill {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 0;
+  min-height: 0;
+  background: linear-gradient(180deg, #f8b6ce, #ec7fb0);
+  transition: height 500ms ease;
+}
+
+.piggy-ear { position: absolute; top: -5px; z-index: 2; width: 52px; height: 58px; border: 6px solid #d97ca7; background: #f7b1cb; transform: rotate(45deg); }
+.piggy-ear.left { left: 38px; border-radius: 15px 32px 12px 32px; }
+.piggy-ear.right { right: 38px; border-radius: 32px 15px 32px 12px; }
+.piggy-eye { position: absolute; top: 68px; z-index: 3; width: 13px; height: 16px; border-radius: 50%; background: #59424f; }
+.piggy-eye.left { left: 83px; }
+.piggy-eye.right { right: 83px; }
+.piggy-snout { position: absolute; left: 50%; top: 95px; z-index: 3; width: 74px; height: 48px; transform: translateX(-50%); border: 5px solid #d97ca7; border-radius: 50%; background: #f9c2d5; }
+.piggy-snout i { position: absolute; top: 15px; width: 8px; height: 13px; border-radius: 50%; background: #c86691; }
+.piggy-snout i:first-child { left: 20px; }
+.piggy-snout i:last-child { right: 20px; }
+.piggy-smile { position: absolute; left: 50%; top: 148px; z-index: 3; width: 38px; height: 16px; transform: translateX(-50%); border-bottom: 4px solid #9e5878; border-radius: 50%; }
+.piggy-leg { position: absolute; bottom: 9px; width: 48px; height: 42px; border: 6px solid #d97ca7; border-radius: 0 0 18px 18px; background: #f6a9c5; }
+.piggy-leg.left { left: 85px; }
+.piggy-leg.right { right: 85px; }
+.piggy-tail { position: absolute; right: 19px; top: 88px; width: 42px; height: 42px; border: 7px solid #d97ca7; border-left-color: transparent; border-radius: 50%; }
+.piggy-scale { grid-column: 2; display: flex; justify-content: space-between; color: #8f6684; font-size: 11px; font-weight: 800; }
 
 .visual-note div {
   display: grid;
@@ -1627,10 +1686,11 @@ select {
   }
 
   .soft-table.income-table {
-    grid-template-columns:
-      minmax(120px, 1fr) minmax(100px, 0.8fr) minmax(110px, 0.8fr) minmax(90px, 0.7fr)
-      minmax(150px, 1.1fr) 64px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .soft-table.payments-table,
+  .soft-table.daily-table { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .daily-grid {
     grid-template-columns: 1fr;
@@ -1669,9 +1729,12 @@ select {
     grid-template-columns: 1fr;
   }
 
-  .soft-table:not(.payments-table) {
+  .soft-table {
     grid-template-columns: 1fr;
   }
+
+  .piggy-progress-card { grid-template-columns: 1fr; text-align: center; }
+  .piggy-scale { grid-column: 1; }
 
   .coin-grid {
     grid-template-columns: repeat(5, minmax(32px, 1fr));

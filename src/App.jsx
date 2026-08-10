@@ -33,6 +33,9 @@ import moneyHandoff from "../assets/money-handoff.jpeg";
 import cardTerminal from "../assets/card-terminal.jpeg";
 import piggyCalculator from "../assets/piggy-calculator.jpeg";
 import piggyPlant from "../assets/piggy-plant.jpeg";
+import plannerBanner from "../assets/planner-banner-v2.jpg";
+import sharedBanner from "../assets/shared-banner-v2.jpg";
+import savingsBanner from "../assets/savings-banner-v2.jpg";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -1007,7 +1010,7 @@ function Cover({ onStart }) {
   return (
     <section className="cover-screen">
       <div className="cover-media">
-        <img src={coverPiggy} alt="Alcancía rosada, monedas, plantas y gráficos financieros" />
+        <img src={plannerBanner} alt="Alcancía, agenda, calculadora, monedas y gráficos en tonos pastel" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
@@ -1107,7 +1110,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
         {activeSection === "calendario" ? (
           <div className="stack">
             <VisualNote
-              image={piggyPlant}
+              image={plannerBanner}
               alt="Alcancía junto a plantas, monedas y gráficos"
               title="Ponle fecha a lo importante"
               text="Tus pagos registrados aparecerán aquí para que puedas anticiparte con calma."
@@ -1207,7 +1210,7 @@ function SetupSection({ sheetDb, onContinue }) {
     <div className="setup-flow">
       <div className="step-badge">Paso 1 de 11</div>
       <VisualNote
-        image={financePlan}
+        image={plannerBanner}
         alt="Plan financiero con café, cuaderno y gráficos"
         title="Empieza con una vista clara"
         text="Primero configura tu espacio; después la agenda te acompañará paso a paso."
@@ -1273,7 +1276,7 @@ function ChecklistSection() {
         </div>
       </div>
       <VisualNote
-        image={visualChecklist}
+        image={plannerBanner}
         alt="Checklist financiero en tonos lila"
         title="Celebrar un avance también cuenta"
         text="Aunque sea pequeño, deja registro de lo que sí hiciste esta semana."
@@ -1287,7 +1290,7 @@ function IncomeSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={moneyHandoff}
+        image={plannerBanner}
         alt="Entrega de dinero entre dos personas"
         title="Todo comienza por lo que entra"
         text="Registra tu sueldo y cualquier ingreso adicional antes de organizar tus compromisos."
@@ -1334,7 +1337,7 @@ function PaymentsSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={paymentTerminal}
+        image={sharedBanner}
         alt="Terminal de pago con tarjeta, efectivo y recibo"
         title="Calendario de pagos"
         text="Ten tus pagos a la vista para evitar sorpresas y decidir con menos enredo."
@@ -1546,7 +1549,7 @@ function HouseholdSection({ sheetDb }) {
   return (
     <div className="stack household-section">
       <VisualNote
-        image={sharedMoney}
+        image={sharedBanner}
         alt="Una persona entregando dinero a otra"
         title="Cuentas claras entre personas"
         text="Registra quién pagó y deja que la agenda calcule cuánto corresponde a cada integrante."
@@ -1654,7 +1657,7 @@ function BudgetSection({ sheetDb }) {
       />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
       <VisualNote
-        image={budgetDesk}
+        image={plannerBanner}
         alt="Plan financiero con cuaderno, calculadora y gráficos"
         title="Distribuye según tus prioridades reales"
         text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
@@ -1669,7 +1672,7 @@ function DailySpendingSection({ sheetDb }) {
   return (
     <div className="form-grid">
       <VisualNote
-        image={piggyCalculator}
+        image={plannerBanner}
         alt="Alcancía con calculadora y planificación financiera"
         title="Los gastos pequeños también cuentan"
         text="Anótalos sin culpa para entender el ritmo real de tu mes."
@@ -1686,7 +1689,6 @@ function SavingsSection({ sheetDb }) {
   const rows = sheetDb.draft.ahorros.length ? sheetDb.draft.ahorros : [["", "", "", "", ""]];
   const summary = getFinancialSummary(sheetDb.draft);
   const progressNumber = summary.savingsProgress;
-  const filled = Math.max(0, Math.min(10, Math.round(progressNumber / 10)));
   return (
     <div className="savings-layout">
       <div className="soft-table income-table header">
@@ -1714,23 +1716,13 @@ function SavingsSection({ sheetDb }) {
           />
         </div>
       ))}
-      <div className="coin-grid" aria-label="Progreso de ahorro">
-        {Array.from({ length: 10 }, (_, index) => (
-          <button
-            className={index < filled ? "coin filled" : "coin"}
-            key={index}
-            type="button"
-            onClick={() => sheetDb.updateCell("ahorros", 0, 3, `${(index + 1) * 10}%`)}
-            aria-label={`Marcar ahorro ${index + 1}`}
-          />
-        ))}
-      </div>
+      <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
       <div className="insight-card">
         <PiggyBank size={20} />
         <span><strong>{progressNumber}%</strong> de avance calculado. Falta <strong>{formatCurrency(summary.savingsGap)}</strong>.</span>
       </div>
       <VisualNote
-        image={savingsPig}
+        image={savingsBanner}
         alt="Alcancía rosada sobre gráficos y monedas"
         title="Bloque de ahorro"
         text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
@@ -1741,6 +1733,34 @@ function SavingsSection({ sheetDb }) {
   );
 }
 
+function PiggySavingsProgress({ progress, saved, target }) {
+  const safeProgress = Math.max(0, Math.min(100, Number(progress) || 0));
+  return (
+    <section className="piggy-progress-card" aria-label={`Progreso de ahorro ${safeProgress}%`}>
+      <div className="piggy-copy">
+        <span>Tu cerdito se está llenando</span>
+        <strong>{safeProgress}%</strong>
+        <p>{formatCurrency(saved)} de {formatCurrency(target)} separados</p>
+      </div>
+      <div className="piggy-scene" aria-hidden="true">
+        <div className="piggy-tail" />
+        <div className="piggy-body">
+          <div className="piggy-fill" style={{ height: `${safeProgress}%` }} />
+          <div className="piggy-ear left" />
+          <div className="piggy-ear right" />
+          <div className="piggy-eye left" />
+          <div className="piggy-eye right" />
+          <div className="piggy-snout"><i /><i /></div>
+          <div className="piggy-smile" />
+        </div>
+        <div className="piggy-leg left" />
+        <div className="piggy-leg right" />
+      </div>
+      <div className="piggy-scale"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    </section>
+  );
+}
+
 function DebtSection({ sheetDb }) {
   const rows = sheetDb.draft.pagos.filter((row) =>
     ["tarjeta", "crédito", "credito", "cuota"].some((word) => String(row.join(" ")).toLowerCase().includes(word))
@@ -1748,7 +1768,7 @@ function DebtSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={cardTerminal}
+        image={sharedBanner}
         alt="Tarjeta, dinero y terminal de pago"
         title="Mira tus compromisos de frente"
         text="Ordenar cuotas y saldos pendientes te ayuda a decidir cuál atender primero."
@@ -1782,7 +1802,7 @@ function CloseSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={visualClose}
+        image={plannerBanner}
         alt="Hoja de cierre mensual con estrella y líneas de reflexión"
         title="Haz un cierre amable"
         text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
