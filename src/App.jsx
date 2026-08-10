@@ -36,6 +36,13 @@ import piggyPlant from "../assets/piggy-plant.jpeg";
 import plannerBanner from "../assets/planner-banner-v2.jpg";
 import sharedBanner from "../assets/shared-banner-v2.jpg";
 import savingsBanner from "../assets/savings-banner-v2.jpg";
+import checklistBanner from "../assets/checklist-banner.jpg";
+import incomeBanner from "../assets/income-banner.jpg";
+import paymentsBanner from "../assets/payments-banner.jpg";
+import debtBanner from "../assets/debt-banner.jpg";
+import dailyBanner from "../assets/daily-banner.jpg";
+import calendarBanner from "../assets/calendar-banner.jpg";
+import closeBanner from "../assets/close-banner.jpg";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -77,8 +84,16 @@ const monthNames = [
 
 const sections = [
   {
+    id: "checklist",
+    label: "1. Por dónde empezar",
+    icon: CheckCircle2,
+    title: "Tu ruta del mes",
+    description: "Mira primero qué debes completar y marca cada paso a medida que avanzas.",
+    message: "No tienes que hacerlo todo hoy: sigue esta ruta, un paso a la vez."
+  },
+  {
     id: "configuracion",
-    label: "1. Configuración",
+    label: "2. Configuración",
     icon: LayoutDashboard,
     title: "Configura tu mes",
     description: "Comienza con tu nombre y decide si usarás la agenda de forma individual o compartida.",
@@ -86,7 +101,7 @@ const sections = [
   },
   {
     id: "ingresos",
-    label: "2. Ingresos",
+    label: "3. Ingresos",
     icon: Plus,
     title: "Ingresos",
     description: "Anota tus entradas de dinero y las fechas en que esperas recibirlas.",
@@ -94,7 +109,7 @@ const sections = [
   },
   {
     id: "pagos",
-    label: "3. Pagos",
+    label: "4. Pagos",
     icon: CheckCircle2,
     title: "Pagos del mes",
     description: "Marca lo que ya está pagado y deja a la vista lo que necesita atención.",
@@ -102,7 +117,7 @@ const sections = [
   },
   {
     id: "hogar",
-    label: "4. Compartido",
+    label: "5. Compartido",
     icon: Heart,
     title: "Finanzas compartidas",
     description: "Divide gastos entre una y cuatro personas y descubre quién tiene saldo pendiente o a favor.",
@@ -110,7 +125,7 @@ const sections = [
   },
   {
     id: "deudas",
-    label: "5. Deudas",
+    label: "6. Deudas",
     icon: TrendingDown,
     title: "Deudas",
     description: "Mira tus compromisos con claridad y define cuál atender primero.",
@@ -118,7 +133,7 @@ const sections = [
   },
   {
     id: "ahorro",
-    label: "6. Ahorro",
+    label: "7. Ahorro",
     icon: PiggyBank,
     title: "Ahorro",
     description: "Visualiza tu meta y celebra cada avance pequeño sin perder el hilo.",
@@ -126,7 +141,7 @@ const sections = [
   },
   {
     id: "presupuesto",
-    label: "7. Presupuesto",
+    label: "8. Presupuesto",
     icon: CircleDollarSign,
     title: "Tu presupuesto disponible",
     description: "Revisa cuánto entra, cuánto está comprometido y cuánto te va quedando.",
@@ -134,7 +149,7 @@ const sections = [
   },
   {
     id: "gastos",
-    label: "8. Gastos diarios",
+    label: "9. Gastos diarios",
     icon: TrendingDown,
     title: "Gastos diarios",
     description: "Registra supermercado, transporte, salidas y compras pequeñas durante el mes.",
@@ -142,19 +157,11 @@ const sections = [
   },
   {
     id: "calendario",
-    label: "9. Calendario",
+    label: "10. Calendario",
     icon: CalendarDays,
     title: "Calendario y pendientes",
     description: "Revisa pagos con fecha, recordatorios y tareas que aún necesitan atención.",
     message: "Lo que tiene fecha pesa menos en la cabeza."
-  },
-  {
-    id: "checklist",
-    label: "10. Checklist",
-    icon: CheckCircle2,
-    title: "Checklist del mes",
-    description: "Marca cada paso sin presión y deja visible lo que ya avanzaste.",
-    message: "Pequeñas acciones repetidas también construyen estabilidad."
   },
   {
     id: "cierre",
@@ -173,17 +180,17 @@ const quickStats = [
 ];
 
 const checklistItems = [
-  "Revisar ingresos",
+  "Elegir modo individual o compartido",
+  "Agregar mis ingresos",
   "Registrar pagos importantes",
-  "Revisar gastos diarios",
-  "Separar ahorro",
-  "Revisar suscripciones",
-  "Hacer balance del mes",
-  "Anotar pendientes",
-  "Celebrar un avance"
+  "Anotar mis deudas",
+  "Crear una meta de ahorro",
+  "Revisar mi presupuesto disponible",
+  "Registrar gastos diarios",
+  "Hacer el cierre del mes"
 ];
 
-const statusOptions = ["Pagado", "Pendiente", "Revisar", "Parcial"];
+const statusOptions = ["Pagado", "Pendiente", "Por revisar"];
 const categoryOptions = [
   "Vivienda",
   "Servicios",
@@ -223,13 +230,14 @@ const progressStickers = [
 ];
 const reminderStickers = ["💸", "⚠️", "✅", "💜"];
 const rowTemplates = {
-  ingresos: ["", "Mensual", "", "Revisar", ""],
-  pagos: ["Servicios", "", "Día 1", "", "", "", "Pendiente", "Transferencia"],
-  ahorros: ["", "", "", "0%", ""],
-  gastos: [new Date().toLocaleDateString("es-CL"), "", "Servicios", "", "Transferencia", ""]
+  ingresos: ["", new Date().toISOString().slice(0, 10), "", "Por revisar", ""],
+  pagos: ["Servicios", "", new Date().toISOString().slice(0, 10), "", "", "", "Pendiente", "Transferencia"],
+  ahorros: ["", "", "", "", ""],
+  gastos: [new Date().toISOString().slice(0, 10), "", "Servicios", "", "Transferencia", ""]
 };
 
 const defaultHousehold = {
+  mode: "individual",
   members: [{ id: "persona-1", name: "Persona 1" }],
   expenses: []
 };
@@ -254,7 +262,7 @@ function normalizeHousehold(value) {
         shares: Object.fromEntries(members.map((member) => [member.id, Number(expense.shares?.[member.id]) || 0]))
       }))
     : [];
-  return { members, expenses };
+  return { mode: value?.mode === "shared" ? "shared" : "individual", members, expenses };
 }
 
 function getHouseholdBalances(household) {
@@ -1022,8 +1030,8 @@ function Cover({ onStart }) {
         <p className="subtitle">Agenda interactiva para darle forma a tu dinero.</p>
         <p className="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
         <button className="primary-action" type="button" onClick={onStart}>
-          <Sparkles size={16} />
-          Configurar mi primer mes
+          <CheckCircle2 size={16} />
+          Ver por dónde empezar
         </button>
       </div>
     </section>
@@ -1110,7 +1118,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
         {activeSection === "calendario" ? (
           <div className="stack">
             <VisualNote
-              image={plannerBanner}
+              image={calendarBanner}
               alt="Alcancía junto a plantas, monedas y gráficos"
               title="Ponle fecha a lo importante"
               text="Tus pagos registrados aparecerán aquí para que puedas anticiparte con calma."
@@ -1182,6 +1190,16 @@ function MapSection({ onSection }) {
 function SetupSection({ sheetDb, onContinue }) {
   const members = sheetDb.household.members;
 
+  function selectMode(mode) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      mode,
+      members: mode === "shared" && current.members.length === 1
+        ? [...current.members, { id: `persona-${Date.now()}`, name: "Persona 2" }]
+        : current.members
+    }));
+  }
+
   function renameMember(id, name) {
     sheetDb.updateHousehold((current) => ({
       ...current,
@@ -1201,6 +1219,8 @@ function SetupSection({ sheetDb, onContinue }) {
   function removeMember(id) {
     if (members.length === 1) return;
     sheetDb.updateHousehold((current) => ({
+      ...current,
+      mode: current.members.length <= 2 ? "individual" : current.mode,
       members: current.members.filter((member) => member.id !== id),
       expenses: current.expenses.filter((expense) => expense.paidBy !== id)
     }));
@@ -1208,7 +1228,7 @@ function SetupSection({ sheetDb, onContinue }) {
 
   return (
     <div className="setup-flow">
-      <div className="step-badge">Paso 1 de 11</div>
+      <div className="step-badge">Paso 2 de 11</div>
       <VisualNote
         image={plannerBanner}
         alt="Plan financiero con café, cuaderno y gráficos"
@@ -1217,8 +1237,19 @@ function SetupSection({ sheetDb, onContinue }) {
         wide
       />
       <div className="setup-card">
-        <h3>¿Quién usará esta agenda?</h3>
-        <p>Empieza contigo. Si compartirás gastos, agrega a las demás personas ahora o hazlo después.</p>
+        <h3>¿Cómo quieres organizarte?</h3>
+        <p>Elige una opción. Puedes cambiarla más adelante sin perder información.</p>
+        <div className="mode-selector">
+          <button className={sheetDb.household.mode === "individual" ? "mode-card active" : "mode-card"} type="button" onClick={() => selectMode("individual")}>
+            <CircleDollarSign size={24} /><strong>Modo individual</strong><span>Solo mis ingresos, pagos y gastos.</span>
+          </button>
+          <button className={sheetDb.household.mode === "shared" ? "mode-card active" : "mode-card"} type="button" onClick={() => selectMode("shared")}>
+            <Heart size={24} /><strong>Modo compartido</strong><span>Dividir cuentas entre 2 a 4 personas.</span>
+          </button>
+        </div>
+      </div>
+      <div className="setup-card">
+        <h3>{sheetDb.household.mode === "shared" ? "¿Quiénes comparten gastos?" : "¿Cómo te llamas?"}</h3>
         <div className="member-grid">
           {members.map((member, index) => (
             <label className="member-field" key={member.id}>
@@ -1228,10 +1259,10 @@ function SetupSection({ sheetDb, onContinue }) {
             </label>
           ))}
         </div>
-        <button className="add-row" type="button" onClick={addMember} disabled={members.length >= 4}><Plus size={15} /> Compartir con otra persona</button>
+        {sheetDb.household.mode === "shared" ? <button className="add-row" type="button" onClick={addMember} disabled={members.length >= 4}><Plus size={15} /> Agregar otra persona</button> : null}
       </div>
       <div className="setup-note-card">
-        <strong>{members.length === 1 ? "Modo individual" : `Modo compartido · ${members.length} personas`}</strong>
+        <strong>{sheetDb.household.mode === "individual" ? "Modo individual" : `Modo compartido · ${members.length} personas`}</strong>
         <span>Puedes cambiar esto más adelante sin perder tus registros.</span>
       </div>
       <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>
@@ -1276,7 +1307,7 @@ function ChecklistSection() {
         </div>
       </div>
       <VisualNote
-        image={plannerBanner}
+        image={checklistBanner}
         alt="Checklist financiero en tonos lila"
         title="Celebrar un avance también cuenta"
         text="Aunque sea pequeño, deja registro de lo que sí hiciste esta semana."
@@ -1290,30 +1321,23 @@ function IncomeSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={plannerBanner}
+        image={incomeBanner}
         alt="Entrega de dinero entre dos personas"
         title="Todo comienza por lo que entra"
         text="Registra tu sueldo y cualquier ingreso adicional antes de organizar tus compromisos."
         wide
       />
-      <div className="soft-table income-table header">
-        <strong>Fuente</strong>
-        <strong>Tipo</strong>
-        <strong>Monto mensual</strong>
-        <strong>Estado</strong>
-        <strong>Notas</strong>
-        <strong>Acción</strong>
-      </div>
+      <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div><AddRowButton label="Agregar ingreso" onClick={() => sheetDb.addRow("ingresos", rowTemplates.ingresos)} /></div>
       {rows.map((row, rowIndex) => (
-        <div className="soft-table income-table" key={`ingreso-${rowIndex}`}>
-          {row.map((cell, columnIndex) => (
-            <input
-              aria-label={`Ingreso fila ${rowIndex + 1} columna ${columnIndex + 1}`}
-              key={columnIndex}
-              value={cell}
-              onChange={(event) => sheetDb.updateCell("ingresos", rowIndex, columnIndex, event.target.value)}
-            />
-          ))}
+        <div className="simple-entry-card" key={`ingreso-${rowIndex}`}>
+          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> Ingreso {rowIndex + 1}</strong></div>
+          <div className="simple-entry-grid">
+            <label><span>Fuente</span><input value={row[0]} placeholder="Ej: sueldo" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 0, e.target.value)} /></label>
+            <label><span>Fecha en que lo recibes</span><input type="date" value={row[1]} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 1, e.target.value)} /></label>
+            <label><span>Monto</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 2, e.target.value)} /></label>
+            <label><span>Estado</span><select value={statusOptions.includes(row[3]) ? row[3] : "Por revisar"} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 3, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <label className="wide"><span>Nota opcional</span><input value={row[4]} placeholder="Ej: pago variable" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 4, e.target.value)} /></label>
+          </div>
           <DeleteRowButton
             label={`Eliminar ingreso fila ${rowIndex + 1}`}
             disabled={sheetDb.status.saving}
@@ -1322,10 +1346,9 @@ function IncomeSection({ sheetDb }) {
         </div>
       ))}
       <div className="total-card">
-        <span>Fuente principal</span>
-        <strong>{rows[0]?.[2] || "$"}</strong>
+        <span>Total de ingresos</span>
+        <strong>{formatCurrency(getFinancialSummary(sheetDb.draft).incomeTotal)}</strong>
       </div>
-      <AddRowButton label="Agregar ingreso" onClick={() => sheetDb.addRow("ingresos", rowTemplates.ingresos)} />
       <SaveButton label="Guardar ingresos" onClick={() => sheetDb.saveSection("ingresos")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -1337,105 +1360,24 @@ function PaymentsSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={sharedBanner}
+        image={paymentsBanner}
         alt="Terminal de pago con tarjeta, efectivo y recibo"
         title="Calendario de pagos"
         text="Ten tus pagos a la vista para evitar sorpresas y decidir con menos enredo."
         wide
       />
-      <div className="table-scroll" aria-label="Pagos mensuales">
-        <div className="soft-table payments-table header">
-          <strong>Categoría</strong>
-          <strong>Concepto</strong>
-          <strong>Fecha</strong>
-          <strong>Total</strong>
-          <strong>Mi parte</strong>
-          <strong>Compartido (opcional)</strong>
-          <strong>Estado</strong>
-          <strong>Forma de pago</strong>
-          <strong>Acción</strong>
-        </div>
+      <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div><AddRowButton label="Agregar pago" onClick={() => sheetDb.addRow("pagos", rowTemplates.pagos)} /></div>
         {payments.map((row, rowIndex) => (
-          <div className="soft-table payments-table" key={`pago-${rowIndex}`}>
-            {row.map((cell, columnIndex) => {
-              const statusValue = statusOptions.includes(String(cell).trim()) ? String(cell).trim() : "Revisar";
-              if (columnIndex === 0) {
-                const categoryValue = findOption(cell, categoryOptions);
-                return (
-                  <select
-                    aria-label={`Categoría pago fila ${rowIndex + 1}`}
-                    key={columnIndex}
-                    value={categoryValue}
-                    onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-                  >
-                    {categoryOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                );
-              }
-              if (columnIndex === 6) {
-                return (
-                <select
-                  aria-label={`Estado pago fila ${rowIndex + 1}`}
-                  className={`status-select status-${statusValue.toLowerCase()}`}
-                  key={columnIndex}
-                  value={statusValue}
-                  onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                );
-              }
-              if (columnIndex === 2) {
-                const dateValue = findOption(cell, paymentDateOptions, "Variable");
-                return (
-                  <select
-                    aria-label={`Fecha pago fila ${rowIndex + 1}`}
-                    key={columnIndex}
-                    value={dateValue}
-                    onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-                  >
-                    {paymentDateOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                );
-              }
-              if (columnIndex === 7) {
-                const methodValue = detectPaymentMethod(cell);
-                return (
-                  <select
-                    aria-label={`Forma de pago fila ${rowIndex + 1}`}
-                    key={columnIndex}
-                    value={methodValue}
-                    onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-                  >
-                    {paymentMethodOptions.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                );
-              }
-              return (
-                <input
-                  aria-label={`Pago fila ${rowIndex + 1} columna ${columnIndex + 1}`}
-                  key={columnIndex}
-                  value={cell}
-                  onChange={(event) => sheetDb.updateCell("pagos", rowIndex, columnIndex, event.target.value)}
-                />
-              );
-            })}
+          <div className="simple-entry-card" key={`pago-${rowIndex}`}>
+            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> Pago {rowIndex + 1}</strong></div>
+            <div className="simple-entry-grid">
+              <label><span>Categoría</span><select value={findOption(row[0], categoryOptions)} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 0, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+              <label><span>Qué debes pagar</span><input value={row[1]} placeholder="Ej: arriendo" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 1, e.target.value)} /></label>
+              <label><span>Fecha de pago</span><input type="date" value={row[2]} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 2, e.target.value)} /></label>
+              <label><span>Monto que pagarás</span><input inputMode="numeric" value={row[4] || row[3]} placeholder="$" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 4, e.target.value)} /></label>
+              <label><span>Estado</span><select value={statusOptions.includes(row[6]) ? row[6] : "Por revisar"} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 6, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+              <label><span>Forma de pago</span><select value={detectPaymentMethod(row[7])} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 7, e.target.value)}>{paymentMethodOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+            </div>
             <DeleteRowButton
               label={`Eliminar pago fila ${rowIndex + 1}`}
               disabled={sheetDb.status.saving}
@@ -1443,12 +1385,10 @@ function PaymentsSection({ sheetDb }) {
             />
           </div>
         ))}
-      </div>
       <div className="formula-note">
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
       </div>
-      <AddRowButton label="Agregar pago" onClick={() => sheetDb.addRow("pagos", rowTemplates.pagos)} />
       <SaveButton label="Guardar pagos" onClick={() => sheetDb.saveSection("pagos")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -1460,7 +1400,7 @@ function HouseholdSection({ sheetDb }) {
   const [form, setForm] = useState({
     concept: "",
     category: "Vivienda",
-    date: new Date().toLocaleDateString("es-CL"),
+    date: new Date().toISOString().slice(0, 10),
     amount: "",
     paidBy: household.members[0]?.id || "",
     splitMode: "equal"
@@ -1491,6 +1431,8 @@ function HouseholdSection({ sheetDb }) {
   function removeMember(id) {
     if (household.members.length === 1) return;
     sheetDb.updateHousehold((current) => ({
+      ...current,
+      mode: current.members.length <= 2 ? "individual" : current.mode,
       members: current.members.filter((member) => member.id !== id),
       expenses: current.expenses.filter((expense) => expense.paidBy !== id)
     }));
@@ -1557,6 +1499,11 @@ function HouseholdSection({ sheetDb }) {
         text="Registra quién pagó y deja que la agenda calcule cuánto corresponde a cada integrante."
         wide
       />
+      <div className="mode-selector compact">
+        <button className={household.mode === "individual" ? "mode-card active" : "mode-card"} type="button" onClick={() => sheetDb.updateHousehold((current) => ({ ...current, mode: "individual" }))}><CircleDollarSign size={21} /><strong>Individual</strong><span>Solo mis cuentas</span></button>
+        <button className={household.mode === "shared" ? "mode-card active" : "mode-card"} type="button" onClick={() => sheetDb.updateHousehold((current) => ({ ...current, mode: "shared", members: current.members.length === 1 ? [...current.members, { id: `persona-${Date.now()}`, name: "Persona 2" }] : current.members }))}><Heart size={21} /><strong>Compartido</strong><span>Dividir gastos</span></button>
+      </div>
+      {household.mode === "individual" ? <div className="empty-state mode-empty"><Heart size={24} /><strong>Estás usando el modo individual</strong><span>Elige “Compartido” arriba cuando quieras dividir un gasto con otra persona.</span></div> : <>
       <div className="household-summary">
         <ReadOnlyCard label="Gastos compartidos" value={formatCurrency(householdTotal)} helper={`${household.expenses.length} movimientos`} />
         {household.members.map((member) => (
@@ -1593,7 +1540,7 @@ function HouseholdSection({ sheetDb }) {
       <form className="shared-expense-form" onSubmit={submitExpense}>
         <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>Completa estos datos. La agenda dividirá el monto automáticamente.</p></div></div>
         <div className="shared-form-grid">
-          <label><span>Fecha</span><input value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
+          <label><span>Fecha</span><input type="date" value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
           <label><span>¿Qué pagaron?</span><input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Ej: supermercado" required /></label>
           <label><span>Categoría</span><select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>
             {categoryOptions.map((option) => <option key={option}>{option}</option>)}
@@ -1640,6 +1587,7 @@ function HouseholdSection({ sheetDb }) {
           );
         }) : <div className="empty-state">Todavía no hay gastos compartidos. Agrega el primero para ver los saldos.</div>}
       </div>
+      </>}
     </div>
   );
 }
@@ -1669,7 +1617,7 @@ function BudgetSection({ sheetDb }) {
       />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
       <VisualNote
-        image={plannerBanner}
+        image={dailyBanner}
         alt="Plan financiero con cuaderno, calculadora y gráficos"
         title="Distribuye según tus prioridades reales"
         text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
@@ -1703,24 +1651,17 @@ function SavingsSection({ sheetDb }) {
   const progressNumber = summary.savingsProgress;
   return (
     <div className="savings-layout">
-      <div className="soft-table income-table header">
-        <strong>Objetivo</strong>
-        <strong>Meta mensual</strong>
-        <strong>Separado este mes</strong>
-        <strong>Avance</strong>
-        <strong>Notas</strong>
-        <strong>Acción</strong>
-      </div>
+      <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div><AddRowButton label="Agregar meta de ahorro" onClick={() => sheetDb.addRow("ahorros", rowTemplates.ahorros)} /></div>
       {rows.map((row, rowIndex) => (
-        <div className="soft-table income-table" key={`ahorro-${rowIndex}`}>
-          {row.map((cell, columnIndex) => (
-            <input
-              aria-label={`Ahorro fila ${rowIndex + 1} columna ${columnIndex + 1}`}
-              key={columnIndex}
-              value={cell}
-              onChange={(event) => sheetDb.updateCell("ahorros", rowIndex, columnIndex, event.target.value)}
-            />
-          ))}
+        <div className="simple-entry-card" key={`ahorro-${rowIndex}`}>
+          <div className="entry-card-heading"><strong><PiggyBank size={18} /> Meta {rowIndex + 1}</strong></div>
+          <div className="simple-entry-grid">
+            <label><span>¿Para qué ahorras?</span><input value={row[0]} placeholder="Ej: vacaciones" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 0, e.target.value)} /></label>
+            <label><span>Meta de este mes</span><input inputMode="numeric" value={row[1]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 1, e.target.value)} /></label>
+            <label><span>¿Cuánto separaste?</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 2, e.target.value)} /></label>
+            <label><span>Fecha meta</span><input type="date" value={row[3]} onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 3, e.target.value)} /></label>
+            <label className="wide"><span>Nota opcional</span><input value={row[4]} placeholder="Ej: separar al recibir el sueldo" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 4, e.target.value)} /></label>
+          </div>
           <DeleteRowButton
             label={`Eliminar ahorro fila ${rowIndex + 1}`}
             disabled={sheetDb.status.saving}
@@ -1728,18 +1669,14 @@ function SavingsSection({ sheetDb }) {
           />
         </div>
       ))}
+      <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
-      <div className="insight-card">
-        <PiggyBank size={20} />
-        <span><strong>{progressNumber}%</strong> de avance calculado. Falta <strong>{formatCurrency(summary.savingsGap)}</strong>.</span>
-      </div>
       <VisualNote
         image={savingsBanner}
         alt="Alcancía rosada sobre gráficos y monedas"
         title="Bloque de ahorro"
         text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
       />
-      <AddRowButton label="Agregar meta de ahorro" onClick={() => sheetDb.addRow("ahorros", rowTemplates.ahorros)} />
       <SaveButton label="Guardar ahorros" onClick={() => sheetDb.saveSection("ahorros")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -1750,9 +1687,11 @@ function PiggySavingsProgress({ progress, saved, target }) {
   return (
     <section className="piggy-progress-card" aria-label={`Progreso de ahorro ${safeProgress}%`}>
       <div className="piggy-copy">
-        <span>Tu cerdito se está llenando</span>
+        <span>{target ? "Tu cerdito se llena automáticamente" : "Escribe una meta para comenzar"}</span>
         <strong>{safeProgress}%</strong>
-        <p>{formatCurrency(saved)} de {formatCurrency(target)} separados</p>
+        <p>{target ? `${formatCurrency(saved)} ÷ ${formatCurrency(target)} = ${safeProgress}%` : "Todavía está vacío porque no hay una meta ingresada."}</p>
+        <div className="piggy-linear"><i style={{ width: `${safeProgress}%` }} /></div>
+        <small>{target ? `Te faltan ${formatCurrency(Math.max(0, target - saved))}` : "Agrega tu meta arriba"}</small>
       </div>
       <div className="piggy-scene" aria-hidden="true">
         <div className="piggy-tail" />
@@ -1780,7 +1719,7 @@ function DebtSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={sharedBanner}
+        image={debtBanner}
         alt="Tarjeta, dinero y terminal de pago"
         title="Mira tus compromisos de frente"
         text="Ordenar cuotas y saldos pendientes te ayuda a decidir cuál atender primero."
@@ -1795,7 +1734,7 @@ function DebtSection({ sheetDb }) {
         <div className="soft-table" key={`${row[1]}-${index}`}>
           <span>{row[1] || row[0]}</span>
           <span>{row[4] || row[3] || "$"}</span>
-          <span className="pill">{row[6] || "Revisar"}</span>
+          <span className="pill">{row[6] === "Revisar" ? "Por revisar" : row[6] || "Por revisar"}</span>
         </div>
       ))}
       <Field label="Prioridad del mes" placeholder="Ej: pagar tarjeta antes del 20" wide />
@@ -1814,7 +1753,7 @@ function CloseSection({ sheetDb }) {
   return (
     <div className="stack">
       <VisualNote
-        image={plannerBanner}
+        image={closeBanner}
         alt="Hoja de cierre mensual con estrella y líneas de reflexión"
         title="Haz un cierre amable"
         text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
@@ -1909,13 +1848,10 @@ function BudgetChart({ summary }) {
 
 function MonthlyCalendar({ sheetDb, month, year }) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const [selectedDay, setSelectedDay] = useState("1");
-  const selectedNote = sheetDb.calendar[selectedDay] || "";
-
-  function addSticker(day, sticker) {
-    const current = sheetDb.calendar[day] || "";
-    sheetDb.updateCalendarDay(day, current ? `${current} ${sticker}` : sticker);
-  }
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const scheduledPayments = sheetDb.draft.pagos
+    .filter((row) => String(row[2] || "").startsWith(monthPrefix) && row[1])
+    .sort((a, b) => String(a[2]).localeCompare(String(b[2])));
 
   return (
     <div className="monthly-calendar wide">
@@ -1923,59 +1859,34 @@ function MonthlyCalendar({ sheetDb, month, year }) {
         <h3>Calendario mensual</h3>
         <span>{monthNames[month]} {year}</span>
       </div>
-      <p>Elige un día y escribe el recordatorio en el panel. Cada mes queda guardado por separado.</p>
-      <div className="calendar-shell">
+      <p>No tienes que volver a escribir nada aquí: las fechas que eliges en “Pagos” aparecen automáticamente.</p>
+      <div className="payment-agenda">
+        <div className="list-heading"><div><h3><CalendarDays size={19} /> Próximos pagos</h3><p>{scheduledPayments.length ? `${scheduledPayments.length} pagos programados` : "Todavía no hay pagos con fecha este mes."}</p></div></div>
+        {scheduledPayments.map((row, index) => <div className="agenda-item" key={`${row[2]}-${row[1]}-${index}`}><span>{new Date(`${row[2]}T12:00:00`).toLocaleDateString("es-CL", { day: "2-digit", month: "short" })}</span><strong>{row[1]}</strong><em>{formatCurrency(row[4] || row[3])}</em><small>{row[6] === "Revisar" ? "Por revisar" : row[6] || "Por revisar"}</small></div>)}
+      </div>
+      <div className="calendar-shell simple">
         <div className="calendar-grid" aria-label={`Días de ${monthNames[month]} ${year}`}>
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = String(index + 1);
+            const dateKey = `${monthPrefix}-${day.padStart(2, "0")}`;
             const scheduled = sheetDb.draft.pagos
-              .filter((row) => normalizeText(row[2]) === normalizeText(`Día ${day}`))
+              .filter((row) => row[2] === dateKey)
               .map((row) => row[1])
               .filter(Boolean);
             const manualNote = sheetDb.calendar[day] || "";
             const note = [manualNote, ...scheduled].filter(Boolean).join(" · ");
             return (
-              <button
-                className={selectedDay === day ? "calendar-day active" : "calendar-day"}
+              <div
+                className={note ? "calendar-day has-payment" : "calendar-day"}
                 key={day}
-                type="button"
-                onClick={() => setSelectedDay(day)}
-                aria-label={`Editar día ${day}`}
+                aria-label={`Día ${day}${note ? `: ${note}` : ""}`}
               >
                 <strong>{day}</strong>
                 {note ? <span className="day-dot" /> : null}
                 <small>{note || "Libre"}</small>
-              </button>
+              </div>
             );
           })}
-        </div>
-        <div className="calendar-editor">
-          <div>
-            <span>Día {selectedDay}</span>
-            <strong>{selectedNote ? "Recordatorio activo" : "Sin recordatorio"}</strong>
-          </div>
-          <textarea
-            aria-label={`Recordatorio día ${selectedDay}`}
-            value={selectedNote}
-            onChange={(event) => sheetDb.updateCalendarDay(selectedDay, event.target.value)}
-            placeholder="Ej: pagar arriendo, revisar tarjeta, separar ahorro..."
-          />
-          <div className="calendar-stickers compact" aria-label="Marcadores para recordatorios">
-            <strong>Marcadores</strong>
-            {reminderStickers.map((sticker) => (
-              <button
-                key={sticker}
-                type="button"
-                onClick={() => addSticker(selectedDay, sticker)}
-                aria-label={`Agregar ${sticker} al día ${selectedDay}`}
-              >
-                {sticker}
-              </button>
-            ))}
-          </div>
-          <button className="clear-day" type="button" onClick={() => sheetDb.updateCalendarDay(selectedDay, "")}>
-            Limpiar día
-          </button>
         </div>
       </div>
     </div>
@@ -2040,7 +1951,7 @@ function AddRowButton({ label, onClick }) {
 }
 
 function DailyExpenseForm({ onSubmit, saving }) {
-  const today = new Date().toLocaleDateString("es-CL");
+  const today = new Date().toISOString().slice(0, 10);
   const [expense, setExpense] = useState({
     date: today,
     concept: "",
@@ -2063,16 +1974,17 @@ function DailyExpenseForm({ onSubmit, saving }) {
   return (
     <form className="daily-form wide" onSubmit={submit}>
       <h3>Agregar gasto diario</h3>
-      <div className="daily-grid">
-        <input value={expense.date} onChange={(event) => update("date", event.target.value)} aria-label="Fecha" />
-        <input
+      <p>Completa los datos básicos; la agenda actualizará tu saldo automáticamente.</p>
+      <div className="simple-entry-grid">
+        <label><span>Fecha</span><input type="date" value={expense.date} onChange={(event) => update("date", event.target.value)} aria-label="Fecha" /></label>
+        <label><span>¿En qué gastaste?</span><input
           value={expense.concept}
           onChange={(event) => update("concept", event.target.value)}
           placeholder="Concepto"
           aria-label="Concepto"
           required
-        />
-        <select
+        /></label>
+        <label><span>Categoría</span><select
           value={expense.category}
           onChange={(event) => update("category", event.target.value)}
           aria-label="Categoría"
@@ -2082,15 +1994,15 @@ function DailyExpenseForm({ onSubmit, saving }) {
               {option}
             </option>
           ))}
-        </select>
-        <input
+        </select></label>
+        <label><span>Monto</span><input
           value={expense.amount}
           onChange={(event) => update("amount", event.target.value)}
           placeholder="$"
           aria-label="Monto"
           required
-        />
-        <select
+        /></label>
+        <label><span>Forma de pago</span><select
           value={expense.method}
           onChange={(event) => update("method", event.target.value)}
           aria-label="Forma de pago"
@@ -2100,15 +2012,15 @@ function DailyExpenseForm({ onSubmit, saving }) {
               {option}
             </option>
           ))}
-        </select>
-        <input
+        </select></label>
+        <label><span>Nota opcional</span><input
           value={expense.note}
           onChange={(event) => update("note", event.target.value)}
           placeholder="Nota amable"
           aria-label="Nota amable"
-        />
+        /></label>
       </div>
-      <SaveButton label="Agregar a Gastos Diarios" saving={saving} type="submit" />
+      <SaveButton label="Agregar gasto" saving={saving} type="submit" />
     </form>
   );
 }
@@ -2138,7 +2050,7 @@ function AppShell({ auth }) {
     { id: "cierre", label: "Cierre" }
   ];
   const pageIndex = order.indexOf(current);
-  const activeSection = current === "cover" ? "configuracion" : current;
+  const activeSection = current === "cover" ? "checklist" : current;
   const progress = Math.round(((pageIndex + 1) / order.length) * 100);
   const theme = current === "cover" ? "cover" : activeSection;
 
@@ -2198,7 +2110,7 @@ function AppShell({ auth }) {
         </div>
         {current === "cover" ? (
           <>
-            <Cover onStart={() => setCurrent("configuracion")} />
+            <Cover onStart={() => setCurrent("checklist")} />
             <SyncBanner auth={auth} sheetDb={sheetDb} />
             <StatStrip sheetDb={sheetDb} />
           </>
