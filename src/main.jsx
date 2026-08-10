@@ -9,8 +9,10 @@ createRoot(document.getElementById("root")).render(
   </StrictMode>
 );
 
+// El piloto siempre debe abrir la versión publicada más reciente.
+// Retiramos el antiguo modo offline porque podía dejar atrapada la pantalla privada.
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
-  });
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => registration.unregister());
+  }).catch(() => {});
 }
