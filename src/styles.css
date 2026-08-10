@@ -425,9 +425,9 @@ code {
 .cover-media img {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
-  object-position: center 58%;
+  max-height: 620px;
+  object-fit: contain;
+  object-position: center;
   background: rgba(255, 255, 255, 0.64);
   border-radius: 14px;
   box-shadow: var(--shadow);
@@ -1383,8 +1383,12 @@ select {
 }
 
 .visual-note.wide img {
-  aspect-ratio: 16 / 7;
-  max-height: 340px;
+  width: min(100%, 680px);
+  height: auto;
+  aspect-ratio: auto;
+  max-height: 560px;
+  margin: 0 auto;
+  object-fit: contain;
 }
 
 .visual-note div {

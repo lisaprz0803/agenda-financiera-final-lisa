@@ -1302,7 +1302,7 @@ function IncomeSection({ sheetDb }) {
         <strong>Acción</strong>
       </div>
       {rows.map((row, rowIndex) => (
-        <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
+        <div className="soft-table income-table" key={`ingreso-${rowIndex}`}>
           {row.map((cell, columnIndex) => (
             <input
               aria-label={`Ingreso fila ${rowIndex + 1} columna ${columnIndex + 1}`}
@@ -1353,7 +1353,7 @@ function PaymentsSection({ sheetDb }) {
           <strong>Acción</strong>
         </div>
         {payments.map((row, rowIndex) => (
-          <div className="soft-table payments-table" key={`${row[1]}-${rowIndex}`}>
+          <div className="soft-table payments-table" key={`pago-${rowIndex}`}>
             {row.map((cell, columnIndex) => {
               const statusValue = statusOptions.includes(String(cell).trim()) ? String(cell).trim() : "Revisar";
               if (columnIndex === 0) {
@@ -1698,7 +1698,7 @@ function SavingsSection({ sheetDb }) {
         <strong>Acción</strong>
       </div>
       {rows.map((row, rowIndex) => (
-        <div className="soft-table income-table" key={`${row[0]}-${rowIndex}`}>
+        <div className="soft-table income-table" key={`ahorro-${rowIndex}`}>
           {row.map((cell, columnIndex) => (
             <input
               aria-label={`Ahorro fila ${rowIndex + 1} columna ${columnIndex + 1}`}
