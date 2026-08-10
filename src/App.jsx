@@ -64,32 +64,16 @@ const monthNames = [
 
 const sections = [
   {
-    id: "mapa",
-    label: "Mapa",
+    id: "configuracion",
+    label: "1. Configuración",
     icon: LayoutDashboard,
-    title: "Mapa de la agenda",
-    description: "Elige una sección o usa Siguiente para recorrer el prototipo completo.",
-    message: "No necesitas tener todo resuelto. Solo necesitas empezar con claridad."
-  },
-  {
-    id: "calendario",
-    label: "Calendario",
-    icon: CalendarDays,
-    title: "Calendario mensual",
-    description: "Agenda recordatorios, pagos y alertas sin llenar la pantalla de ruido.",
-    message: "Lo que tiene fecha pesa menos en la cabeza."
-  },
-  {
-    id: "checklist",
-    label: "Checklist",
-    icon: CheckCircle2,
-    title: "Checklist del mes",
-    description: "Marca cada paso sin presión y deja visible lo que ya avanzaste.",
-    message: "Pequeñas acciones repetidas también construyen estabilidad."
+    title: "Configura tu mes",
+    description: "Comienza con tu nombre y decide si usarás la agenda de forma individual o compartida.",
+    message: "Paso 1: primero dale un nombre a tu espacio y elige cómo organizarás el mes."
   },
   {
     id: "ingresos",
-    label: "Ingresos",
+    label: "2. Ingresos",
     icon: Plus,
     title: "Ingresos",
     description: "Anota tus entradas de dinero y las fechas en que esperas recibirlas.",
@@ -97,7 +81,7 @@ const sections = [
   },
   {
     id: "pagos",
-    label: "Pagos",
+    label: "3. Pagos",
     icon: CheckCircle2,
     title: "Pagos del mes",
     description: "Marca lo que ya está pagado y deja a la vista lo que necesita atención.",
@@ -105,39 +89,63 @@ const sections = [
   },
   {
     id: "hogar",
-    label: "Compartido",
+    label: "4. Compartido",
     icon: Heart,
     title: "Finanzas compartidas",
     description: "Divide gastos entre una y cuatro personas y descubre quién tiene saldo pendiente o a favor.",
     message: "Compartir las cuentas también puede sentirse claro, justo y liviano."
   },
   {
-    id: "presupuesto",
-    label: "Presupuesto",
-    icon: CircleDollarSign,
-    title: "Presupuesto",
-    description: "Ordena ingresos, gastos y decisiones antes de que el mes tome velocidad.",
-    message: "Un presupuesto no es una restricción, es una guía para cuidarte mejor."
-  },
-  {
-    id: "ahorro",
-    label: "Ahorro",
-    icon: PiggyBank,
-    title: "Ahorro",
-    description: "Visualiza tu meta y celebra cada avance pequeño sin perder el hilo.",
-    message: "Ahorrar aunque sea poco sigue siendo elegirte."
-  },
-  {
     id: "deudas",
-    label: "Deudas",
+    label: "5. Deudas",
     icon: TrendingDown,
     title: "Deudas",
     description: "Mira tus compromisos con claridad y define cuál atender primero.",
     message: "Cada gasto cuenta una historia. Mirarlo con honestidad también es avanzar."
   },
   {
+    id: "ahorro",
+    label: "6. Ahorro",
+    icon: PiggyBank,
+    title: "Ahorro",
+    description: "Visualiza tu meta y celebra cada avance pequeño sin perder el hilo.",
+    message: "Ahorrar aunque sea poco sigue siendo elegirte."
+  },
+  {
+    id: "presupuesto",
+    label: "7. Presupuesto",
+    icon: CircleDollarSign,
+    title: "Tu presupuesto disponible",
+    description: "Revisa cuánto entra, cuánto está comprometido y cuánto te va quedando.",
+    message: "Ahora que ya anotaste lo importante, puedes ver tu dinero con más claridad."
+  },
+  {
+    id: "gastos",
+    label: "8. Gastos diarios",
+    icon: TrendingDown,
+    title: "Gastos diarios",
+    description: "Registra supermercado, transporte, salidas y compras pequeñas durante el mes.",
+    message: "Anotar sin juzgar te ayuda a entender tus hábitos y decidir mejor."
+  },
+  {
+    id: "calendario",
+    label: "9. Calendario",
+    icon: CalendarDays,
+    title: "Calendario y pendientes",
+    description: "Revisa pagos con fecha, recordatorios y tareas que aún necesitan atención.",
+    message: "Lo que tiene fecha pesa menos en la cabeza."
+  },
+  {
+    id: "checklist",
+    label: "10. Checklist",
+    icon: CheckCircle2,
+    title: "Checklist del mes",
+    description: "Marca cada paso sin presión y deja visible lo que ya avanzaste.",
+    message: "Pequeñas acciones repetidas también construyen estabilidad."
+  },
+  {
     id: "cierre",
-    label: "Cierre",
+    label: "11. Cierre",
     icon: Heart,
     title: "Cierre mensual",
     description: "Registra aprendizajes, logros y ajustes para el próximo ciclo.",
@@ -998,7 +1006,7 @@ function Cover({ onStart }) {
         <p className="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
         <button className="primary-action" type="button" onClick={onStart}>
           <Sparkles size={16} />
-          Comenzar
+          Configurar mi primer mes
         </button>
       </div>
     </section>
@@ -1081,13 +1089,14 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
       <QuoteCard text={section.message} />
 
       <div className="panel-body">
-        {activeSection === "mapa" ? <MapSection onSection={onSection} /> : null}
+        {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={() => onSection("ingresos")} /> : null}
         {activeSection === "calendario" ? <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} /> : null}
         {activeSection === "checklist" ? <ChecklistSection /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
         {activeSection === "hogar" ? <HouseholdSection sheetDb={sheetDb} /> : null}
         {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} month={month} year={year} /> : null}
+        {activeSection === "gastos" ? <DailySpendingSection sheetDb={sheetDb} /> : null}
         {activeSection === "ahorro" ? <SavingsSection sheetDb={sheetDb} /> : null}
         {activeSection === "deudas" ? <DebtSection sheetDb={sheetDb} /> : null}
         {activeSection === "cierre" ? <CloseSection sheetDb={sheetDb} /> : null}
@@ -1138,6 +1147,59 @@ function MapSection({ onSection }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function SetupSection({ sheetDb, onContinue }) {
+  const members = sheetDb.household.members;
+
+  function renameMember(id, name) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      members: current.members.map((member) => member.id === id ? { ...member, name } : member)
+    }));
+  }
+
+  function addMember() {
+    if (members.length >= 4) return;
+    const id = `persona-${Date.now()}`;
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      members: [...current.members, { id, name: `Persona ${current.members.length + 1}` }]
+    }));
+  }
+
+  function removeMember(id) {
+    if (members.length === 1) return;
+    sheetDb.updateHousehold((current) => ({
+      members: current.members.filter((member) => member.id !== id),
+      expenses: current.expenses.filter((expense) => expense.paidBy !== id)
+    }));
+  }
+
+  return (
+    <div className="setup-flow">
+      <div className="step-badge">Paso 1 de 11</div>
+      <div className="setup-card">
+        <h3>¿Quién usará esta agenda?</h3>
+        <p>Empieza contigo. Si compartirás gastos, agrega a las demás personas ahora o hazlo después.</p>
+        <div className="member-grid">
+          {members.map((member, index) => (
+            <label className="member-field" key={member.id}>
+              <span>{index === 0 ? "Tu nombre" : `Persona ${index + 1}`}</span>
+              <input value={member.name} onChange={(event) => renameMember(member.id, event.target.value)} placeholder="Escribe un nombre" />
+              {members.length > 1 ? <button type="button" onClick={() => removeMember(member.id)} aria-label={`Eliminar ${member.name}`}><Trash2 size={14} /></button> : null}
+            </label>
+          ))}
+        </div>
+        <button className="add-row" type="button" onClick={addMember} disabled={members.length >= 4}><Plus size={15} /> Compartir con otra persona</button>
+      </div>
+      <div className="setup-note-card">
+        <strong>{members.length === 1 ? "Modo individual" : `Modo compartido · ${members.length} personas`}</strong>
+        <span>Puedes cambiar esto más adelante sin perder tus registros.</span>
+      </div>
+      <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>
     </div>
   );
 }
@@ -1552,6 +1614,15 @@ function BudgetSection({ sheetDb }) {
         text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
         wide
       />
+    </div>
+  );
+}
+
+function DailySpendingSection({ sheetDb }) {
+  const summary = getFinancialSummary(sheetDb.draft);
+  return (
+    <div className="form-grid">
+      <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
       <DailyExpensesList sheetDb={sheetDb} />
     </div>
@@ -1975,7 +2046,7 @@ function AppShell({ auth }) {
     { id: "cierre", label: "Cierre" }
   ];
   const pageIndex = order.indexOf(current);
-  const activeSection = current === "cover" ? "mapa" : current;
+  const activeSection = current === "cover" ? "configuracion" : current;
   const progress = Math.round(((pageIndex + 1) / order.length) * 100);
   const theme = current === "cover" ? "cover" : activeSection;
 
@@ -2035,7 +2106,7 @@ function AppShell({ auth }) {
         </div>
         {current === "cover" ? (
           <>
-            <Cover onStart={() => setCurrent("mapa")} />
+            <Cover onStart={() => setCurrent("configuracion")} />
             <SyncBanner auth={auth} sheetDb={sheetDb} />
             <StatStrip sheetDb={sheetDb} />
           </>

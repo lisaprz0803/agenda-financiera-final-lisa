@@ -1692,6 +1692,38 @@ select {
   gap: 14px;
 }
 
+.setup-flow {
+  display: grid;
+  gap: 18px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.step-badge {
+  width: fit-content;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #f5eaf8;
+  color: #76548d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.setup-card,
+.setup-note-card {
+  border: 1px solid rgba(139, 111, 104, 0.16);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 22px;
+}
+
+.setup-card h3 { margin: 0 0 6px; }
+.setup-card > p { margin: 0 0 18px; color: var(--muted); }
+.setup-card .add-row { margin-top: 16px; }
+.setup-note-card { display: flex; flex-direction: column; gap: 5px; background: #fff9ef; }
+.setup-note-card span { color: var(--muted); font-size: 13px; }
+.setup-flow > .primary-action { justify-self: end; }
+
 .balance-card,
 .member-card,
 .shared-expense-form,
