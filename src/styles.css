@@ -2,7 +2,7 @@
   color-scheme: light;
   --ink: #523b38;
   --ink-soft: #7d6260;
-  --muted: #9f827e;
+  --muted: #806b68;
   --rose: #d979a1;
   --rose-soft: #f7dce7;
   --lilac: #d8c1e6;
@@ -1941,6 +1941,7 @@ select {
 .currency-field span { font-size: 13px; font-weight: 850; color: var(--ink-soft); }
 .currency-field select, .filter-field select { min-height: 44px; border: 1px solid rgba(139,111,104,.2); border-radius: 12px; background: white; padding: 9px 12px; font: inherit; }
 .data-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.backup-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
 .danger-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; border: 1px solid #e5b3bd; border-radius: 999px; background: #fff6f7; color: #a24d65; padding: 0 16px; font-weight: 850; }
 .settings-card small { display: block; margin-top: 12px; color: var(--muted); }
 
@@ -1987,6 +1988,22 @@ select {
 .compact-edit { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .export-action { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 46px; border: 0; border-radius: 999px; background: linear-gradient(135deg,#d486af,#9c7fca); color: white; padding: 0 18px; font-weight: 900; box-shadow: 0 10px 22px rgba(145,96,142,.18); }
 .mobile-menu-button, .mobile-bottom-nav, .menu-backdrop { display: none; }
+.duplicate-row { justify-self: start; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #d7c5e2; border-radius: 999px; background: #f7f1fa; color: #745c87; padding: 0 14px; font-weight: 850; }
+.calendar-empty-action, .toggle-calendar { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; border: 1px solid #d5badf; border-radius: 999px; background: white; color: #76578a; padding: 0 16px; font-weight: 850; }
+.toggle-calendar { justify-self: start; }
+.help-tip { grid-column: 1 / -1; border: 1px solid #ded1e5; border-radius: 14px; background: #fbf7fd; padding: 10px 13px; }
+.help-tip summary { display: flex; align-items: center; gap: 7px; color: #6f587e; font-weight: 850; cursor: pointer; }
+.help-tip p { margin: 9px 0 2px; color: var(--muted); line-height: 1.5; }
+.copy-next-action { justify-self: start; display: inline-flex; align-items: center; gap: 8px; min-height: 46px; border: 1px solid #a9d0b7; border-radius: 999px; background: #eff9f2; color: #397052; padding: 0 18px; font-weight: 900; }
+.inline-success { padding: 12px 15px; border-radius: 13px; background: #e3f5e9; color: #326447; font-weight: 850; }
+.expense-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.search-field { display: flex; align-items: center; gap: 7px; min-height: 44px; border: 1px solid rgba(139,111,104,.2); border-radius: 12px; background: white; padding: 0 10px; }
+.search-field input { min-width: 120px; border: 0; outline: 0; background: transparent; }
+.home-summary-wrap { display: grid; gap: 14px; }
+.home-upcoming { display: grid; gap: 8px; padding: 16px 18px; border: 1px solid #e0c9d8; border-radius: 18px; background: rgba(255,255,255,.82); }
+.home-upcoming > div { display: flex; align-items: center; gap: 8px; color: #785c70; }
+.home-upcoming > span { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 9px 11px; border-radius: 12px; background: #fff9fb; }
+.home-upcoming em { font-style: normal; color: var(--muted); text-transform: capitalize; }
 
 /* Estados reconocibles de un vistazo */
 .status-select.status-paid,
@@ -2164,6 +2181,10 @@ select {
   .closing-dashboard { grid-template-columns: 1fr; padding: 15px; }
   .closing-metrics { grid-template-columns: repeat(3,1fr); }
   .closing-metrics > div { min-height: 108px; padding: 10px 5px; }
+  .expense-filters, .filter-field, .search-field { width: 100%; }
+  .search-field input, .filter-field select { flex: 1; width: 100%; }
+  .home-upcoming > span { grid-template-columns: 1fr auto; }
+  .home-upcoming > span strong { grid-column: 1 / -1; }
 }
 
 @media print {

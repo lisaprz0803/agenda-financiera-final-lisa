@@ -11,10 +11,14 @@ import {
   CircleDollarSign,
   Download,
   Heart,
+  HelpCircle,
   Loader2,
   LayoutDashboard,
   Menu,
   Pencil,
+  Copy,
+  Search,
+  Upload,
   LogOut,
   PiggyBank,
   Plus,
@@ -625,6 +629,10 @@ function getFinancialSummary(draft) {
   };
 }
 
+function hasMeaningfulPayment(row) {
+  return Boolean(String(row?.[1] || "").trim() || parseMoney(row?.[4] || row?.[3]));
+}
+
 function getBalanceStatus(value) {
   if (value > 0) return { label: "Saldo a favor", helper: "Después de cubrir lo planificado, este dinero quedaría disponible.", tone: "positive" };
   if (value < 0) return { label: "Saldo en contra", helper: "Tus compromisos superan tus ingresos. Revisa pagos, gastos o ahorro.", tone: "negative" };
@@ -812,6 +820,7 @@ function useSheetDatabase(auth, monthKey) {
       persistMonth(nextDraft);
       return nextDraft;
     });
+    setStatus((current) => ({ ...current, loaded: true, message: "Cambios guardados automáticamente.", error: "" }));
   }
 
   function addRow(section, template = []) {
@@ -820,6 +829,7 @@ function useSheetDatabase(auth, monthKey) {
       persistMonth(nextDraft);
       return nextDraft;
     });
+    setStatus((current) => ({ ...current, loaded: true, message: "Nueva línea agregada y guardada.", error: "" }));
   }
 
   function removeLocalRow(section, rowIndex) {
@@ -991,6 +1001,34 @@ function useSheetDatabase(auth, monthKey) {
       persistMonth(draft, calendar, reflection, nextHousehold);
       return nextHousehold;
     });
+    setStatus((current) => ({ ...current, loaded: true, message: "Cambios guardados automáticamente.", error: "" }));
+  }
+
+  async function copyPlanToNextMonth() {
+    const [yearText, monthText] = monthKey.split("-");
+    const nextDate = new Date(Number(yearText), Number(monthText), 1);
+    const nextKey = getMonthKey(nextDate.getMonth(), nextDate.getFullYear());
+    const userKey = getUserKey(auth);
+    const existing = readLocalMonth(userKey, nextKey) || {};
+    const nextDraft = cleanDraftData({
+      ...(existing.draft || emptySheetData()),
+      pagos: draft.pagos.filter(hasMeaningfulPayment).map((row) => [...row.slice(0, 2), "", ...row.slice(3, 6), "Pendiente", row[7]]),
+      ahorros: draft.ahorros.filter((row) => row[0] || parseMoney(row[1])).map((row) => [row[0], row[1], "", row[3], row[4]])
+    });
+    writeLocalMonth(userKey, nextKey, { ...existing, draft: nextDraft, household: existing.household || household, calendar: existing.calendar || {}, reflection: existing.reflection || "", updatedAt: new Date().toISOString() });
+    setStatus((current) => ({ ...current, message: `Pagos y metas copiados a ${monthNames[nextDate.getMonth()]} ${nextDate.getFullYear()}.`, error: "" }));
+  }
+
+  async function importBackup(file) {
+    try {
+      const payload = JSON.parse(await file.text());
+      if (!payload || typeof payload !== "object") throw new Error("invalid");
+      localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify(payload));
+      await loadMonthData();
+      setStatus((current) => ({ ...current, message: "Respaldo importado correctamente.", error: "" }));
+    } catch {
+      setStatus((current) => ({ ...current, error: "No se pudo importar ese archivo de respaldo.", message: "" }));
+    }
   }
 
   async function resetMonth() {
@@ -1040,7 +1078,9 @@ function useSheetDatabase(auth, monthKey) {
     updateReflection,
     updateHousehold,
     resetMonth,
-    loadExampleData
+    loadExampleData,
+    copyPlanToNextMonth,
+    importBackup
   };
 }
 
@@ -1073,7 +1113,7 @@ function StatStrip({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
   const balanceStatus = getBalanceStatus(summary.projectedBalance);
   const hasData = summary.incomeTotal || summary.monthlyPayments || summary.dailyExpenses || summary.savingsTarget;
-  const paymentsDone = sheetDb.draft.pagos.filter((row) => String(row[6] || "").toLowerCase().includes("pagado")).length;
+  const upcomingPayments = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[2] && row[6] !== "Pagado").sort((a, b) => String(a[2]).localeCompare(String(b[2]))).slice(0, 3);
   const liveStats = [
     { label: "Ingresos", value: formatCurrency(summary.incomeTotal), helper: "Ingresos registrados" },
     { label: "Ahorro", value: `${summary.savingsProgress}%`, helper: "Meta vs. separado" },
@@ -1081,7 +1121,7 @@ function StatStrip({ sheetDb }) {
   ];
   if (!hasData) return <div className="empty-home"><div><Sparkles size={22} /><strong>Tu agenda está lista</strong><span>Comienza agregando tu primer ingreso. Todo se guardará automáticamente.</span></div><small>1. Elige tu modo · 2. Agrega ingresos · 3. Registra pagos</small></div>;
   return (
-    <div className="stat-strip" aria-label="Resumen">
+    <div className="home-summary-wrap"><div className="stat-strip" aria-label="Resumen">
       {(sheetDb.status.loaded ? liveStats : quickStats).map((stat) => (
         <div className="stat" key={stat.label}>
           <span>{stat.label}</span>
@@ -1089,7 +1129,7 @@ function StatStrip({ sheetDb }) {
           <small>{stat.helper}</small>
         </div>
       ))}
-    </div>
+    </div>{upcomingPayments.length ? <section className="home-upcoming"><div><CalendarDays size={20} /><strong>Pagos que vencen pronto</strong></div>{upcomingPayments.map((row, index) => <span key={`${row[1]}-${index}`}><b>{row[1]}</b><em>{new Date(`${row[2]}T12:00:00`).toLocaleDateString("es-CL", { day: "2-digit", month: "short" })}</em><strong>{formatCurrency(row[4] || row[3])}</strong></span>)}</section> : null}</div>
   );
 }
 
@@ -1183,12 +1223,6 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
             <p>{section.description}</p>
           </div>
         </div>
-        <div className="panel-actions">
-          <button className="utility-button" type="button" onClick={() => window.print()}>
-            <Download size={16} />
-            Imprimir
-          </button>
-        </div>
       </header>
 
       <SyncBanner auth={auth} sheetDb={sheetDb} />
@@ -1205,7 +1239,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
               text="Tus pagos registrados aparecerán aquí para que puedas anticiparte con calma."
               wide
             />
-            <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} />
+            <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} onSection={onSection} />
           </div>
         ) : null}
         {activeSection === "checklist" ? <ChecklistSection sheetDb={sheetDb} onSection={onSection} /> : null}
@@ -1270,6 +1304,7 @@ function MapSection({ onSection }) {
 
 function SetupSection({ sheetDb, onContinue }) {
   const members = sheetDb.household.members;
+  const backupInputRef = useRef(null);
 
   function selectMode(mode) {
     sheetDb.updateHousehold((current) => ({
@@ -1288,6 +1323,16 @@ function SetupSection({ sheetDb, onContinue }) {
 
   function confirmReset() {
     if (window.confirm("¿Quieres borrar los datos de este mes y comenzar desde cero? Esta acción no se puede deshacer.")) sheetDb.resetMonth();
+  }
+
+  function exportBackup() {
+    const data = localStorage.getItem(MONTHLY_STORE_KEY) || "{}";
+    const blob = new Blob([data], { type: "application/json" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `respaldo-agenda-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
   }
 
   function renameMember(id, name) {
@@ -1359,7 +1404,8 @@ function SetupSection({ sheetDb, onContinue }) {
         <h3>Preferencias de tu agenda</h3>
         <label className="currency-field"><span>Moneda</span><select value={sheetDb.household.currency || "CLP"} onChange={(event) => selectCurrency(event.target.value)}><option value="CLP">Peso chileno (CLP)</option><option value="USD">Dólar (USD)</option><option value="EUR">Euro (EUR)</option><option value="ARS">Peso argentino (ARS)</option><option value="MXN">Peso mexicano (MXN)</option></select></label>
         <div className="data-actions"><button type="button" className="add-row" onClick={sheetDb.loadExampleData}><Sparkles size={15} /> Cargar datos de ejemplo</button><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Comenzar desde cero</button></div>
-        <small>Los datos de ejemplo sirven para aprender. “Comenzar desde cero” limpia solamente el mes seleccionado.</small>
+        <div className="backup-actions"><button type="button" className="add-row" onClick={exportBackup}><Download size={15} /> Descargar respaldo</button><button type="button" className="add-row" onClick={() => backupInputRef.current?.click()}><Upload size={15} /> Importar respaldo</button><input ref={backupInputRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) sheetDb.importBackup(file); event.target.value = ""; }} /></div>
+        <small>Tus datos se guardan en este dispositivo. Descarga un respaldo si cambiarás de teléfono o computador. “Comenzar desde cero” limpia solamente el mes seleccionado.</small>
       </div>
       <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>
     </div>
@@ -1457,7 +1503,6 @@ function IncomeSection({ sheetDb }) {
         <span>Total de ingresos</span>
         <strong>{formatCurrency(getFinancialSummary(sheetDb.draft).incomeTotal)}</strong>
       </div>
-      <SaveButton label="Guardar ingresos" onClick={() => sheetDb.saveSection("ingresos")} saving={sheetDb.status.saving} />
     </div>
   );
 }
@@ -1491,13 +1536,13 @@ function PaymentsSection({ sheetDb }) {
               disabled={sheetDb.status.saving}
               onClick={() => sheetDb.deleteRow("pagos", rowIndex)}
             />
+            <button className="duplicate-row" type="button" onClick={() => sheetDb.addRow("pagos", [...row])}><Copy size={15} /> Duplicar este pago</button>
           </div>
         ))}
       <div className="formula-note">
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
       </div>
-      <SaveButton label="Guardar pagos" onClick={() => sheetDb.saveSection("pagos")} saving={sheetDb.status.saving} />
     </div>
   );
 }
@@ -1721,11 +1766,11 @@ function BudgetSection({ sheetDb }) {
   const balanceStatus = getBalanceStatus(adjustedProjectedBalance);
   return (
     <div className="form-grid">
-      <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Suma de Ingresos" />
-      <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Suma de Mi parte" />
+      <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Todo el dinero que esperas recibir" />
+      <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Total que te corresponde pagar" />
       <ReadOnlyCard label="Gastos diarios" value={formatCurrency(summary.dailyExpenses)} helper={`${dailyExpenses} registros`} />
-      <ReadOnlyCard label="Meta de ahorro" value={formatCurrency(summary.savingsTarget)} helper="Suma de metas de Ahorros" />
-      <ReadOnlyCard label={`Aporte compartido · ${personalMember?.name || "Yo"}`} value={formatCurrency(sharedCommitment)} helper="Calculado desde Finanzas compartidas" />
+      <ReadOnlyCard label="Meta de ahorro" value={formatCurrency(summary.savingsTarget)} helper="Todo lo que quieres separar este mes" />
+      <ReadOnlyCard label={`Tu parte compartida · ${personalMember?.name || "Yo"}`} value={formatCurrency(sharedCommitment)} helper="Tu parte de los gastos compartidos" />
       <BudgetChart summary={summary} />
       <ReadOnlyCard
         label={balanceStatus.label}
@@ -1733,8 +1778,10 @@ function BudgetSection({ sheetDb }) {
         helper={balanceStatus.helper}
         wide
       />
-      <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Ingresos recibidos - pagos pagados - gastos - ahorro separado" wide />
-      <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
+      <HelpTip text="Este resultado mira todo el mes: ingresos esperados menos pagos, gastos, ahorro y tu parte compartida." />
+      <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Dinero realmente disponible en este momento" wide />
+      <HelpTip text="Cuenta solamente el dinero que ya recibiste y descuenta lo que ya pagaste, gastaste o separaste." />
+      <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Lo que todavía falta para completar tu meta" />
       <VisualNote
         image={dailyBanner}
         alt="Plan financiero con cuaderno, calculadora y gráficos"
@@ -1790,7 +1837,6 @@ function SavingsSection({ sheetDb }) {
       ))}
       <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
-      <SaveButton label="Guardar ahorros" onClick={() => sheetDb.saveSection("ahorros")} saving={sheetDb.status.saving} />
     </div>
   );
 }
@@ -1862,7 +1908,8 @@ function DebtSection({ sheetDb }) {
       <div className="debt-list">
         {debts.length ? debts.map((debt) => {
           const percent = debt.installmentsTotal ? Math.min(100, Math.round((debt.installmentsPaid / debt.installmentsTotal) * 100)) : 0;
-          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(debt.total)}</strong><small>Cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Has pagado {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
+          const remaining = debt.installmentsTotal && debt.installment ? Math.max(0, (debt.installmentsTotal - debt.installmentsPaid) * debt.installment) : debt.total;
+          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Falta por pagar · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Has pagado {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
     </div>
@@ -1872,8 +1919,8 @@ function DebtSection({ sheetDb }) {
 function CloseSection({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
   const balanceStatus = getBalanceStatus(summary.projectedBalance);
-  const paidCount = sheetDb.draft.pagos.filter((row) => row[6] === "Pagado").length;
-  const pendingCount = sheetDb.draft.pagos.filter((row) => row[6] === "Pendiente").length;
+  const paidCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pagado").length;
+  const pendingCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pendiente").length;
 
   function addSticker(sticker) {
     const label = `${sticker.icon} ${sticker.label}`;
@@ -1894,6 +1941,7 @@ function CloseSection({ sheetDb }) {
         <div className="closing-savings"><span>Ahorro separado</span><strong>{formatCurrency(summary.savingsSaved)}</strong><i><b style={{ width: `${summary.savingsProgress}%` }} /></i></div>
       </section>
       <button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Exportar cierre a PDF</button>
+      <button className="copy-next-action" type="button" onClick={sheetDb.copyPlanToNextMonth}><Copy size={17} /> Copiar pagos y metas al mes siguiente</button>
       <div className="sticker-board" aria-label="Stickers de progreso">
         {progressStickers.map((sticker) => (
           <button key={sticker.label} type="button" onClick={() => addSticker(sticker)}>
@@ -1949,6 +1997,10 @@ function ReadOnlyCard({ label, value, helper, wide = false }) {
   );
 }
 
+function HelpTip({ text }) {
+  return <details className="help-tip"><summary><HelpCircle size={16} /> ¿Qué significa?</summary><p>{text}</p></details>;
+}
+
 function BudgetChart({ summary }) {
   const items = [
     { label: "Pagos", value: summary.monthlyPayments },
@@ -1978,7 +2030,8 @@ function BudgetChart({ summary }) {
   );
 }
 
-function MonthlyCalendar({ sheetDb, month, year }) {
+function MonthlyCalendar({ sheetDb, month, year, onSection }) {
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
   const scheduledPayments = sheetDb.draft.pagos
@@ -1995,8 +2048,10 @@ function MonthlyCalendar({ sheetDb, month, year }) {
       <div className="payment-agenda">
         <div className="list-heading"><div><h3><CalendarDays size={19} /> Próximos pagos</h3><p>{scheduledPayments.length ? `${scheduledPayments.length} pagos programados` : "Todavía no hay pagos con fecha este mes."}</p></div></div>
         {scheduledPayments.map((row, index) => <div className="agenda-item" key={`${row[2]}-${row[1]}-${index}`}><span>{new Date(`${row[2]}T12:00:00`).toLocaleDateString("es-CL", { day: "2-digit", month: "short" })}</span><strong>{row[1]}</strong><em>{formatCurrency(row[4] || row[3])}</em><small>{row[6] === "Revisar" ? "Por revisar" : row[6] || "Por revisar"}</small></div>)}
+        {!scheduledPayments.length ? <button className="calendar-empty-action" type="button" onClick={() => onSection("pagos")}><Plus size={16} /> Agregar un pago con fecha</button> : null}
       </div>
-      <div className="calendar-shell simple">
+      {scheduledPayments.length ? <button className="toggle-calendar" type="button" onClick={() => setShowFullCalendar((value) => !value)}><CalendarDays size={16} /> {showFullCalendar ? "Ocultar calendario completo" : "Ver calendario completo"}</button> : null}
+      {showFullCalendar && scheduledPayments.length ? <div className="calendar-shell simple">
         <div className="calendar-grid" aria-label={`Días de ${monthNames[month]} ${year}`}>
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = String(index + 1);
@@ -2020,7 +2075,7 @@ function MonthlyCalendar({ sheetDb, month, year }) {
             );
           })}
         </div>
-      </div>
+      </div> : null}
     </div>
   );
 }
@@ -2028,14 +2083,15 @@ function MonthlyCalendar({ sheetDb, month, year }) {
 function DailyExpensesList({ sheetDb }) {
   const rows = sheetDb.draft.gastos;
   const [filter, setFilter] = useState("Todas");
+  const [search, setSearch] = useState("");
   const [editing, setEditing] = useState(null);
-  const visibleRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => filter === "Todas" || row[2] === filter);
+  const visibleRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => (filter === "Todas" || row[2] === filter) && (!search.trim() || normalizeText(row.join(" ")).includes(normalizeText(search))));
 
   return (
     <div className="daily-list wide">
       <div className="list-heading">
         <h3>Gastos del mes</h3>
-        <label className="filter-field"><span>Filtrar</span><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>Todas</option>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+        <div className="expense-filters"><label className="search-field"><Search size={15} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar gasto" aria-label="Buscar gasto" /></label><label className="filter-field"><span>Filtrar</span><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>Todas</option>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label></div>
       </div>
       <div className="expense-card-list" aria-label="Gastos diarios registrados">
         {visibleRows.length ? visibleRows.map(({ row, index: rowIndex }) => (
@@ -2082,6 +2138,7 @@ function DailyExpenseForm({ onSubmit, saving }) {
     method: "Transferencia",
     note: ""
   });
+  const [success, setSuccess] = useState("");
 
   function update(field, value) {
     setExpense((current) => ({ ...current, [field]: value }));
@@ -2091,6 +2148,8 @@ function DailyExpenseForm({ onSubmit, saving }) {
     event.preventDefault();
     await onSubmit(expense);
     setExpense({ date: today, concept: "", category: "Servicios", amount: "", method: "Transferencia", note: "" });
+    setSuccess("✓ Gasto agregado correctamente.");
+    window.setTimeout(() => setSuccess(""), 3000);
   }
 
   return (
@@ -2143,6 +2202,7 @@ function DailyExpenseForm({ onSubmit, saving }) {
         /></label>
       </div>
       <SaveButton label="Agregar gasto" saving={saving} type="submit" />
+      {success ? <div className="inline-success" role="status">{success}</div> : null}
     </form>
   );
 }
@@ -2205,6 +2265,12 @@ function AppShell({ auth }) {
     setCurrent(section);
     setMenuOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToQuickExpense() {
+    setCurrent("gastos");
+    setMenuOpen(false);
+    window.setTimeout(() => document.querySelector(".daily-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
 
   return (
@@ -2284,7 +2350,7 @@ function AppShell({ auth }) {
           <ArrowRight size={15} />
         </button>
       </footer>
-      <nav className="mobile-bottom-nav" aria-label="Acciones rápidas"><button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={() => goTo("gastos")}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button></nav>
+      <nav className="mobile-bottom-nav" aria-label="Acciones rápidas"><button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button></nav>
     </div>
   );
 }
