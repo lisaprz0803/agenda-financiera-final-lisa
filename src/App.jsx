@@ -1135,7 +1135,7 @@ function StatStrip({ sheetDb }) {
 
 function Cover({ onStart }) {
   return (
-    <section className="cover-screen">
+    <section className="cover-screen page-transition">
       <div className="cover-media">
         <img src={heroCoverV2} alt="Alcancía, agenda, calendario, calculadora y billetera en tonos pastel" />
       </div>
@@ -1212,7 +1212,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
   const Icon = section.icon;
 
   return (
-    <article className="planner-panel">
+    <article className="planner-panel page-transition">
       <header className="panel-header">
         <div className="title-lockup">
           <div className="title-icon">
@@ -2326,6 +2326,7 @@ function AppShell({ auth }) {
               onSection={goTo}
             />
             <PlannerPanel
+              key={activeSection}
               activeSection={activeSection}
               onSection={goTo}
               auth={auth}
