@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import {
@@ -2254,6 +2254,10 @@ function AppShell({ auth }) {
   const progress = Math.round(((pageIndex + 1) / order.length) * 100);
   const theme = current === "cover" ? "cover" : activeSection;
 
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [current]);
+
   function changeMonth(delta) {
     setMonth((value) => {
       const next = value + delta;
@@ -2272,13 +2276,11 @@ function AppShell({ auth }) {
   function move(delta) {
     const nextIndex = Math.max(0, Math.min(order.length - 1, pageIndex + delta));
     setCurrent(order[nextIndex]);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goTo(section) {
     setCurrent(section);
     setMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goToQuickExpense() {
@@ -2289,6 +2291,7 @@ function AppShell({ auth }) {
 
   return (
     <div className={`app-shell theme-${theme}`}>
+      <div className="page-transition-flourish" key={`flourish-${current}`} aria-hidden="true"><span>✦</span></div>
       <header className="topbar">
         <div className="brand">
           <Sparkles size={16} />
