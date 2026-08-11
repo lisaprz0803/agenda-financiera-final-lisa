@@ -13,6 +13,8 @@ import {
   Heart,
   Loader2,
   LayoutDashboard,
+  Menu,
+  Pencil,
   LogOut,
   PiggyBank,
   Plus,
@@ -21,6 +23,7 @@ import {
   Sparkles,
   Trash2,
   TrendingDown
+  ,X
 } from "lucide-react";
 import heroPlanner from "../assets/hero-plata.jpg";
 import coverPiggy from "../assets/cover-piggy.jpeg";
@@ -180,14 +183,14 @@ const quickStats = [
 ];
 
 const checklistItems = [
-  "Elegir modo individual o compartido",
-  "Agregar mis ingresos",
-  "Registrar pagos importantes",
-  "Anotar mis deudas",
-  "Crear una meta de ahorro",
-  "Revisar mi presupuesto disponible",
-  "Registrar gastos diarios",
-  "Hacer el cierre del mes"
+  { id: "setup", label: "Elegir modo individual o compartido", section: "configuracion", action: "Configurar ahora" },
+  { id: "income", label: "Agregar mis ingresos", section: "ingresos", action: "Agregar ingreso" },
+  { id: "payments", label: "Registrar pagos importantes", section: "pagos", action: "Registrar pago" },
+  { id: "debts", label: "Anotar mis deudas", section: "deudas", action: "Agregar deuda" },
+  { id: "savings", label: "Crear una meta de ahorro", section: "ahorro", action: "Crear meta" },
+  { id: "budget", label: "Revisar mi presupuesto disponible", section: "presupuesto", action: "Ver presupuesto" },
+  { id: "expenses", label: "Registrar gastos diarios", section: "gastos", action: "Agregar gasto" },
+  { id: "close", label: "Hacer el cierre del mes", section: "cierre", action: "Cerrar el mes" }
 ];
 
 const statusOptions = ["Pagado", "Pendiente", "Por revisar"];
@@ -238,8 +241,10 @@ const rowTemplates = {
 
 const defaultHousehold = {
   mode: "individual",
+  currency: "CLP",
   members: [{ id: "persona-1", name: "Persona 1" }],
-  expenses: []
+  expenses: [],
+  debts: []
 };
 
 function normalizeHousehold(value) {
@@ -262,7 +267,19 @@ function normalizeHousehold(value) {
         shares: Object.fromEntries(members.map((member) => [member.id, Number(expense.shares?.[member.id]) || 0]))
       }))
     : [];
-  return { mode: value?.mode === "shared" ? "shared" : "individual", members, expenses };
+  const debts = Array.isArray(value?.debts) ? value.debts.map((debt) => ({
+    id: String(debt.id || `${Date.now()}-${Math.random()}`),
+    name: String(debt.name || ""),
+    total: Number(debt.total) || 0,
+    installment: Number(debt.installment) || 0,
+    installmentsTotal: Number(debt.installmentsTotal) || 0,
+    installmentsPaid: Number(debt.installmentsPaid) || 0,
+    nextDate: String(debt.nextDate || ""),
+    status: statusOptions.includes(debt.status) ? debt.status : "Por revisar",
+    priority: String(debt.priority || "Media")
+  })) : [];
+  const currency = ["CLP", "USD", "EUR", "ARS", "MXN"].includes(value?.currency) ? value.currency : "CLP";
+  return { mode: value?.mode === "shared" ? "shared" : "individual", currency, members, expenses, debts };
 }
 
 function getHouseholdBalances(household) {
@@ -343,6 +360,16 @@ function writeLocalMonth(userKey, monthKey, payload) {
     localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify({ ...allData, [userKey]: { ...userData, [monthKey]: payload } }));
   } catch {
     // Local persistence is best effort.
+  }
+}
+
+function removeLocalMonth(userKey, monthKey) {
+  try {
+    const allData = JSON.parse(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+    if (allData[userKey]) delete allData[userKey][monthKey];
+    localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify(allData));
+  } catch {
+    // Local cleanup is best effort.
   }
 }
 
@@ -555,10 +582,16 @@ function parseMoney(value) {
   return Number(cleaned) || 0;
 }
 
-function formatCurrency(value) {
+function formatMoneyEntry(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits ? new Intl.NumberFormat("es-CL").format(Number(digits)) : "";
+}
+
+function formatCurrency(value, currency) {
+  const selectedCurrency = currency || (typeof localStorage !== "undefined" ? localStorage.getItem("agenda_financiera_currency") : "CLP") || "CLP";
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
-    currency: "CLP",
+    currency: selectedCurrency,
     maximumFractionDigits: 0
   }).format(Number(value) || 0);
 }
@@ -690,7 +723,7 @@ function useSheetDatabase(auth, monthKey) {
         loading: false,
         saving: false,
         loaded: Boolean(payload),
-        message: payload ? "Mes cargado desde Firebase/local." : "Mes nuevo listo para registrar datos.",
+        message: payload ? "Tu mes está listo y tus cambios están guardados." : "Mes nuevo listo para registrar datos.",
         error: ""
       });
     } catch {
@@ -705,7 +738,7 @@ function useSheetDatabase(auth, monthKey) {
         loading: false,
         saving: false,
         loaded: Boolean(payload),
-        message: "Usando respaldo local del mes.",
+        message: "Tu mes está listo y tus cambios están guardados.",
         error: ""
       });
     }
@@ -949,6 +982,36 @@ function useSheetDatabase(auth, monthKey) {
     });
   }
 
+  async function resetMonth() {
+    const nextDraft = emptySheetData();
+    const nextHousehold = normalizeHousehold(defaultHousehold);
+    removeLocalMonth(getUserKey(auth), monthKey);
+    setDraft(nextDraft);
+    setSheetData(nextDraft);
+    setCalendar({});
+    setReflection("");
+    setHousehold(nextHousehold);
+    localStorage.removeItem(CHECKLIST_STORAGE_KEY);
+    await persistMonth(nextDraft, {}, "", nextHousehold);
+    setStatus((current) => ({ ...current, loaded: false, message: "Mes reiniciado. Ya puedes comenzar desde cero.", error: "" }));
+  }
+
+  async function loadExampleData() {
+    const today = new Date().toISOString().slice(0, 10);
+    const nextDraft = cleanDraftData({
+      ingresos: [["Sueldo", today, "1200000", "Pagado", "Ejemplo"]],
+      pagos: [["Vivienda", "Arriendo", today, "", "420000", "", "Pendiente", "Transferencia"]],
+      gastos: [[today, "Supermercado", "Supermercado", "45000", "Débito", "Ejemplo"]],
+      ahorros: [["Fondo de emergencia", "150000", "50000", today, "Ejemplo"]]
+    });
+    const nextHousehold = normalizeHousehold({ ...household, debts: [{ id: `${Date.now()}`, name: "Tarjeta", total: 300000, installment: 50000, installmentsTotal: 6, installmentsPaid: 2, nextDate: today, status: "Pendiente", priority: "Alta" }] });
+    setDraft(nextDraft);
+    setSheetData(nextDraft);
+    setHousehold(nextHousehold);
+    await persistMonth(nextDraft, calendar, reflection, nextHousehold);
+    setStatus((current) => ({ ...current, loaded: true, message: "Datos de ejemplo cargados. Puedes reemplazarlos o reiniciar el mes.", error: "" }));
+  }
+
   return {
     sheetData,
     draft,
@@ -964,7 +1027,9 @@ function useSheetDatabase(auth, monthKey) {
     deleteRow,
     updateCalendarDay,
     updateReflection,
-    updateHousehold
+    updateHousehold,
+    resetMonth,
+    loadExampleData
   };
 }
 
@@ -995,12 +1060,14 @@ function AuthGate({ auth }) {
 
 function StatStrip({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
+  const hasData = summary.incomeTotal || summary.monthlyPayments || summary.dailyExpenses || summary.savingsTarget;
   const paymentsDone = sheetDb.draft.pagos.filter((row) => String(row[6] || "").toLowerCase().includes("pagado")).length;
   const liveStats = [
-    { label: "Ingreso base", value: formatCurrency(summary.incomeTotal), helper: "Desde hoja Ingresos" },
+    { label: "Ingresos", value: formatCurrency(summary.incomeTotal), helper: "Ingresos registrados" },
     { label: "Ahorro", value: `${summary.savingsProgress}%`, helper: "Meta vs. separado" },
     { label: "Saldo proyectado", value: formatCurrency(summary.projectedBalance), helper: `${paymentsDone} pagos marcados` }
   ];
+  if (!hasData) return <div className="empty-home"><div><Sparkles size={22} /><strong>Tu agenda está lista</strong><span>Comienza agregando tu primer ingreso. Todo se guardará automáticamente.</span></div><small>1. Elige tu modo · 2. Agrega ingresos · 3. Registra pagos</small></div>;
   return (
     <div className="stat-strip" aria-label="Resumen">
       {(sheetDb.status.loaded ? liveStats : quickStats).map((stat) => (
@@ -1033,6 +1100,7 @@ function Cover({ onStart }) {
           <CheckCircle2 size={16} />
           Ver por dónde empezar
         </button>
+        <div className="onboarding-steps"><span><b>1</b> Elige tu modo</span><span><b>2</b> Registra lo importante</span><span><b>3</b> Mira cuánto te queda</span></div>
       </div>
     </section>
   );
@@ -1075,7 +1143,7 @@ function Sidebar({ activeSection, month, year, progress, onMonth, onSection }) {
 
       <div className="progress-card">
         <div>
-          <span>Avance del prototipo</span>
+          <span>Avance del mes</span>
           <strong>{progress}%</strong>
         </div>
         <div className="progress-track">
@@ -1127,7 +1195,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
             <MonthlyCalendar sheetDb={sheetDb} month={month} year={year} />
           </div>
         ) : null}
-        {activeSection === "checklist" ? <ChecklistSection /> : null}
+        {activeSection === "checklist" ? <ChecklistSection sheetDb={sheetDb} onSection={onSection} /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
         {activeSection === "hogar" ? <HouseholdSection sheetDb={sheetDb} /> : null}
@@ -1153,7 +1221,7 @@ function QuoteCard({ text }) {
 function SyncBanner({ auth, sheetDb }) {
   return (
     <div className={sheetDb.status.error ? "sync-banner error" : "sync-banner"}>
-      <span>{sheetDb.status.error || "✓ Guardado automático activado. No necesitas conectar Google Sheets."}</span>
+      <span>{sheetDb.status.error || (sheetDb.status.message && !sheetDb.status.message.includes("Google") ? `✓ ${sheetDb.status.message}` : "✓ Guardado automáticamente en este dispositivo.")}</span>
     </div>
   );
 }
@@ -1198,6 +1266,15 @@ function SetupSection({ sheetDb, onContinue }) {
         ? [...current.members, { id: `persona-${Date.now()}`, name: "Persona 2" }]
         : current.members
     }));
+  }
+
+  function selectCurrency(currency) {
+    localStorage.setItem("agenda_financiera_currency", currency);
+    sheetDb.updateHousehold((current) => ({ ...current, currency }));
+  }
+
+  function confirmReset() {
+    if (window.confirm("¿Quieres borrar los datos de este mes y comenzar desde cero? Esta acción no se puede deshacer.")) sheetDb.resetMonth();
   }
 
   function renameMember(id, name) {
@@ -1265,12 +1342,18 @@ function SetupSection({ sheetDb, onContinue }) {
         <strong>{sheetDb.household.mode === "individual" ? "Modo individual" : `Modo compartido · ${members.length} personas`}</strong>
         <span>Puedes cambiar esto más adelante sin perder tus registros.</span>
       </div>
+      <div className="setup-card settings-card">
+        <h3>Preferencias de tu agenda</h3>
+        <label className="currency-field"><span>Moneda</span><select value={sheetDb.household.currency || "CLP"} onChange={(event) => selectCurrency(event.target.value)}><option value="CLP">Peso chileno (CLP)</option><option value="USD">Dólar (USD)</option><option value="EUR">Euro (EUR)</option><option value="ARS">Peso argentino (ARS)</option><option value="MXN">Peso mexicano (MXN)</option></select></label>
+        <div className="data-actions"><button type="button" className="add-row" onClick={sheetDb.loadExampleData}><Sparkles size={15} /> Cargar datos de ejemplo</button><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Comenzar desde cero</button></div>
+        <small>Los datos de ejemplo sirven para aprender. “Comenzar desde cero” limpia solamente el mes seleccionado.</small>
+      </div>
       <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>
     </div>
   );
 }
 
-function ChecklistSection() {
+function ChecklistSection({ sheetDb, onSection }) {
   const [checked, setChecked] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(CHECKLIST_STORAGE_KEY) || "{}");
@@ -1281,13 +1364,24 @@ function ChecklistSection() {
 
   function toggle(item) {
     setChecked((current) => {
-      const next = { ...current, [item]: !current[item] };
+      const next = { ...current, [item.id]: !current[item.id] };
       localStorage.setItem(CHECKLIST_STORAGE_KEY, JSON.stringify(next));
       return next;
     });
   }
 
-  const done = checklistItems.filter((item) => checked[item]).length;
+  const automatic = {
+    setup: Boolean(sheetDb.household.members[0]?.name && sheetDb.household.members[0].name !== "Persona 1"),
+    income: sheetDb.draft.ingresos.some((row) => parseMoney(row[2]) > 0),
+    payments: sheetDb.draft.pagos.some((row) => parseMoney(row[4] || row[3]) > 0),
+    debts: sheetDb.household.debts.length > 0,
+    savings: sheetDb.draft.ahorros.some((row) => parseMoney(row[1]) > 0),
+    budget: Boolean(checked.budget),
+    expenses: sheetDb.draft.gastos.length > 0,
+    close: Boolean(sheetDb.reflection.trim() || checked.close)
+  };
+  const isDone = (item) => Boolean(automatic[item.id] || checked[item.id]);
+  const done = checklistItems.filter(isDone).length;
 
   return (
     <div className="checklist-layout">
@@ -1299,10 +1393,11 @@ function ChecklistSection() {
         <p>Marca cada paso sin presión. No se trata de hacerlo perfecto, se trata de hacerlo visible.</p>
         <div className="checklist-items">
           {checklistItems.map((item) => (
-            <label className={checked[item] ? "task checked" : "task"} key={item}>
-              <input type="checkbox" checked={Boolean(checked[item])} onChange={() => toggle(item)} />
-              <span>{item}</span>
-            </label>
+            <div className={isDone(item) ? "task checked" : "task"} key={item.id}>
+              <input aria-label={`Marcar ${item.label}`} type="checkbox" checked={isDone(item)} onChange={() => toggle(item)} />
+              <span>{item.label}</span>
+              <button type="button" onClick={() => { if (item.id === "budget") toggle(item); onSection(item.section); }}>{isDone(item) ? "Revisar" : item.action}<ArrowRight size={14} /></button>
+            </div>
           ))}
         </div>
       </div>
@@ -1334,7 +1429,7 @@ function IncomeSection({ sheetDb }) {
           <div className="simple-entry-grid">
             <label><span>Fuente</span><input value={row[0]} placeholder="Ej: sueldo" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 0, e.target.value)} /></label>
             <label><span>Fecha en que lo recibes</span><input type="date" value={row[1]} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 1, e.target.value)} /></label>
-            <label><span>Monto</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 2, e.target.value)} /></label>
+            <label><span>Monto</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 2, formatMoneyEntry(e.target.value))} /></label>
             <label><span>Estado</span><select value={statusOptions.includes(row[3]) ? row[3] : "Por revisar"} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 3, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
             <label className="wide"><span>Nota opcional</span><input value={row[4]} placeholder="Ej: pago variable" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 4, e.target.value)} /></label>
           </div>
@@ -1374,7 +1469,7 @@ function PaymentsSection({ sheetDb }) {
               <label><span>Categoría</span><select value={findOption(row[0], categoryOptions)} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 0, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Qué debes pagar</span><input value={row[1]} placeholder="Ej: arriendo" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 1, e.target.value)} /></label>
               <label><span>Fecha de pago</span><input type="date" value={row[2]} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 2, e.target.value)} /></label>
-              <label><span>Monto que pagarás</span><input inputMode="numeric" value={row[4] || row[3]} placeholder="$" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 4, e.target.value)} /></label>
+              <label><span>Monto que pagarás</span><input inputMode="numeric" value={row[4] || row[3]} placeholder="$" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 4, formatMoneyEntry(e.target.value))} /></label>
               <label><span>Estado</span><select value={statusOptions.includes(row[6]) ? row[6] : "Por revisar"} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 6, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Forma de pago</span><select value={detectPaymentMethod(row[7])} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 7, e.target.value)}>{paymentMethodOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
             </div>
@@ -1486,6 +1581,10 @@ function HouseholdSection({ sheetDb }) {
     }));
   }
 
+  function updateExpenseStatus(expenseId, status) {
+    sheetDb.updateHousehold((current) => ({ ...current, expenses: current.expenses.map((expense) => expense.id === expenseId ? { ...expense, status } : expense) }));
+  }
+
   const householdTotal = household.expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const previewAmount = parseMoney(form.amount);
   const previewShare = household.members.length ? Math.round(previewAmount / household.members.length) : 0;
@@ -1514,6 +1613,7 @@ function HouseholdSection({ sheetDb }) {
           </div>
         ))}
       </div>
+      {household.expenses.length ? <div className="settlement-guide"><strong>¿Quién le paga a quién?</strong>{household.members.filter((member) => balances[member.id] < 0).map((debtor) => { const creditor = household.members.filter((member) => balances[member.id] > 0).sort((a,b) => balances[b.id] - balances[a.id])[0]; return creditor ? <span key={debtor.id}><b>{debtor.name}</b> debe transferir <b>{formatCurrency(Math.min(Math.abs(balances[debtor.id]), balances[creditor.id]))}</b> a <b>{creditor.name}</b>.</span> : null; })}</div> : null}
 
       <section className="member-card">
         <div className="list-heading">
@@ -1545,7 +1645,7 @@ function HouseholdSection({ sheetDb }) {
           <label><span>Categoría</span><select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>
             {categoryOptions.map((option) => <option key={option}>{option}</option>)}
           </select></label>
-          <label><span>Monto total</span><input value={form.amount} onChange={(event) => updateForm("amount", event.target.value)} placeholder="Ej: 100.000" inputMode="numeric" required /></label>
+          <label><span>Monto total</span><input value={form.amount} onChange={(event) => updateForm("amount", formatMoneyEntry(event.target.value))} placeholder="Ej: 100.000" inputMode="numeric" required /></label>
           <label><span>¿Quién pagó?</span><select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)}>
             {household.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
           </select></label>
@@ -1573,6 +1673,7 @@ function HouseholdSection({ sheetDb }) {
               <div className="shared-row-head">
                 <div><strong>{expense.concept}</strong><span>{expense.date} · {expense.category}</span></div>
                 <div><strong>{formatCurrency(expense.amount)}</strong><span>Pagó {payer?.name || "—"}</span></div>
+                <label className="shared-status"><span>Estado</span><select value={statusOptions.includes(expense.status) ? expense.status : "Por revisar"} onChange={(event) => updateExpenseStatus(expense.id, event.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
                 <button className="delete-row" type="button" onClick={() => removeExpense(expense.id)} aria-label={`Eliminar ${expense.concept}`}><Trash2 size={15} /></button>
               </div>
               <div className="share-grid">
@@ -1601,6 +1702,9 @@ function BudgetSection({ sheetDb }) {
     0
   );
   const adjustedProjectedBalance = summary.projectedBalance - sharedCommitment;
+  const receivedIncome = sheetDb.draft.ingresos.filter((row) => row[3] === "Pagado").reduce((sum, row) => sum + parseMoney(row[2]), 0);
+  const paidPayments = sheetDb.draft.pagos.filter((row) => row[6] === "Pagado").reduce((sum, row) => sum + parseMoney(row[4] || row[3]), 0);
+  const availableToday = receivedIncome - paidPayments - summary.dailyExpenses - summary.savingsSaved;
   return (
     <div className="form-grid">
       <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Suma de Ingresos" />
@@ -1615,6 +1719,7 @@ function BudgetSection({ sheetDb }) {
         helper="Ingresos - pagos - gastos - ahorro - aporte compartido"
         wide
       />
+      <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Ingresos recibidos - pagos pagados - gastos - ahorro separado" wide />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Meta - separado este mes" />
       <VisualNote
         image={dailyBanner}
@@ -1657,8 +1762,8 @@ function SavingsSection({ sheetDb }) {
           <div className="entry-card-heading"><strong><PiggyBank size={18} /> Meta {rowIndex + 1}</strong></div>
           <div className="simple-entry-grid">
             <label><span>¿Para qué ahorras?</span><input value={row[0]} placeholder="Ej: vacaciones" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 0, e.target.value)} /></label>
-            <label><span>Meta de este mes</span><input inputMode="numeric" value={row[1]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 1, e.target.value)} /></label>
-            <label><span>¿Cuánto separaste?</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 2, e.target.value)} /></label>
+            <label><span>Meta de este mes</span><input inputMode="numeric" value={row[1]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 1, formatMoneyEntry(e.target.value))} /></label>
+            <label><span>¿Cuánto separaste?</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 2, formatMoneyEntry(e.target.value))} /></label>
             <label><span>Fecha meta</span><input type="date" value={row[3]} onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 3, e.target.value)} /></label>
             <label className="wide"><span>Nota opcional</span><input value={row[4]} placeholder="Ej: separar al recibir el sueldo" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 4, e.target.value)} /></label>
           </div>
@@ -1713,9 +1818,16 @@ function PiggySavingsProgress({ progress, saved, target }) {
 }
 
 function DebtSection({ sheetDb }) {
-  const rows = sheetDb.draft.pagos.filter((row) =>
-    ["tarjeta", "crédito", "credito", "cuota"].some((word) => String(row.join(" ")).toLowerCase().includes(word))
-  );
+  const [form, setForm] = useState({ name: "", total: "", installment: "", installmentsTotal: "", installmentsPaid: "", nextDate: new Date().toISOString().slice(0, 10), status: "Por revisar", priority: "Media" });
+  const debts = sheetDb.household.debts || [];
+  function update(field, value) { setForm((current) => ({ ...current, [field]: value })); }
+  function submit(event) {
+    event.preventDefault();
+    if (!form.name.trim() || !parseMoney(form.total)) return;
+    sheetDb.updateHousehold((current) => ({ ...current, debts: [...(current.debts || []), { ...form, id: `${Date.now()}`, name: form.name.trim(), total: parseMoney(form.total), installment: parseMoney(form.installment), installmentsTotal: Number(form.installmentsTotal) || 0, installmentsPaid: Number(form.installmentsPaid) || 0 }] }));
+    setForm((current) => ({ ...current, name: "", total: "", installment: "", installmentsTotal: "", installmentsPaid: "" }));
+  }
+  function removeDebt(id) { sheetDb.updateHousehold((current) => ({ ...current, debts: current.debts.filter((debt) => debt.id !== id) })); }
   return (
     <div className="stack">
       <VisualNote
@@ -1725,19 +1837,26 @@ function DebtSection({ sheetDb }) {
         text="Ordenar cuotas y saldos pendientes te ayuda a decidir cuál atender primero."
         wide
       />
-      <div className="soft-table header">
-        <strong>Deuda</strong>
-        <strong>Cuota</strong>
-        <strong>Estado</strong>
-      </div>
-      {(rows.length ? rows : [["Sin deudas detectadas", "", ""]]).map((row, index) => (
-        <div className="soft-table" key={`${row[1]}-${index}`}>
-          <span>{row[1] || row[0]}</span>
-          <span>{row[4] || row[3] || "$"}</span>
-          <span className="pill">{row[6] === "Revisar" ? "Por revisar" : row[6] || "Por revisar"}</span>
+      <form className="simple-entry-card" onSubmit={submit}>
+        <div className="entry-card-heading"><strong><TrendingDown size={18} /> Agregar deuda</strong></div>
+        <div className="simple-entry-grid debt-grid">
+          <label><span>Nombre</span><input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ej: tarjeta de crédito" required /></label>
+          <label><span>Saldo total</span><input inputMode="numeric" value={form.total} onChange={(e) => update("total", formatMoneyEntry(e.target.value))} placeholder="$" required /></label>
+          <label><span>Valor de la cuota</span><input inputMode="numeric" value={form.installment} onChange={(e) => update("installment", formatMoneyEntry(e.target.value))} placeholder="$" /></label>
+          <label><span>Cuotas totales</span><input type="number" min="0" value={form.installmentsTotal} onChange={(e) => update("installmentsTotal", e.target.value)} placeholder="12" /></label>
+          <label><span>Cuotas pagadas</span><input type="number" min="0" value={form.installmentsPaid} onChange={(e) => update("installmentsPaid", e.target.value)} placeholder="3" /></label>
+          <label><span>Próximo pago</span><input type="date" value={form.nextDate} onChange={(e) => update("nextDate", e.target.value)} /></label>
+          <label><span>Estado</span><select value={form.status} onChange={(e) => update("status", e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+          <label><span>Prioridad</span><select value={form.priority} onChange={(e) => update("priority", e.target.value)}><option>Alta</option><option>Media</option><option>Baja</option></select></label>
         </div>
-      ))}
-      <Field label="Prioridad del mes" placeholder="Ej: pagar tarjeta antes del 20" wide />
+        <button className="shared-submit" type="submit"><Plus size={17} /> Agregar deuda</button>
+      </form>
+      <div className="debt-list">
+        {debts.length ? debts.map((debt) => {
+          const percent = debt.installmentsTotal ? Math.min(100, Math.round((debt.installmentsPaid / debt.installmentsTotal) * 100)) : 0;
+          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(debt.total)}</strong><small>Cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Has pagado {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className="pill">{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
+        }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
+      </div>
     </div>
   );
 }
@@ -1762,6 +1881,7 @@ function CloseSection({ sheetDb }) {
         <ReadOnlyCard label="Saldo proyectado" value={formatCurrency(summary.projectedBalance)} helper="Resumen del mes" />
         <ReadOnlyCard label="Ahorro separado" value={formatCurrency(summary.savingsSaved)} helper={`${summary.savingsProgress}% de avance`} />
       </div>
+      <button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Exportar cierre a PDF</button>
       <div className="sticker-board" aria-label="Stickers de progreso">
         {progressStickers.map((sticker) => (
           <button key={sticker.label} type="button" onClick={() => addSticker(sticker)}>
@@ -1895,39 +2015,29 @@ function MonthlyCalendar({ sheetDb, month, year }) {
 
 function DailyExpensesList({ sheetDb }) {
   const rows = sheetDb.draft.gastos;
+  const [filter, setFilter] = useState("Todas");
+  const [editing, setEditing] = useState(null);
+  const visibleRows = rows.map((row, index) => ({ row, index })).filter(({ row }) => filter === "Todas" || row[2] === filter);
 
   return (
     <div className="daily-list wide">
       <div className="list-heading">
         <h3>Gastos del mes</h3>
-        <span>{rows.length} líneas registradas</span>
+        <label className="filter-field"><span>Filtrar</span><select value={filter} onChange={(event) => setFilter(event.target.value)}><option>Todas</option>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
       </div>
-      <div className="table-scroll" aria-label="Gastos diarios registrados">
-        <div className="soft-table daily-table header">
-          <strong>Fecha</strong>
-          <strong>Concepto</strong>
-          <strong>Categoría</strong>
-          <strong>Monto</strong>
-          <strong>Forma de pago</strong>
-          <strong>Nota</strong>
-          <strong>Acción</strong>
-        </div>
-        {(rows.length ? rows : [["", "Sin gastos registrados", "", "", "", ""]]).map((row, rowIndex) => (
-          <div className="soft-table daily-table" key={`${row[1]}-${rowIndex}`}>
-            {row.map((cell, columnIndex) => (
-              <span key={columnIndex}>{cell || "-"}</span>
-            ))}
-            {rows.length ? (
-              <DeleteRowButton
-                label={`Eliminar gasto fila ${rowIndex + 1}`}
-                disabled={sheetDb.status.saving}
-                onClick={() => sheetDb.deleteRow("gastos", rowIndex)}
-              />
-            ) : (
-              <span />
-            )}
-          </div>
-        ))}
+      <div className="expense-card-list" aria-label="Gastos diarios registrados">
+        {visibleRows.length ? visibleRows.map(({ row, index: rowIndex }) => (
+          <article className="expense-row-card" key={`${row[1]}-${rowIndex}`}>
+            {editing === rowIndex ? <div className="simple-entry-grid compact-edit">
+              <label><span>Fecha</span><input type="date" value={row[0]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 0, e.target.value)} /></label>
+              <label><span>Concepto</span><input value={row[1]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 1, e.target.value)} /></label>
+              <label><span>Categoría</span><select value={findOption(row[2], categoryOptions)} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 2, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+              <label><span>Monto</span><input inputMode="numeric" value={row[3]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 3, formatMoneyEntry(e.target.value))} /></label>
+            </div> : <div className="expense-main"><span>{row[0]}</span><strong>{row[1]}</strong><small>{row[2]} · {row[4]}</small></div>}
+            <strong className="expense-amount">{formatCurrency(row[3])}</strong>
+            <div className="row-actions"><button type="button" onClick={() => setEditing(editing === rowIndex ? null : rowIndex)} aria-label={`Editar ${row[1]}`}><Pencil size={15} /></button><DeleteRowButton label={`Eliminar gasto fila ${rowIndex + 1}`} disabled={sheetDb.status.saving} onClick={() => sheetDb.deleteRow("gastos", rowIndex)} /></div>
+          </article>
+        )) : <div className="empty-state">No hay gastos para este filtro.</div>}
       </div>
     </div>
   );
@@ -1997,7 +2107,7 @@ function DailyExpenseForm({ onSubmit, saving }) {
         </select></label>
         <label><span>Monto</span><input
           value={expense.amount}
-          onChange={(event) => update("amount", event.target.value)}
+          onChange={(event) => update("amount", formatMoneyEntry(event.target.value))}
           placeholder="$"
           aria-label="Monto"
           required
@@ -2036,11 +2146,15 @@ function Field({ label, placeholder, wide = false }) {
 
 function AppShell({ auth }) {
   const [current, setCurrent] = useState("cover");
+  const [menuOpen, setMenuOpen] = useState(false);
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const monthKey = getMonthKey(month, year);
   const sheetDb = useSheetDatabase(auth, monthKey);
+  useEffect(() => {
+    localStorage.setItem("agenda_financiera_currency", sheetDb.household.currency || "CLP");
+  }, [sheetDb.household.currency]);
 
   const order = useMemo(() => ["cover", ...sections.map((section) => section.id)], []);
   const topNavItems = [
@@ -2074,6 +2188,12 @@ function AppShell({ auth }) {
     setCurrent(order[nextIndex]);
   }
 
+  function goTo(section) {
+    setCurrent(section);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className={`app-shell theme-${theme}`}>
       <header className="topbar">
@@ -2096,7 +2216,8 @@ function AppShell({ auth }) {
             </button>
           ))}
         </nav>
-        <div className="session"><span>Modo piloto</span></div>
+        <div className="session"><span>Mi agenda</span></div>
+        <button className="mobile-menu-button" type="button" onClick={() => setMenuOpen((value) => !value)} aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}>{menuOpen ? <X size={21} /> : <Menu size={21} />}</button>
       </header>
 
       <main className="workspace">
@@ -2115,18 +2236,19 @@ function AppShell({ auth }) {
             <StatStrip sheetDb={sheetDb} />
           </>
         ) : (
-          <section className="planner-grid">
+          <section className={menuOpen ? "planner-grid mobile-menu-open" : "planner-grid"}>
+            {menuOpen ? <button className="menu-backdrop" type="button" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú" /> : null}
             <Sidebar
               activeSection={activeSection}
               month={month}
               year={year}
               progress={progress}
               onMonth={changeMonth}
-              onSection={setCurrent}
+              onSection={goTo}
             />
             <PlannerPanel
               activeSection={activeSection}
-              onSection={setCurrent}
+              onSection={goTo}
               auth={auth}
               sheetDb={sheetDb}
               month={month}
@@ -2149,6 +2271,7 @@ function AppShell({ auth }) {
           <ArrowRight size={15} />
         </button>
       </footer>
+      <nav className="mobile-bottom-nav" aria-label="Acciones rápidas"><button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={() => goTo("gastos")}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button></nav>
     </div>
   );
 }
