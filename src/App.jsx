@@ -599,11 +599,26 @@ function formatMoneyEntry(value) {
 
 function formatCurrency(value, currency) {
   const selectedCurrency = currency || (typeof localStorage !== "undefined" ? localStorage.getItem("agenda_financiera_currency") : "CLP") || "CLP";
+  const numericValue = typeof value === "number" ? value : parseMoney(value);
   return new Intl.NumberFormat("es-CL", {
     style: "currency",
     currency: selectedCurrency,
     maximumFractionDigits: 0
-  }).format(Number(value) || 0);
+  }).format(numericValue || 0);
+}
+
+function getRealProgress(sheetDb) {
+  const completed = [
+    Boolean(sheetDb.household.members[0]?.name && sheetDb.household.members[0].name !== "Persona 1"),
+    sheetDb.draft.ingresos.some((row) => parseMoney(row[2]) > 0),
+    sheetDb.draft.pagos.some((row) => parseMoney(row[4] || row[3]) > 0),
+    sheetDb.household.debts.length > 0,
+    sheetDb.draft.ahorros.some((row) => parseMoney(row[1]) > 0),
+    sheetDb.draft.ingresos.some((row) => parseMoney(row[2]) > 0) && (sheetDb.draft.pagos.length > 0 || sheetDb.draft.gastos.length > 0),
+    sheetDb.draft.gastos.some((row) => parseMoney(row[3]) > 0),
+    Boolean(sheetDb.reflection.trim())
+  ];
+  return Math.round((completed.filter(Boolean).length / completed.length) * 100);
 }
 
 function getFinancialSummary(draft) {
@@ -1025,6 +1040,7 @@ function useSheetDatabase(auth, monthKey) {
       const payload = JSON.parse(await file.text());
       if (!payload || typeof payload !== "object") throw new Error("invalid");
       localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify(payload));
+      localStorage.removeItem(`agenda_financiera_demo_${monthKey}`);
       await loadMonthData();
       setStatus((current) => ({ ...current, message: "Respaldo importado correctamente.", error: "" }));
     } catch {
@@ -1042,6 +1058,7 @@ function useSheetDatabase(auth, monthKey) {
     setReflection("");
     setHousehold(nextHousehold);
     localStorage.removeItem(CHECKLIST_STORAGE_KEY);
+    localStorage.removeItem(`agenda_financiera_demo_${monthKey}`);
     await persistMonth(nextDraft, {}, "", nextHousehold);
     setStatus((current) => ({ ...current, loaded: false, message: "Mes reiniciado. Ya puedes comenzar desde cero.", error: "" }));
   }
@@ -1058,6 +1075,7 @@ function useSheetDatabase(auth, monthKey) {
     setDraft(nextDraft);
     setSheetData(nextDraft);
     setHousehold(nextHousehold);
+    localStorage.setItem(`agenda_financiera_demo_${monthKey}`, "true");
     await persistMonth(nextDraft, calendar, reflection, nextHousehold);
     setStatus((current) => ({ ...current, loaded: true, message: "Datos de ejemplo cargados. Puedes reemplazarlos o reiniciar el mes.", error: "" }));
   }
@@ -1230,7 +1248,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
       <QuoteCard text={section.message} />
 
       <div className="panel-body">
-        {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={() => onSection("ingresos")} /> : null}
+        {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={() => onSection("ingresos")} month={month} year={year} /> : null}
         {activeSection === "calendario" ? (
           <div className="stack">
             <VisualNote
@@ -1303,9 +1321,11 @@ function MapSection({ onSection }) {
   );
 }
 
-function SetupSection({ sheetDb, onContinue }) {
+function SetupSection({ sheetDb, onContinue, month, year }) {
   const members = sheetDb.household.members;
   const backupInputRef = useRef(null);
+  const [backupMessage, setBackupMessage] = useState("");
+  const demoMode = localStorage.getItem(`agenda_financiera_demo_${getMonthKey(month, year)}`) === "true";
 
   function selectMode(mode) {
     sheetDb.updateHousehold((current) => ({
@@ -1323,17 +1343,29 @@ function SetupSection({ sheetDb, onContinue }) {
   }
 
   function confirmReset() {
-    if (window.confirm("¿Quieres borrar los datos de este mes y comenzar desde cero? Esta acción no se puede deshacer.")) sheetDb.resetMonth();
+    if (window.confirm(`¿Quieres borrar solamente ${monthNames[month]} ${year}? Tus otros meses no se modificarán. Esta acción no se puede deshacer.`)) sheetDb.resetMonth();
   }
 
   function exportBackup() {
     const data = localStorage.getItem(MONTHLY_STORE_KEY) || "{}";
-    const blob = new Blob([data], { type: "application/json" });
+    const blob = new Blob([data], { type: "application/octet-stream" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `respaldo-agenda-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(link.href);
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    setBackupMessage("✓ Respaldo preparado. Busca el archivo en la carpeta Descargas.");
+  }
+
+  async function copyBackup() {
+    try {
+      await navigator.clipboard.writeText(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+      setBackupMessage("✓ Respaldo copiado. Puedes pegarlo y guardarlo en una nota segura.");
+    } catch {
+      setBackupMessage("No se pudo copiar. Usa Descargar respaldo desde Chrome o Safari.");
+    }
   }
 
   function renameMember(id, name) {
@@ -1403,10 +1435,13 @@ function SetupSection({ sheetDb, onContinue }) {
       </div>
       <div className="setup-card settings-card">
         <h3>Preferencias de tu agenda</h3>
+        {demoMode ? <div className="demo-active-banner"><Sparkles size={18} /><div><strong>Estás usando datos de prueba</strong><span>Puedes recorrer la agenda sin confundirlos con tus finanzas reales.</span></div></div> : null}
         <label className="currency-field"><span>Moneda</span><select value={sheetDb.household.currency || "CLP"} onChange={(event) => selectCurrency(event.target.value)}><option value="CLP">Peso chileno (CLP)</option><option value="USD">Dólar (USD)</option><option value="EUR">Euro (EUR)</option><option value="ARS">Peso argentino (ARS)</option><option value="MXN">Peso mexicano (MXN)</option></select></label>
-        <div className="data-actions"><button type="button" className="add-row" onClick={sheetDb.loadExampleData}><Sparkles size={15} /> Cargar datos de ejemplo</button><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Comenzar desde cero</button></div>
-        <div className="backup-actions"><button type="button" className="add-row" onClick={exportBackup}><Download size={15} /> Descargar respaldo</button><button type="button" className="add-row" onClick={() => backupInputRef.current?.click()}><Upload size={15} /> Importar respaldo</button><input ref={backupInputRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) sheetDb.importBackup(file); event.target.value = ""; }} /></div>
-        <small>Tus datos se guardan en este dispositivo. Descarga un respaldo si cambiarás de teléfono o computador. “Comenzar desde cero” limpia solamente el mes seleccionado.</small>
+        <div className="pilot-mode-card"><Sparkles size={19} /><div><strong>¿Solo quieres probarla?</strong><span>Carga información ficticia para recorrer todas las secciones. Podrás borrarla después.</span></div><button type="button" className="add-row" onClick={sheetDb.loadExampleData}>Usar datos de prueba</button></div>
+        <div className="data-actions"><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Borrar {monthNames[month]} {year} y comenzar de cero</button></div>
+        <div className="backup-actions"><button type="button" className="add-row" onClick={exportBackup}><Download size={15} /> Descargar respaldo</button><button type="button" className="add-row" onClick={copyBackup}><Copy size={15} /> Copiar respaldo</button><button type="button" className="add-row" onClick={() => backupInputRef.current?.click()}><Upload size={15} /> Importar respaldo</button><input ref={backupInputRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) { sheetDb.importBackup(file); setBackupMessage(`✓ Archivo ${file.name} seleccionado para importar.`); } event.target.value = ""; }} /></div>
+        {backupMessage ? <div className="backup-message" role="status">{backupMessage}</div> : null}
+        <small>Tus datos se guardan en este dispositivo. Guarda el archivo de respaldo sin modificarlo. El botón para comenzar de cero borra únicamente el mes indicado.</small>
       </div>
       <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>
     </div>
@@ -1954,7 +1989,7 @@ function CloseSection({ sheetDb }) {
         <div className="closing-metrics"><div><CheckCircle2 size={20} /><strong>{paidCount}</strong><span>pagos completados</span></div><div><CalendarDays size={20} /><strong>{pendingCount}</strong><span>pagos pendientes</span></div><div><PiggyBank size={20} /><strong>{summary.savingsProgress}%</strong><span>de tu meta ahorrada</span></div></div>
         <div className="closing-savings"><span>Ahorro separado</span><strong>{formatCurrency(summary.savingsSaved)}</strong><i><b style={{ width: `${summary.savingsProgress}%` }} /></i></div>
       </section>
-      <button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Exportar cierre a PDF</button>
+      <div className="pdf-action-wrap"><button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Imprimir o guardar como PDF</button><small>En la ventana que se abre, elige “Guardar como PDF”.</small></div>
       <button className="copy-next-action" type="button" onClick={sheetDb.copyPlanToNextMonth}><Copy size={17} /> Copiar pagos y metas al mes siguiente</button>
       <div className="sticker-board" aria-label="Stickers de progreso">
         {progressStickers.map((sticker) => (
@@ -2110,14 +2145,14 @@ function DailyExpensesList({ sheetDb }) {
       <div className="expense-card-list" aria-label="Gastos diarios registrados">
         {visibleRows.length ? visibleRows.map(({ row, index: rowIndex }) => (
           <article className="expense-row-card" key={`${row[1]}-${rowIndex}`}>
-            {editing === rowIndex ? <div className="simple-entry-grid compact-edit">
+            {editing?.index === rowIndex ? <div className="simple-entry-grid compact-edit">
               <label><span>Fecha</span><input type="date" value={row[0]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 0, e.target.value)} /></label>
               <label><span>Concepto</span><input value={row[1]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 1, e.target.value)} /></label>
               <label><span>Categoría</span><select value={findOption(row[2], categoryOptions)} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 2, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Monto</span><input inputMode="numeric" value={row[3]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 3, formatMoneyEntry(e.target.value))} /></label>
             </div> : <div className="expense-main"><span>{row[0]}</span><strong>{row[1]}</strong><small>{row[2]} · {row[4]}</small></div>}
             <strong className="expense-amount">{formatCurrency(row[3])}</strong>
-            <div className="row-actions"><button type="button" onClick={() => setEditing(editing === rowIndex ? null : rowIndex)} aria-label={`Editar ${row[1]}`}><Pencil size={15} /></button><DeleteRowButton label={`Eliminar gasto fila ${rowIndex + 1}`} disabled={sheetDb.status.saving} onClick={() => sheetDb.deleteRow("gastos", rowIndex)} /></div>
+            <div className="row-actions">{editing?.index === rowIndex ? <><button className="finish-edit" type="button" onClick={() => setEditing(null)} aria-label={`Guardar cambios de ${row[1]}`} title="Guardar cambios"><Save size={15} /></button><button className="cancel-edit" type="button" onClick={() => { editing.original.forEach((value, columnIndex) => sheetDb.updateCell("gastos", rowIndex, columnIndex, value)); setEditing(null); }} aria-label={`Cancelar edición de ${row[1]}`} title="Cancelar edición"><X size={15} /></button></> : <button type="button" onClick={() => setEditing({ index: rowIndex, original: [...row] })} aria-label={`Editar ${row[1]}`}><Pencil size={15} /></button>}<DeleteRowButton label={`Eliminar gasto fila ${rowIndex + 1}`} disabled={sheetDb.status.saving} onClick={() => sheetDb.deleteRow("gastos", rowIndex)} /></div>
           </article>
         )) : <div className="empty-state">No hay gastos para este filtro.</div>}
       </div>
@@ -2251,7 +2286,7 @@ function AppShell({ auth }) {
   ];
   const pageIndex = order.indexOf(current);
   const activeSection = current === "cover" ? "checklist" : current;
-  const progress = Math.round(((pageIndex + 1) / order.length) * 100);
+  const progress = getRealProgress(sheetDb);
   const theme = current === "cover" ? "cover" : activeSection;
 
   useLayoutEffect(() => {
