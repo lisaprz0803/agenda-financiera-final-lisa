@@ -38,7 +38,6 @@ import piggyCalculator from "../assets/piggy-calculator.jpeg";
 import piggyPlant from "../assets/piggy-plant.jpeg";
 import plannerBanner from "../assets/planner-banner-v2.jpg";
 import sharedBanner from "../assets/shared-banner-v2.jpg";
-import savingsBanner from "../assets/savings-banner-v2.jpg";
 import checklistBanner from "../assets/checklist-banner.jpg";
 import incomeBanner from "../assets/income-banner.jpg";
 import paymentsBanner from "../assets/payments-banner.jpg";
@@ -194,6 +193,11 @@ const checklistItems = [
 ];
 
 const statusOptions = ["Pagado", "Pendiente", "Por revisar"];
+function getStatusClass(value) {
+  if (value === "Pagado") return "status-paid";
+  if (value === "Pendiente") return "status-pending";
+  return "status-review";
+}
 const categoryOptions = [
   "Vivienda",
   "Servicios",
@@ -618,6 +622,12 @@ function getFinancialSummary(draft) {
     savingsProgress,
     projectedBalance
   };
+}
+
+function getBalanceStatus(value) {
+  if (value > 0) return { label: "Saldo a favor", helper: "Después de cubrir lo planificado, este dinero quedaría disponible.", tone: "positive" };
+  if (value < 0) return { label: "Saldo en contra", helper: "Tus compromisos superan tus ingresos. Revisa pagos, gastos o ahorro.", tone: "negative" };
+  return { label: "Saldo equilibrado", helper: "Tus ingresos y compromisos están nivelados.", tone: "neutral" };
 }
 
 function parseSheetValues(payload) {
@@ -1060,12 +1070,13 @@ function AuthGate({ auth }) {
 
 function StatStrip({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
+  const balanceStatus = getBalanceStatus(summary.projectedBalance);
   const hasData = summary.incomeTotal || summary.monthlyPayments || summary.dailyExpenses || summary.savingsTarget;
   const paymentsDone = sheetDb.draft.pagos.filter((row) => String(row[6] || "").toLowerCase().includes("pagado")).length;
   const liveStats = [
     { label: "Ingresos", value: formatCurrency(summary.incomeTotal), helper: "Ingresos registrados" },
     { label: "Ahorro", value: `${summary.savingsProgress}%`, helper: "Meta vs. separado" },
-    { label: "Saldo proyectado", value: formatCurrency(summary.projectedBalance), helper: `${paymentsDone} pagos marcados` }
+    { label: balanceStatus.label, value: formatCurrency(summary.projectedBalance), helper: balanceStatus.helper }
   ];
   if (!hasData) return <div className="empty-home"><div><Sparkles size={22} /><strong>Tu agenda está lista</strong><span>Comienza agregando tu primer ingreso. Todo se guardará automáticamente.</span></div><small>1. Elige tu modo · 2. Agrega ingresos · 3. Registra pagos</small></div>;
   return (
@@ -1430,7 +1441,7 @@ function IncomeSection({ sheetDb }) {
             <label><span>Fuente</span><input value={row[0]} placeholder="Ej: sueldo" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 0, e.target.value)} /></label>
             <label><span>Fecha en que lo recibes</span><input type="date" value={row[1]} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 1, e.target.value)} /></label>
             <label><span>Monto</span><input inputMode="numeric" value={row[2]} placeholder="$" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 2, formatMoneyEntry(e.target.value))} /></label>
-            <label><span>Estado</span><select value={statusOptions.includes(row[3]) ? row[3] : "Por revisar"} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 3, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+            <label><span>Estado</span><select className={`status-select ${getStatusClass(statusOptions.includes(row[3]) ? row[3] : "Por revisar")}`} value={statusOptions.includes(row[3]) ? row[3] : "Por revisar"} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 3, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
             <label className="wide"><span>Nota opcional</span><input value={row[4]} placeholder="Ej: pago variable" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 4, e.target.value)} /></label>
           </div>
           <DeleteRowButton
@@ -1470,7 +1481,7 @@ function PaymentsSection({ sheetDb }) {
               <label><span>Qué debes pagar</span><input value={row[1]} placeholder="Ej: arriendo" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 1, e.target.value)} /></label>
               <label><span>Fecha de pago</span><input type="date" value={row[2]} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 2, e.target.value)} /></label>
               <label><span>Monto que pagarás</span><input inputMode="numeric" value={row[4] || row[3]} placeholder="$" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 4, formatMoneyEntry(e.target.value))} /></label>
-              <label><span>Estado</span><select value={statusOptions.includes(row[6]) ? row[6] : "Por revisar"} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 6, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+              <label><span>Estado</span><select className={`status-select ${getStatusClass(statusOptions.includes(row[6]) ? row[6] : "Por revisar")}`} value={statusOptions.includes(row[6]) ? row[6] : "Por revisar"} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 6, e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Forma de pago</span><select value={detectPaymentMethod(row[7])} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 7, e.target.value)}>{paymentMethodOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
             </div>
             <DeleteRowButton
@@ -1673,7 +1684,7 @@ function HouseholdSection({ sheetDb }) {
               <div className="shared-row-head">
                 <div><strong>{expense.concept}</strong><span>{expense.date} · {expense.category}</span></div>
                 <div><strong>{formatCurrency(expense.amount)}</strong><span>Pagó {payer?.name || "—"}</span></div>
-                <label className="shared-status"><span>Estado</span><select value={statusOptions.includes(expense.status) ? expense.status : "Por revisar"} onChange={(event) => updateExpenseStatus(expense.id, event.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                <label className="shared-status"><span>Estado</span><select className={`status-select ${getStatusClass(statusOptions.includes(expense.status) ? expense.status : "Por revisar")}`} value={statusOptions.includes(expense.status) ? expense.status : "Por revisar"} onChange={(event) => updateExpenseStatus(expense.id, event.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
                 <button className="delete-row" type="button" onClick={() => removeExpense(expense.id)} aria-label={`Eliminar ${expense.concept}`}><Trash2 size={15} /></button>
               </div>
               <div className="share-grid">
@@ -1705,6 +1716,7 @@ function BudgetSection({ sheetDb }) {
   const receivedIncome = sheetDb.draft.ingresos.filter((row) => row[3] === "Pagado").reduce((sum, row) => sum + parseMoney(row[2]), 0);
   const paidPayments = sheetDb.draft.pagos.filter((row) => row[6] === "Pagado").reduce((sum, row) => sum + parseMoney(row[4] || row[3]), 0);
   const availableToday = receivedIncome - paidPayments - summary.dailyExpenses - summary.savingsSaved;
+  const balanceStatus = getBalanceStatus(adjustedProjectedBalance);
   return (
     <div className="form-grid">
       <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Suma de Ingresos" />
@@ -1714,9 +1726,9 @@ function BudgetSection({ sheetDb }) {
       <ReadOnlyCard label={`Aporte compartido · ${personalMember?.name || "Yo"}`} value={formatCurrency(sharedCommitment)} helper="Calculado desde Finanzas compartidas" />
       <BudgetChart summary={summary} />
       <ReadOnlyCard
-        label="Saldo proyectado"
+        label={balanceStatus.label}
         value={formatCurrency(adjustedProjectedBalance)}
-        helper="Ingresos - pagos - gastos - ahorro - aporte compartido"
+        helper={balanceStatus.helper}
         wide
       />
       <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Ingresos recibidos - pagos pagados - gastos - ahorro separado" wide />
@@ -1776,12 +1788,6 @@ function SavingsSection({ sheetDb }) {
       ))}
       <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
-      <VisualNote
-        image={savingsBanner}
-        alt="Alcancía rosada sobre gráficos y monedas"
-        title="Bloque de ahorro"
-        text="Meta de ahorro, llevo ahorrado y me falta. Separar aunque sea poco también es elegirte."
-      />
       <SaveButton label="Guardar ahorros" onClick={() => sheetDb.saveSection("ahorros")} saving={sheetDb.status.saving} />
     </div>
   );
@@ -1846,7 +1852,7 @@ function DebtSection({ sheetDb }) {
           <label><span>Cuotas totales</span><input type="number" min="0" value={form.installmentsTotal} onChange={(e) => update("installmentsTotal", e.target.value)} placeholder="12" /></label>
           <label><span>Cuotas pagadas</span><input type="number" min="0" value={form.installmentsPaid} onChange={(e) => update("installmentsPaid", e.target.value)} placeholder="3" /></label>
           <label><span>Próximo pago</span><input type="date" value={form.nextDate} onChange={(e) => update("nextDate", e.target.value)} /></label>
-          <label><span>Estado</span><select value={form.status} onChange={(e) => update("status", e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+          <label><span>Estado</span><select className={`status-select ${getStatusClass(form.status)}`} value={form.status} onChange={(e) => update("status", e.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
           <label><span>Prioridad</span><select value={form.priority} onChange={(e) => update("priority", e.target.value)}><option>Alta</option><option>Media</option><option>Baja</option></select></label>
         </div>
         <button className="shared-submit" type="submit"><Plus size={17} /> Agregar deuda</button>
@@ -1854,7 +1860,7 @@ function DebtSection({ sheetDb }) {
       <div className="debt-list">
         {debts.length ? debts.map((debt) => {
           const percent = debt.installmentsTotal ? Math.min(100, Math.round((debt.installmentsPaid / debt.installmentsTotal) * 100)) : 0;
-          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(debt.total)}</strong><small>Cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Has pagado {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className="pill">{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
+          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(debt.total)}</strong><small>Cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Has pagado {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
     </div>
@@ -1863,6 +1869,9 @@ function DebtSection({ sheetDb }) {
 
 function CloseSection({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
+  const balanceStatus = getBalanceStatus(summary.projectedBalance);
+  const paidCount = sheetDb.draft.pagos.filter((row) => row[6] === "Pagado").length;
+  const pendingCount = sheetDb.draft.pagos.filter((row) => row[6] === "Pendiente").length;
 
   function addSticker(sticker) {
     const label = `${sticker.icon} ${sticker.label}`;
@@ -1877,10 +1886,11 @@ function CloseSection({ sheetDb }) {
         title="Haz un cierre amable"
         text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
       />
-      <div className="close-summary">
-        <ReadOnlyCard label="Saldo proyectado" value={formatCurrency(summary.projectedBalance)} helper="Resumen del mes" />
-        <ReadOnlyCard label="Ahorro separado" value={formatCurrency(summary.savingsSaved)} helper={`${summary.savingsProgress}% de avance`} />
-      </div>
+      <section className={`closing-dashboard ${balanceStatus.tone}`}>
+        <div className="closing-balance"><span>Resultado del mes</span><strong>{balanceStatus.label}</strong><b>{formatCurrency(summary.projectedBalance)}</b><p>{balanceStatus.helper}</p></div>
+        <div className="closing-metrics"><div><CheckCircle2 size={20} /><strong>{paidCount}</strong><span>pagos completados</span></div><div><CalendarDays size={20} /><strong>{pendingCount}</strong><span>pagos pendientes</span></div><div><PiggyBank size={20} /><strong>{summary.savingsProgress}%</strong><span>de tu meta ahorrada</span></div></div>
+        <div className="closing-savings"><span>Ahorro separado</span><strong>{formatCurrency(summary.savingsSaved)}</strong><i><b style={{ width: `${summary.savingsProgress}%` }} /></i></div>
+      </section>
       <button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Exportar cierre a PDF</button>
       <div className="sticker-board" aria-label="Stickers de progreso">
         {progressStickers.map((sticker) => (
@@ -2186,6 +2196,7 @@ function AppShell({ auth }) {
   function move(delta) {
     const nextIndex = Math.max(0, Math.min(order.length - 1, pageIndex + delta));
     setCurrent(order[nextIndex]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goTo(section) {
