@@ -271,7 +271,7 @@ function normalizeHousehold(value) {
         category: String(expense.category || "Otro"),
         date: String(expense.date || ""),
         amount: Number(expense.amount) || 0,
-        paidBy: memberIds.has(expense.paidBy) ? expense.paidBy : members[0].id,
+        paidBy: expense.paidBy === "shared" || memberIds.has(expense.paidBy) ? expense.paidBy : members[0].id,
         status: String(expense.status || "Pendiente"),
         shares: Object.fromEntries(members.map((member) => [member.id, Number(expense.shares?.[member.id]) || 0]))
       }))
@@ -295,6 +295,7 @@ function getHouseholdBalances(household) {
   const balances = Object.fromEntries(household.members.map((member) => [member.id, 0]));
   household.expenses.forEach((expense) => {
     const amount = Number(expense.amount) || 0;
+    if (expense.paidBy === "shared") return;
     if (balances[expense.paidBy] !== undefined) balances[expense.paidBy] += amount;
     household.members.forEach((member) => {
       balances[member.id] -= Number(expense.shares?.[member.id]) || 0;
@@ -1556,6 +1557,7 @@ function HouseholdSection({ sheetDb }) {
     date: new Date().toISOString().slice(0, 10),
     amount: "",
     paidBy: household.members[0]?.id || "",
+    paymentMode: "one",
     splitMode: "equal"
   });
 
@@ -1615,7 +1617,7 @@ function HouseholdSection({ sheetDb }) {
         category: form.category,
         date: form.date,
         amount,
-        paidBy: form.paidBy,
+        paidBy: form.paymentMode === "shared" ? "shared" : form.paidBy,
         status: "Pendiente",
         shares
       }]
@@ -1641,6 +1643,13 @@ function HouseholdSection({ sheetDb }) {
 
   function updateExpenseStatus(expenseId, status) {
     sheetDb.updateHousehold((current) => ({ ...current, expenses: current.expenses.map((expense) => expense.id === expenseId ? { ...expense, status } : expense) }));
+  }
+
+  function updateExpensePayer(expenseId, paidBy) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      expenses: current.expenses.map((expense) => expense.id === expenseId ? { ...expense, paidBy } : expense)
+    }));
   }
 
   const householdTotal = household.expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -1671,7 +1680,7 @@ function HouseholdSection({ sheetDb }) {
           </div>
         ))}
       </div>
-      {household.expenses.length ? <div className="settlement-guide"><strong>¿Quién le paga a quién?</strong>{household.members.filter((member) => balances[member.id] < 0).map((debtor) => { const creditor = household.members.filter((member) => balances[member.id] > 0).sort((a,b) => balances[b.id] - balances[a.id])[0]; return creditor ? <span key={debtor.id}><b>{debtor.name}</b> debe transferir <b>{formatCurrency(Math.min(Math.abs(balances[debtor.id]), balances[creditor.id]))}</b> a <b>{creditor.name}</b>.</span> : null; })}</div> : null}
+      {household.expenses.length ? <div className="settlement-guide"><strong>Resumen entre ustedes</strong>{household.members.some((member) => balances[member.id] < 0) ? household.members.filter((member) => balances[member.id] < 0).map((debtor) => { const creditor = household.members.filter((member) => balances[member.id] > 0).sort((a,b) => balances[b.id] - balances[a.id])[0]; return creditor ? <span key={debtor.id}><b>{debtor.name}</b> tiene pendiente entregar <b>{formatCurrency(Math.min(Math.abs(balances[debtor.id]), balances[creditor.id]))}</b> a <b>{creditor.name}</b>.</span> : null; }) : <span className="settlement-ok">✓ Están al día. No hay dinero pendiente entre ustedes.</span>}</div> : null}
 
       <section className="member-card">
         <div className="list-heading">
@@ -1704,15 +1713,19 @@ function HouseholdSection({ sheetDb }) {
             {categoryOptions.map((option) => <option key={option}>{option}</option>)}
           </select></label>
           <label><span>Monto total</span><input value={form.amount} onChange={(event) => updateForm("amount", formatMoneyEntry(event.target.value))} placeholder="Ej: 100.000" inputMode="numeric" required /></label>
-          <label><span>¿Quién pagó?</span><select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)}>
-            {household.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+          <label><span>¿Cómo lo pagaron?</span><select value={form.paymentMode} onChange={(event) => updateForm("paymentMode", event.target.value)}>
+            <option value="one">Una persona pagó todo</option>
+            <option value="shared">Cada persona pagó su parte</option>
           </select></label>
+          {form.paymentMode === "one" ? <label><span>¿Quién pagó todo?</span><select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)}>
+            {household.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+          </select></label> : <div className="paid-together-note"><CheckCircle2 size={18} /><span>No se calculará ninguna transferencia: quedará registrado que cada persona pagó su parte.</span></div>}
         </div>
         {household.members.length < 2 ? (
           <div className="shared-help">Primero presiona <strong>Agregar persona</strong> y escribe el nombre de tu pareja.</div>
         ) : previewAmount ? (
           <div className="split-preview">
-            <span>Así quedará dividido:</span>
+            <span>{form.paymentMode === "shared" ? "Cada persona pagará esta parte:" : "Así quedará dividido:"}</span>
             <div>{household.members.map((member, index) => <strong key={member.id}>{member.name}: {formatCurrency(index === household.members.length - 1 ? previewAmount - previewShare * (household.members.length - 1) : previewShare)}</strong>)}</div>
           </div>
         ) : null}
@@ -1730,7 +1743,8 @@ function HouseholdSection({ sheetDb }) {
             <article className="shared-row" key={expense.id}>
               <div className="shared-row-head">
                 <div><strong>{expense.concept}</strong><span>{expense.date} · {expense.category}</span></div>
-                <div><strong>{formatCurrency(expense.amount)}</strong><span>Pagó {payer?.name || "—"}</span></div>
+                <div><strong>{formatCurrency(expense.amount)}</strong><span>{expense.paidBy === "shared" ? "Pagaron entre todos" : `Pagó ${payer?.name || "—"}`}</span></div>
+                <label className="shared-status"><span>¿Cómo se pagó?</span><select value={expense.paidBy} onChange={(event) => updateExpensePayer(expense.id, event.target.value)}><option value="shared">Cada uno pagó su parte</option>{household.members.map((member) => <option key={member.id} value={member.id}>{member.name} pagó todo</option>)}</select></label>
                 <label className="shared-status"><span>Estado</span><select className={`status-select ${getStatusClass(statusOptions.includes(expense.status) ? expense.status : "Por revisar")}`} value={statusOptions.includes(expense.status) ? expense.status : "Por revisar"} onChange={(event) => updateExpenseStatus(expense.id, event.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
                 <button className="delete-row" type="button" onClick={() => removeExpense(expense.id)} aria-label={`Eliminar ${expense.concept}`}><Trash2 size={15} /></button>
               </div>
