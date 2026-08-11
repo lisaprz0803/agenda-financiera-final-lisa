@@ -1952,6 +1952,21 @@ select {
 .onboarding-steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
 .onboarding-steps span { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,.55); color: #765d6b; font-size: 12px; font-weight: 800; }
 .onboarding-steps b { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: #c481ad; color: white; }
+.cover-reassurance { display: block; margin-top: 10px; color: #735f68; font-size: 14px; font-weight: 750; }
+
+/* Lectura cómoda y controles fáciles de tocar */
+.planner-panel input,
+.planner-panel select,
+.planner-panel textarea { font-size: 16px; }
+.planner-panel button { min-height: 42px; }
+.panel-header p,
+.visual-note p,
+.setup-card > p,
+.monthly-calendar > p { font-size: 15px; line-height: 1.55; }
+.field > span,
+.simple-entry-grid label > span,
+.shared-form-grid label > span { font-size: 14px; }
+.empty-state { font-size: 15px; line-height: 1.55; }
 
 .settlement-guide { display: grid; gap: 7px; padding: 16px 18px; border: 1px solid #b9ddc5; border-radius: 17px; background: #effaf3; color: #416b50; }
 .debt-list { display: grid; gap: 12px; }
@@ -2135,6 +2150,7 @@ select {
   .cover-screen { min-height: auto; }
   .cover-media { display: block; }
   .cover-media img { max-height: 210px; object-fit: cover; }
+  .cover-reassurance { padding: 0 18px; font-size: 15px; line-height: 1.45; }
   .cover-copy h1 { font-size: clamp(38px,12vw,58px); }
   .checklist-layout { grid-template-columns: 1fr; }
   .checklist-items { grid-template-columns: 1fr; }

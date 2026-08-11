@@ -37,6 +37,7 @@ import cardTerminal from "../assets/card-terminal.jpeg";
 import piggyCalculator from "../assets/piggy-calculator.jpeg";
 import piggyPlant from "../assets/piggy-plant.jpeg";
 import plannerBanner from "../assets/planner-banner-v2.jpg";
+import heroCoverV2 from "../assets/hero-cover-v2.jpg";
 import sharedBanner from "../assets/shared-banner-v2.jpg";
 import checklistBanner from "../assets/checklist-banner.jpg";
 import incomeBanner from "../assets/income-banner.jpg";
@@ -1096,7 +1097,7 @@ function Cover({ onStart }) {
   return (
     <section className="cover-screen">
       <div className="cover-media">
-        <img src={plannerBanner} alt="Alcancía, agenda, calculadora, monedas y gráficos en tonos pastel" />
+        <img src={heroCoverV2} alt="Alcancía, agenda, calendario, calculadora y billetera en tonos pastel" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
@@ -1111,6 +1112,7 @@ function Cover({ onStart }) {
           <CheckCircle2 size={16} />
           Ver por dónde empezar
         </button>
+        <small className="cover-reassurance">No necesitas saber de finanzas. La agenda te guía paso a paso.</small>
         <div className="onboarding-steps"><span><b>1</b> Elige tu modo</span><span><b>2</b> Registra lo importante</span><span><b>3</b> Mira cuánto te queda</span></div>
       </div>
     </section>
