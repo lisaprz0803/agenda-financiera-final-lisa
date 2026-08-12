@@ -2405,7 +2405,7 @@ function AppShell({ auth }) {
           <ArrowRight size={15} />
         </button>
       </footer>
-      <nav className="mobile-bottom-nav" aria-label="Acciones rápidas"><button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button></nav>
+      <nav className="mobile-bottom-nav" aria-label="Acciones rápidas"><button type="button" onClick={() => move(-1)} disabled={pageIndex === 0}><ArrowLeft size={18} /><span>Anterior</span></button><button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button><button type="button" onClick={() => move(1)} disabled={pageIndex === order.length - 1}><ArrowRight size={18} /><span>Siguiente</span></button></nav>
     </div>
   );
 }

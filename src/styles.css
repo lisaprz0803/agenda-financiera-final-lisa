@@ -2280,11 +2280,11 @@ select {
 
 @media (max-width: 760px) {
   html, body { overflow-x: hidden; }
-  body { padding-bottom: 138px; }
+  body { padding-bottom: 82px; }
   .topbar { grid-template-columns: 1fr auto; padding: 10px 14px; }
   .topnav, .session { display: none; }
   .mobile-menu-button { display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--theme-line); border-radius: 13px; background: white; color: var(--theme-accent); }
-  .workspace { width: 100%; padding: 10px; }
+  .workspace { width: 100%; padding: 10px 10px 84px; }
   .planner-grid { display: block; }
   .planner-grid .sidebar { display: none; }
   .planner-grid.mobile-menu-open .sidebar { position: fixed; inset: 66px 14px 78px; z-index: 80; display: block; overflow-y: auto; border-radius: 20px; box-shadow: 0 24px 70px rgba(70,45,62,.32); }
@@ -2293,13 +2293,11 @@ select {
   .planner-panel .simple-entry-card,
   .planner-panel .simple-entry-grid,
   .planner-panel .simple-entry-grid label { min-width: 0; max-width: 100%; }
-  .pager { position: fixed; inset: auto 10px calc(68px + env(safe-area-inset-bottom)); z-index: 88; display: grid; grid-template-columns: 1fr auto 1fr; min-height: 52px; padding: 5px 7px; border: 1px solid var(--theme-line); border-radius: 18px; background: rgba(255,252,249,.97); box-shadow: 0 12px 32px rgba(72,49,64,.18); backdrop-filter: blur(14px); }
-  .pager button { min-height: 40px; padding: 0 13px; box-shadow: none; }
-  .pager button:last-child { justify-self: end; }
-  .pager > span { font-size: 12px; }
-  .mobile-bottom-nav { position: fixed; inset: auto 0 0; z-index: 90; display: grid; grid-template-columns: repeat(4,1fr); min-height: 64px; border-top: 1px solid rgba(139,111,104,.18); background: rgba(255,252,249,.96); backdrop-filter: blur(14px); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+  .pager { display: none; }
+  .mobile-bottom-nav { position: fixed; inset: auto 0 0; z-index: 90; display: grid; grid-template-columns: repeat(6,1fr); min-height: 64px; border-top: 1px solid rgba(139,111,104,.18); background: rgba(255,252,249,.97); backdrop-filter: blur(14px); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
   .mobile-bottom-nav button { display: grid; justify-items: center; gap: 2px; border: 0; background: transparent; color: #7b6470; font-size: 11px; font-weight: 800; }
-  .mobile-bottom-nav button:nth-child(2) svg { display: grid; place-items: center; width: 30px; height: 30px; padding: 6px; border-radius: 50%; background: #c878a5; color: white; }
+  .mobile-bottom-nav button:disabled { opacity: .35; }
+  .mobile-bottom-nav button:nth-child(3) svg { display: grid; place-items: center; width: 30px; height: 30px; padding: 6px; border-radius: 50%; background: #c878a5; color: white; }
   .cover-screen { min-height: auto; }
   .cover-media { display: block; }
   .cover-media img { max-height: 210px; object-fit: cover; }
