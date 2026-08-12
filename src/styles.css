@@ -2154,8 +2154,8 @@ select {
 .pdf-action-wrap small { color: var(--muted); font-size: 13px; }
 .mobile-menu-button, .mobile-bottom-nav, .menu-backdrop { display: none; }
 .duplicate-row { justify-self: start; display: inline-flex; align-items: center; gap: 7px; border: 1px solid #d7c5e2; border-radius: 999px; background: #f7f1fa; color: #745c87; padding: 0 14px; font-weight: 850; }
-.calendar-empty-action, .toggle-calendar { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; border: 1px solid #d5badf; border-radius: 999px; background: white; color: #76578a; padding: 0 16px; font-weight: 850; }
-.toggle-calendar { justify-self: start; }
+.calendar-empty-action, .toggle-calendar { width: min(100%, 430px); display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; border: 1px solid #d5badf; border-radius: 999px; background: white; color: #76578a; padding: 0 16px; font-weight: 850; justify-self: center; margin-inline: auto; }
+.toggle-calendar { justify-self: center; }
 .help-tip { grid-column: 1 / -1; border: 1px solid #ded1e5; border-radius: 14px; background: #fbf7fd; padding: 10px 13px; }
 .help-tip summary { display: flex; align-items: center; gap: 7px; color: #6f587e; font-weight: 850; cursor: pointer; }
 .help-tip p { margin: 9px 0 2px; color: var(--muted); line-height: 1.5; }
@@ -2319,7 +2319,8 @@ select {
   box-shadow: 0 9px 20px rgba(109, 70, 104, .16);
   cursor: pointer;
   animation: entryFormReveal .24s ease both;
-  margin-top: 6px;
+  margin: 6px auto 0;
+  align-self: center;
 }
 
 .floating-add-action:hover { transform: translateY(-2px); }
