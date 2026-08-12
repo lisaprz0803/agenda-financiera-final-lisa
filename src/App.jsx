@@ -221,6 +221,26 @@ const categoryOptions = [
   "Deudas",
   "Otro"
 ];
+const categoryStickerMap = {
+  Vivienda: { icon: "🏠", tone: "rose" },
+  Servicios: { icon: "💡", tone: "gold" },
+  Supermercado: { icon: "🛒", tone: "peach" },
+  Transporte: { icon: "🚌", tone: "mint" },
+  Familia: { icon: "💞", tone: "rose" },
+  "Familia / hijos": { icon: "🧸", tone: "peach" },
+  Bebé: { icon: "🍼", tone: "sky" },
+  Personal: { icon: "✨", tone: "lilac" },
+  Ahorro: { icon: "🐷", tone: "mint" },
+  Salud: { icon: "🩺", tone: "sky" },
+  Educación: { icon: "🎒", tone: "rose" },
+  Deudas: { icon: "💳", tone: "lilac" },
+  Otro: { icon: "🛍️", tone: "peach" }
+};
+
+function CategorySticker({ category, compact = false }) {
+  const sticker = categoryStickerMap[category] || categoryStickerMap.Otro;
+  return <span className={`category-sticker ${sticker.tone} ${compact ? "compact" : ""}`} aria-label={`Categoría ${category || "Otro"}`} title={category || "Otro"}><i>{sticker.icon}</i>{compact ? null : <b>{category || "Otro"}</b>}</span>;
+}
 const paymentMethodOptions = ["Transferencia", "Débito", "Crédito", "Efectivo", "Cheques", "Pago web", "Otro"];
 const paymentDateOptions = [
   "Día 1",
@@ -1576,7 +1596,7 @@ function PaymentsSection({ sheetDb }) {
       <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div><AddRowButton label="Agregar pago" onClick={addPayment} /></div>
         {payments.map((row, rowIndex) => (
           <div className="simple-entry-card" key={`pago-${rowIndex}`}>
-            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> Pago {rowIndex + 1}</strong></div>
+            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> Pago {rowIndex + 1}</strong><CategorySticker category={findOption(row[0], categoryOptions)} /></div>
             <div className="simple-entry-grid">
               <label><span>Categoría</span><select value={findOption(row[0], categoryOptions)} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 0, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Qué debes pagar</span><input value={row[1]} placeholder="Ej: arriendo" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 1, e.target.value)} /></label>
@@ -1796,7 +1816,7 @@ function HouseholdSection({ sheetDb }) {
           return (
             <article className="shared-row" key={expense.id}>
               <div className="shared-row-head">
-                <div><strong>{expense.concept}</strong><span>{expense.date} · {expense.category}</span></div>
+                <div className="shared-concept"><CategorySticker category={expense.category} compact /><div><strong>{expense.concept}</strong><span>{expense.date} · {expense.category}</span></div></div>
                 <div><strong>{formatCurrency(expense.amount)}</strong><span>{expense.paidBy === "shared" ? "Pagaron entre todos" : `Pagó ${payer?.name || "—"}`}</span></div>
                 <label className="shared-status"><span>¿Cómo se pagó?</span><select value={expense.paidBy} onChange={(event) => updateExpensePayer(expense.id, event.target.value)}><option value="shared">Cada uno pagó su parte</option>{household.members.map((member) => <option key={member.id} value={member.id}>{member.name} pagó todo</option>)}</select></label>
                 <label className="shared-status"><span>Estado</span><select className={`status-select ${getStatusClass(statusOptions.includes(expense.status) ? expense.status : "Por revisar")}`} value={statusOptions.includes(expense.status) ? expense.status : "Por revisar"} onChange={(event) => updateExpenseStatus(expense.id, event.target.value)}>{statusOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
@@ -2176,7 +2196,7 @@ function DailyExpensesList({ sheetDb }) {
               <label><span>Concepto</span><input value={row[1]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 1, e.target.value)} /></label>
               <label><span>Categoría</span><select value={findOption(row[2], categoryOptions)} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 2, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Monto</span><input inputMode="numeric" value={row[3]} onChange={(e) => sheetDb.updateCell("gastos", rowIndex, 3, formatMoneyEntry(e.target.value))} /></label>
-            </div> : <div className="expense-main"><span>{row[0]}</span><strong>{row[1]}</strong><small>{row[2]} · {row[4]}</small></div>}
+            </div> : <div className="expense-main with-sticker"><CategorySticker category={row[2]} compact /><div><span>{row[0]}</span><strong>{row[1]}</strong><small>{row[2]} · {row[4]}</small></div></div>}
             <strong className="expense-amount">{formatCurrency(row[3])}</strong>
             <div className="row-actions">{editing?.index === rowIndex ? <><button className="finish-edit" type="button" onClick={() => setEditing(null)} aria-label={`Guardar cambios de ${row[1]}`} title="Guardar cambios"><Save size={15} /></button><button className="cancel-edit" type="button" onClick={() => { editing.original.forEach((value, columnIndex) => sheetDb.updateCell("gastos", rowIndex, columnIndex, value)); setEditing(null); }} aria-label={`Cancelar edición de ${row[1]}`} title="Cancelar edición"><X size={15} /></button></> : <button type="button" onClick={() => setEditing({ index: rowIndex, original: [...row] })} aria-label={`Editar ${row[1]}`}><Pencil size={15} /></button>}<DeleteRowButton label={`Eliminar gasto fila ${rowIndex + 1}`} disabled={sheetDb.status.saving} onClick={() => sheetDb.deleteRow("gastos", rowIndex)} /></div>
           </article>

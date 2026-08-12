@@ -2100,7 +2100,11 @@ select {
 .expense-card-list { display: grid; gap: 10px; }
 .expense-row-card { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 14px; align-items: center; padding: 14px 16px; border: 1px solid rgba(139,111,104,.15); border-radius: 16px; background: rgba(255,255,255,.88); }
 .expense-main { display: grid; gap: 3px; }
+.expense-main.with-sticker { grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
+.expense-main.with-sticker > div { display: grid; gap: 3px; }
 .expense-main span, .expense-main small { color: var(--muted); font-size: 12px; }
+.shared-concept { display: flex !important; flex-direction: row !important; align-items: center; gap: 10px !important; }
+.shared-concept > div { display: flex; flex-direction: column; gap: 4px; }
 .expense-amount { color: var(--theme-accent); }
 .row-actions { display: flex; gap: 6px; }
 .row-actions > button { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 11px; background: #f4edf8; color: #7c6390; }
@@ -2223,7 +2227,19 @@ select {
   border-radius: 20px;
   background: rgba(255,255,255,.9);
 }
+.entry-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .entry-card-heading strong { display: flex; align-items: center; gap: 8px; color: var(--theme-accent); }
+.category-sticker { --sticker: #f6dce8; display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 4px 11px 4px 5px; border: 2px solid color-mix(in srgb, var(--sticker) 72%, #8b6f68); border-radius: 999px; background: color-mix(in srgb, var(--sticker) 46%, white); color: #684f5f; box-shadow: 0 4px 10px rgba(91,63,79,.08); }
+.category-sticker i { display: grid; place-items: center; width: 28px; height: 28px; border: 1px dashed color-mix(in srgb, var(--sticker) 55%, #7b5f65); border-radius: 50%; background: white; font-style: normal; font-size: 17px; }
+.category-sticker b { font-size: 11px; font-weight: 900; letter-spacing: .01em; }
+.category-sticker.compact { width: 42px; min-width: 42px; height: 42px; min-height: 42px; justify-content: center; padding: 4px; }
+.category-sticker.compact i { width: 30px; height: 30px; }
+.category-sticker.rose { --sticker: #f3bfd5; }
+.category-sticker.gold { --sticker: #f4d67c; }
+.category-sticker.peach { --sticker: #f5c59e; }
+.category-sticker.mint { --sticker: #a9dfd3; }
+.category-sticker.sky { --sticker: #acdce8; }
+.category-sticker.lilac { --sticker: #d3bce8; }
 .simple-entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .simple-entry-grid label { display: grid; gap: 7px; min-width: 0; }
 .simple-entry-grid label.wide { grid-column: 1 / -1; }
