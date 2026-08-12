@@ -386,6 +386,7 @@ code {
   font-weight: 850;
   white-space: nowrap;
 }
+.brand small { display: inline-grid; place-items: center; min-width: 28px; height: 20px; border-radius: 999px; background: var(--theme-accent); color: white; font-size: 10px; font-weight: 900; }
 
 .topnav {
   display: flex;

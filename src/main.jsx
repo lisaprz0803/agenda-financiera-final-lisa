@@ -16,3 +16,9 @@ if ("serviceWorker" in navigator) {
     registrations.forEach((registration) => registration.unregister());
   }).catch(() => {});
 }
+
+// Limpia solamente archivos antiguos de la aplicación; los datos financieros
+// permanecen intactos en localStorage.
+if ("caches" in window) {
+  caches.keys().then((keys) => Promise.all(keys.map((key) => caches.delete(key)))).catch(() => {});
+}
