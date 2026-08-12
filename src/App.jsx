@@ -1536,9 +1536,14 @@ function ChecklistSection({ sheetDb, onSection }) {
 }
 
 function IncomeSection({ sheetDb }) {
-  const rows = sheetDb.draft.ingresos.length ? sheetDb.draft.ingresos : [["", "", "", "", ""]];
+  const rows = sheetDb.draft.ingresos;
+  const [newRowIndex, setNewRowIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
   function addIncome() {
+    const nextIndex = sheetDb.draft.ingresos.length;
     sheetDb.addRow("ingresos", rowTemplates.ingresos);
+    setNewRowIndex(nextIndex);
+    setEditingIndex(nextIndex);
     window.setTimeout(() => document.querySelectorAll(".simple-entry-card").item(document.querySelectorAll(".simple-entry-card").length - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
   return (
@@ -1553,7 +1558,8 @@ function IncomeSection({ sheetDb }) {
       <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div><AddRowButton label="Agregar ingreso" onClick={addIncome} /></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ingreso-${rowIndex}`}>
-          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> Ingreso {rowIndex + 1}</strong></div>
+          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> {row[0] || `Ingreso ${rowIndex + 1}`} {row[2] ? `· ${formatCurrency(parseMoney(row[2]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => setEditingIndex(editingIndex === rowIndex ? null : rowIndex)}>{editingIndex === rowIndex ? "Cerrar" : "Editar"}</button></div>
+          {editingIndex === rowIndex ? <>
           <div className="simple-entry-grid">
             <label><span>Fuente</span><input value={row[0]} placeholder="Ej: sueldo" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 0, e.target.value)} /></label>
             <label><span>Fecha en que lo recibes</span><input type="date" value={row[1]} onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 1, e.target.value)} /></label>
@@ -1566,8 +1572,11 @@ function IncomeSection({ sheetDb }) {
             disabled={sheetDb.status.saving}
             onClick={() => sheetDb.deleteRow("ingresos", rowIndex)}
           />
+          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ingresos", rowIndex); setNewRowIndex(null); }}>Cancelar</button> : null}
+          </> : <div className="saved-entry-summary"><span>{row[1] || "Sin fecha"}</span><span className={`pill ${getStatusClass(row[3] || "Por revisar")}`}>{row[3] || "Por revisar"}</span></div>}
         </div>
       ))}
+      {!rows.length ? <div className="empty-state compact-empty">Todavía no hay ingresos. Presiona “Agregar ingreso” cuando quieras comenzar.</div> : null}
       <div className="total-card">
         <span>Total de ingresos</span>
         <strong>{formatCurrency(getFinancialSummary(sheetDb.draft).incomeTotal)}</strong>
@@ -1578,10 +1587,15 @@ function IncomeSection({ sheetDb }) {
 }
 
 function PaymentsSection({ sheetDb }) {
-  const payments = sheetDb.draft.pagos.length ? sheetDb.draft.pagos : [["", "", "", "", "", "", "", ""]];
+  const payments = sheetDb.draft.pagos;
+  const [newRowIndex, setNewRowIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
   const summary = getFinancialSummary(sheetDb.draft);
   function addPayment() {
+    const nextIndex = sheetDb.draft.pagos.length;
     sheetDb.addRow("pagos", rowTemplates.pagos);
+    setNewRowIndex(nextIndex);
+    setEditingIndex(nextIndex);
     window.setTimeout(() => document.querySelectorAll(".simple-entry-card").item(document.querySelectorAll(".simple-entry-card").length - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
   return (
@@ -1596,7 +1610,8 @@ function PaymentsSection({ sheetDb }) {
       <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div><AddRowButton label="Agregar pago" onClick={addPayment} /></div>
         {payments.map((row, rowIndex) => (
           <div className="simple-entry-card" key={`pago-${rowIndex}`}>
-            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> Pago {rowIndex + 1}</strong><CategorySticker category={findOption(row[0], categoryOptions)} /></div>
+            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> {row[1] || `Pago ${rowIndex + 1}`} {row[4] || row[3] ? `· ${formatCurrency(parseMoney(row[4] || row[3]))}` : ""}</strong><div><CategorySticker category={findOption(row[0], categoryOptions)} /><button className="edit-entry" type="button" onClick={() => setEditingIndex(editingIndex === rowIndex ? null : rowIndex)}>{editingIndex === rowIndex ? "Cerrar" : "Editar"}</button></div></div>
+            {editingIndex === rowIndex ? <>
             <div className="simple-entry-grid">
               <label><span>Categoría</span><select value={findOption(row[0], categoryOptions)} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 0, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
               <label><span>Qué debes pagar</span><input value={row[1]} placeholder="Ej: arriendo" onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 1, e.target.value)} /></label>
@@ -1611,8 +1626,11 @@ function PaymentsSection({ sheetDb }) {
               onClick={() => sheetDb.deleteRow("pagos", rowIndex)}
             />
             <button className="duplicate-row" type="button" onClick={() => sheetDb.addRow("pagos", [...row])}><Copy size={15} /> Duplicar este pago</button>
+            {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("pagos", rowIndex); setNewRowIndex(null); }}>Cancelar</button> : null}
+            </> : <div className="saved-entry-summary"><span>{row[2] || "Sin fecha"}</span><span className={`pill ${getStatusClass(row[6] || "Por revisar")}`}>{row[6] || "Por revisar"}</span></div>}
           </div>
         ))}
+      {!payments.length ? <div className="empty-state compact-empty">Todavía no hay pagos. Las casillas aparecerán cuando presiones “Agregar pago”.</div> : null}
       <div className="formula-note">
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
@@ -1634,6 +1652,7 @@ function HouseholdSection({ sheetDb }) {
     paymentMode: "one",
     splitMode: "equal"
   });
+  const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
     if (!household.members.some((member) => member.id === form.paidBy)) {
@@ -1697,6 +1716,7 @@ function HouseholdSection({ sheetDb }) {
       }]
     }));
     setForm((current) => ({ ...current, concept: "", amount: "" }));
+    setFormOpen(false);
   }
 
   function updateShare(expenseId, memberId, value) {
@@ -1785,7 +1805,7 @@ function HouseholdSection({ sheetDb }) {
         </div>
       </section>
 
-      <form className="shared-expense-form" onSubmit={submitExpense}>
+      {!formOpen ? <AddBottomButton label="Agregar gasto compartido" onClick={() => setFormOpen(true)} /> : <form className="shared-expense-form entry-form-reveal" onSubmit={submitExpense}>
         <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>Completa estos datos. La agenda dividirá el monto automáticamente.</p></div></div>
         <div className="shared-form-grid">
           <label><span>Fecha</span><input type="date" value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
@@ -1813,7 +1833,8 @@ function HouseholdSection({ sheetDb }) {
         <button className="shared-submit" type="submit" disabled={household.members.length < 2 || !previewAmount || !form.concept.trim()}>
           <Plus size={18} /> Dividir y agregar gasto
         </button>
-      </form>
+        <button className="cancel-entry" type="button" onClick={() => setFormOpen(false)}>Cancelar</button>
+      </form>}
 
       <div className="shared-list">
         <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Aquí verás tu parte y la de cada persona. Puedes corregir los montos si no es mitad y mitad.</p></div></div>
@@ -1890,6 +1911,7 @@ function BudgetSection({ sheetDb }) {
 
 function DailySpendingSection({ sheetDb }) {
   const summary = getFinancialSummary(sheetDb.draft);
+  const [formOpen, setFormOpen] = useState(false);
   return (
     <div className="form-grid">
       <VisualNote
@@ -1900,19 +1922,24 @@ function DailySpendingSection({ sheetDb }) {
         wide
       />
       <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
-      <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
+      {formOpen ? <DailyExpenseForm onSubmit={async (expense) => { await sheetDb.appendDailyExpense(expense); setFormOpen(false); }} saving={sheetDb.status.saving} onCancel={() => setFormOpen(false)} /> : <AddBottomButton label="Agregar gasto diario" onClick={() => setFormOpen(true)} />}
       <DailyExpensesList sheetDb={sheetDb} />
-      <AddBottomButton label="Agregar otro gasto" onClick={() => document.querySelector(".daily-form")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+      {sheetDb.draft.gastos.length && !formOpen ? <AddBottomButton label="Agregar otro gasto" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
 }
 
 function SavingsSection({ sheetDb }) {
-  const rows = sheetDb.draft.ahorros.length ? sheetDb.draft.ahorros : [["", "", "", "", ""]];
+  const rows = sheetDb.draft.ahorros;
+  const [newRowIndex, setNewRowIndex] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
   const summary = getFinancialSummary(sheetDb.draft);
   const progressNumber = summary.savingsProgress;
   function addSavingsGoal() {
+    const nextIndex = sheetDb.draft.ahorros.length;
     sheetDb.addRow("ahorros", rowTemplates.ahorros);
+    setNewRowIndex(nextIndex);
+    setEditingIndex(nextIndex);
     window.setTimeout(() => document.querySelectorAll(".simple-entry-card").item(document.querySelectorAll(".simple-entry-card").length - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   }
   return (
@@ -1920,7 +1947,8 @@ function SavingsSection({ sheetDb }) {
       <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div><AddRowButton label="Agregar meta de ahorro" onClick={addSavingsGoal} /></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ahorro-${rowIndex}`}>
-          <div className="entry-card-heading"><strong><PiggyBank size={18} /> Meta {rowIndex + 1}</strong></div>
+          <div className="entry-card-heading"><strong><PiggyBank size={18} /> {row[0] || `Meta ${rowIndex + 1}`} {row[1] ? `· ${formatCurrency(parseMoney(row[1]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => setEditingIndex(editingIndex === rowIndex ? null : rowIndex)}>{editingIndex === rowIndex ? "Cerrar" : "Editar"}</button></div>
+          {editingIndex === rowIndex ? <>
           <div className="simple-entry-grid">
             <label><span>¿Para qué ahorras?</span><input value={row[0]} placeholder="Ej: vacaciones" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 0, e.target.value)} /></label>
             <label><span>Meta de este mes</span><input inputMode="numeric" value={row[1]} placeholder="$" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 1, formatMoneyEntry(e.target.value))} /></label>
@@ -1933,8 +1961,11 @@ function SavingsSection({ sheetDb }) {
             disabled={sheetDb.status.saving}
             onClick={() => sheetDb.deleteRow("ahorros", rowIndex)}
           />
+          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ahorros", rowIndex); setNewRowIndex(null); }}>Cancelar</button> : null}
+          </> : <div className="saved-entry-summary"><span>Ahorrado: {formatCurrency(parseMoney(row[2]))}</span><span>{row[3] || "Sin fecha meta"}</span></div>}
         </div>
       ))}
+      {!rows.length ? <div className="empty-state compact-empty">Aún no tienes metas. Las casillas aparecerán al presionar “Agregar meta de ahorro”.</div> : null}
       <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
       <AddBottomButton label="Agregar otra meta de ahorro" onClick={addSavingsGoal} />
@@ -1975,12 +2006,14 @@ function PiggySavingsProgress({ progress, saved, target }) {
 function DebtSection({ sheetDb }) {
   const [form, setForm] = useState({ name: "", total: "", installment: "", installmentsTotal: "", installmentsPaid: "", nextDate: new Date().toISOString().slice(0, 10), status: "Por revisar", priority: "Media" });
   const debts = sheetDb.household.debts || [];
+  const [formOpen, setFormOpen] = useState(false);
   function update(field, value) { setForm((current) => ({ ...current, [field]: value })); }
   function submit(event) {
     event.preventDefault();
     if (!form.name.trim() || !parseMoney(form.total)) return;
     sheetDb.updateHousehold((current) => ({ ...current, debts: [...(current.debts || []), { ...form, id: `${Date.now()}`, name: form.name.trim(), total: parseMoney(form.total), installment: parseMoney(form.installment), installmentsTotal: Number(form.installmentsTotal) || 0, installmentsPaid: Number(form.installmentsPaid) || 0 }] }));
     setForm((current) => ({ ...current, name: "", total: "", installment: "", installmentsTotal: "", installmentsPaid: "" }));
+    setFormOpen(false);
   }
   function removeDebt(id) { sheetDb.updateHousehold((current) => ({ ...current, debts: current.debts.filter((debt) => debt.id !== id) })); }
   return (
@@ -1992,7 +2025,7 @@ function DebtSection({ sheetDb }) {
         text="Ordenar cuotas y saldos pendientes te ayuda a decidir cuál atender primero."
         wide
       />
-      <form className="simple-entry-card" onSubmit={submit}>
+      {!formOpen ? <AddBottomButton label="Agregar deuda" onClick={() => setFormOpen(true)} /> : <form className="simple-entry-card entry-form-reveal" onSubmit={submit}>
         <div className="entry-card-heading"><strong><TrendingDown size={18} /> Agregar deuda</strong></div>
         <div className="simple-entry-grid debt-grid">
           <label><span>Nombre</span><input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ej: tarjeta de crédito" required /></label>
@@ -2005,7 +2038,8 @@ function DebtSection({ sheetDb }) {
           <label><span>Prioridad</span><select value={form.priority} onChange={(e) => update("priority", e.target.value)}><option>Alta</option><option>Media</option><option>Baja</option></select></label>
         </div>
         <button className="shared-submit" type="submit"><Plus size={17} /> Agregar deuda</button>
-      </form>
+        <button className="cancel-entry" type="button" onClick={() => setFormOpen(false)}>Cancelar</button>
+      </form>}
       <div className="debt-list">
         {debts.length ? debts.map((debt) => {
           const percent = debt.installmentsTotal ? Math.min(100, Math.round((debt.installmentsPaid / debt.installmentsTotal) * 100)) : 0;
@@ -2014,7 +2048,7 @@ function DebtSection({ sheetDb }) {
           return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Saldo pendiente · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Pagado hasta hoy: {formatCurrency(paidAmount)} · {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
-      <AddBottomButton label="Agregar otra deuda" onClick={() => document.querySelector(".debt-grid")?.closest("form")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+      {debts.length && !formOpen ? <AddBottomButton label="Agregar otra deuda" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
 }
@@ -2234,7 +2268,7 @@ function AddBottomButton({ label, onClick }) {
   return <button className="add-bottom-action" type="button" onClick={onClick}><Plus size={18} /> {label}</button>;
 }
 
-function DailyExpenseForm({ onSubmit, saving }) {
+function DailyExpenseForm({ onSubmit, saving, onCancel }) {
   const today = new Date().toISOString().slice(0, 10);
   const [expense, setExpense] = useState({
     date: today,
@@ -2308,6 +2342,7 @@ function DailyExpenseForm({ onSubmit, saving }) {
         /></label>
       </div>
       <SaveButton label="Agregar gasto" saving={saving} type="submit" />
+      <button className="cancel-entry" type="button" onClick={onCancel}>Cancelar</button>
       {success ? <div className="inline-success" role="status">{success}</div> : null}
     </form>
   );
