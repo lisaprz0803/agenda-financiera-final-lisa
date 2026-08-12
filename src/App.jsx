@@ -147,20 +147,20 @@ const sections = [
     message: "Ahorrar aunque sea poco sigue siendo elegirte."
   },
   {
-    id: "presupuesto",
-    label: "8. Presupuesto",
-    icon: CircleDollarSign,
-    title: "Tu presupuesto disponible",
-    description: "Revisa cuánto entra, cuánto está comprometido y cuánto te va quedando.",
-    message: "Ahora que ya anotaste lo importante, puedes ver tu dinero con más claridad."
-  },
-  {
     id: "gastos",
-    label: "9. Gastos diarios",
+    label: "8. Gastos diarios",
     icon: TrendingDown,
     title: "Gastos diarios",
     description: "Registra supermercado, transporte, salidas y compras pequeñas durante el mes.",
     message: "Anotar sin juzgar te ayuda a entender tus hábitos y decidir mejor."
+  },
+  {
+    id: "presupuesto",
+    label: "9. Presupuesto",
+    icon: CircleDollarSign,
+    title: "Tu presupuesto disponible",
+    description: "Revisa cuánto entra, cuánto está comprometido y cuánto te va quedando.",
+    message: "Ahora que ya anotaste lo importante, puedes ver tu dinero con más claridad."
   },
   {
     id: "calendario",
@@ -629,7 +629,7 @@ function getFinancialSummary(draft) {
   const dailyExpenses = draft.gastos.reduce((sum, row) => sum + parseMoney(row[3]), 0);
   const savingsTarget = draft.ahorros.reduce((sum, row) => sum + parseMoney(row[1]), 0);
   const savingsSaved = draft.ahorros.reduce((sum, row) => sum + parseMoney(row[2]), 0);
-  const projectedBalance = incomeTotal - monthlyPayments - dailyExpenses - savingsTarget;
+  const projectedBalance = incomeTotal - monthlyPayments - dailyExpenses - savingsSaved;
   const savingsGap = Math.max(0, savingsTarget - savingsSaved);
   const savingsProgress = savingsTarget
     ? Math.min(100, Math.round((savingsSaved / savingsTarget) * 100))
@@ -1829,7 +1829,7 @@ function BudgetSection({ sheetDb }) {
         helper={balanceStatus.helper}
         wide
       />
-      <HelpTip text="Este resultado mira todo el mes: ingresos esperados menos pagos, gastos, ahorro y tu parte compartida." />
+      <HelpTip text="Este resultado mira todo el mes: ingresos esperados menos pagos, gastos, el ahorro que ya separaste y tu parte compartida. La meta completa no se descuenta hasta que realmente la ahorras." />
       <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Dinero realmente disponible en este momento" wide />
       <HelpTip text="Cuenta solamente el dinero que ya recibiste y descuenta lo que ya pagaste, gastaste o separaste." />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Lo que todavía falta para completar tu meta" />
@@ -1959,8 +1959,9 @@ function DebtSection({ sheetDb }) {
       <div className="debt-list">
         {debts.length ? debts.map((debt) => {
           const percent = debt.installmentsTotal ? Math.min(100, Math.round((debt.installmentsPaid / debt.installmentsTotal) * 100)) : 0;
-          const remaining = debt.installmentsTotal && debt.installment ? Math.max(0, (debt.installmentsTotal - debt.installmentsPaid) * debt.installment) : debt.total;
-          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Falta por pagar · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Has pagado {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
+          const paidAmount = debt.installment * debt.installmentsPaid;
+          const remaining = Math.max(0, debt.total - paidAmount);
+          return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Saldo pendiente · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Pagado hasta hoy: {formatCurrency(paidAmount)} · {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
     </div>
@@ -2098,7 +2099,7 @@ function MonthlyCalendar({ sheetDb, month, year, onSection }) {
       <p>No tienes que volver a escribir nada aquí: las fechas que eliges en “Pagos” aparecen automáticamente.</p>
       <div className="payment-agenda">
         <div className="list-heading"><div><h3><CalendarDays size={19} /> Próximos pagos</h3><p>{scheduledPayments.length ? `${scheduledPayments.length} pagos programados` : "Todavía no hay pagos con fecha este mes."}</p></div></div>
-        {scheduledPayments.map((row, index) => <div className="agenda-item" key={`${row[2]}-${row[1]}-${index}`}><span>{new Date(`${row[2]}T12:00:00`).toLocaleDateString("es-CL", { day: "2-digit", month: "short" })}</span><strong>{row[1]}</strong><em>{formatCurrency(row[4] || row[3])}</em><small>{row[6] === "Revisar" ? "Por revisar" : row[6] || "Por revisar"}</small></div>)}
+        {scheduledPayments.map((row, index) => { const status = statusOptions.includes(row[6]) ? row[6] : "Por revisar"; return <div className={`agenda-item ${getStatusClass(status)}`} key={`${row[2]}-${row[1]}-${index}`}><span>{new Date(`${row[2]}T12:00:00`).toLocaleDateString("es-CL", { day: "2-digit", month: "short" })}</span><strong>{row[1]}</strong><em>{formatCurrency(row[4] || row[3])}</em><small>{status}</small></div>; })}
         {!scheduledPayments.length ? <button className="calendar-empty-action" type="button" onClick={() => onSection("pagos")}><Plus size={16} /> Agregar un pago con fecha</button> : null}
       </div>
       {scheduledPayments.length ? <button className="toggle-calendar" type="button" onClick={() => setShowFullCalendar((value) => !value)}><CalendarDays size={16} /> {showFullCalendar ? "Ocultar calendario completo" : "Ver calendario completo"}</button> : null}
@@ -2107,15 +2108,14 @@ function MonthlyCalendar({ sheetDb, month, year, onSection }) {
           {Array.from({ length: daysInMonth }, (_, index) => {
             const day = String(index + 1);
             const dateKey = `${monthPrefix}-${day.padStart(2, "0")}`;
-            const scheduled = sheetDb.draft.pagos
-              .filter((row) => row[2] === dateKey)
-              .map((row) => row[1])
-              .filter(Boolean);
+            const scheduledRows = sheetDb.draft.pagos.filter((row) => row[2] === dateKey && row[1]);
+            const scheduled = scheduledRows.map((row) => row[1]);
+            const dayStatus = scheduledRows.some((row) => row[6] === "Pendiente") ? "Pendiente" : scheduledRows.some((row) => row[6] === "Por revisar") ? "Por revisar" : scheduledRows.length ? "Pagado" : "";
             const manualNote = sheetDb.calendar[day] || "";
             const note = [manualNote, ...scheduled].filter(Boolean).join(" · ");
             return (
               <div
-                className={note ? "calendar-day has-payment" : "calendar-day"}
+                className={note ? `calendar-day has-payment ${getStatusClass(dayStatus || "Por revisar")}` : "calendar-day"}
                 key={day}
                 aria-label={`Día ${day}${note ? `: ${note}` : ""}`}
               >

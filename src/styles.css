@@ -2252,9 +2252,21 @@ select {
 .agenda-item > span { color: var(--theme-accent); font-weight: 900; text-transform: capitalize; }
 .agenda-item em { font-style: normal; font-weight: 800; }
 .agenda-item small { padding: 5px 8px; border-radius: 999px; background: #f0e8f8; color: #735a88; }
+.agenda-item.status-paid { border: 1px solid #a9d9b8; background: #effaf3; }
+.agenda-item.status-paid small { background: #d5f0df; color: #33704d; }
+.agenda-item.status-pending { border: 1px solid #efb3bd; background: #fff1f3; }
+.agenda-item.status-pending small { background: #f8d5dc; color: #9b4055; }
+.agenda-item.status-review { border: 1px solid #e9cf73; background: #fff9df; }
+.agenda-item.status-review small { background: #f8e9a9; color: #765e16; }
 .calendar-shell.simple { display: block; }
 .calendar-day { cursor: default; }
 .calendar-day.has-payment { border-color: #c895d7; background: #faf1ff; }
+.calendar-day.has-payment.status-paid { border-color: #78bd91; background: #eaf8ef; }
+.calendar-day.has-payment.status-paid .day-dot { background: #3b9a62; }
+.calendar-day.has-payment.status-pending { border-color: #df8294; background: #fff0f2; }
+.calendar-day.has-payment.status-pending .day-dot { background: #c94f69; }
+.calendar-day.has-payment.status-review { border-color: #dfc152; background: #fff8d8; }
+.calendar-day.has-payment.status-review .day-dot { background: #c49c17; }
 
 .daily-form > p { margin: -4px 0 2px; color: var(--muted); }
 
