@@ -260,7 +260,9 @@ function normalizeHousehold(value) {
   const members = Array.isArray(value?.members) && value.members.length
     ? value.members.slice(0, 4).map((member, index) => ({
         id: String(member.id || `persona-${index + 1}`),
-        name: String(member.name || `Persona ${index + 1}`)
+        name: member.name === undefined || member.name === null
+          ? `Persona ${index + 1}`
+          : String(member.name)
       }))
     : defaultHousehold.members;
   const memberIds = new Set(members.map((member) => member.id));
