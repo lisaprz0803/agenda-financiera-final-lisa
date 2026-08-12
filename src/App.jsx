@@ -1510,6 +1510,10 @@ function ChecklistSection({ sheetDb, onSection }) {
 
 function IncomeSection({ sheetDb }) {
   const rows = sheetDb.draft.ingresos.length ? sheetDb.draft.ingresos : [["", "", "", "", ""]];
+  function addIncome() {
+    sheetDb.addRow("ingresos", rowTemplates.ingresos);
+    window.setTimeout(() => document.querySelectorAll(".simple-entry-card").item(document.querySelectorAll(".simple-entry-card").length - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
   return (
     <div className="stack">
       <VisualNote
@@ -1519,7 +1523,7 @@ function IncomeSection({ sheetDb }) {
         text="Registra tu sueldo y cualquier ingreso adicional antes de organizar tus compromisos."
         wide
       />
-      <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div><AddRowButton label="Agregar ingreso" onClick={() => sheetDb.addRow("ingresos", rowTemplates.ingresos)} /></div>
+      <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div><AddRowButton label="Agregar ingreso" onClick={addIncome} /></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ingreso-${rowIndex}`}>
           <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> Ingreso {rowIndex + 1}</strong></div>
@@ -1541,6 +1545,7 @@ function IncomeSection({ sheetDb }) {
         <span>Total de ingresos</span>
         <strong>{formatCurrency(getFinancialSummary(sheetDb.draft).incomeTotal)}</strong>
       </div>
+      <AddBottomButton label="Agregar otro ingreso" onClick={addIncome} />
     </div>
   );
 }
@@ -1548,6 +1553,10 @@ function IncomeSection({ sheetDb }) {
 function PaymentsSection({ sheetDb }) {
   const payments = sheetDb.draft.pagos.length ? sheetDb.draft.pagos : [["", "", "", "", "", "", "", ""]];
   const summary = getFinancialSummary(sheetDb.draft);
+  function addPayment() {
+    sheetDb.addRow("pagos", rowTemplates.pagos);
+    window.setTimeout(() => document.querySelectorAll(".simple-entry-card").item(document.querySelectorAll(".simple-entry-card").length - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
   return (
     <div className="stack">
       <VisualNote
@@ -1557,7 +1566,7 @@ function PaymentsSection({ sheetDb }) {
         text="Ten tus pagos a la vista para evitar sorpresas y decidir con menos enredo."
         wide
       />
-      <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div><AddRowButton label="Agregar pago" onClick={() => sheetDb.addRow("pagos", rowTemplates.pagos)} /></div>
+      <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div><AddRowButton label="Agregar pago" onClick={addPayment} /></div>
         {payments.map((row, rowIndex) => (
           <div className="simple-entry-card" key={`pago-${rowIndex}`}>
             <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> Pago {rowIndex + 1}</strong></div>
@@ -1581,6 +1590,7 @@ function PaymentsSection({ sheetDb }) {
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
       </div>
+      <AddBottomButton label="Agregar otro pago" onClick={addPayment} />
     </div>
   );
 }
@@ -1858,6 +1868,7 @@ function DailySpendingSection({ sheetDb }) {
       <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
       <DailyExpenseForm onSubmit={sheetDb.appendDailyExpense} saving={sheetDb.status.saving} />
       <DailyExpensesList sheetDb={sheetDb} />
+      <AddBottomButton label="Agregar otro gasto" onClick={() => document.querySelector(".daily-form")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
     </div>
   );
 }
@@ -1866,9 +1877,13 @@ function SavingsSection({ sheetDb }) {
   const rows = sheetDb.draft.ahorros.length ? sheetDb.draft.ahorros : [["", "", "", "", ""]];
   const summary = getFinancialSummary(sheetDb.draft);
   const progressNumber = summary.savingsProgress;
+  function addSavingsGoal() {
+    sheetDb.addRow("ahorros", rowTemplates.ahorros);
+    window.setTimeout(() => document.querySelectorAll(".simple-entry-card").item(document.querySelectorAll(".simple-entry-card").length - 1)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
   return (
     <div className="savings-layout">
-      <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div><AddRowButton label="Agregar meta de ahorro" onClick={() => sheetDb.addRow("ahorros", rowTemplates.ahorros)} /></div>
+      <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div><AddRowButton label="Agregar meta de ahorro" onClick={addSavingsGoal} /></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ahorro-${rowIndex}`}>
           <div className="entry-card-heading"><strong><PiggyBank size={18} /> Meta {rowIndex + 1}</strong></div>
@@ -1888,6 +1903,7 @@ function SavingsSection({ sheetDb }) {
       ))}
       <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
+      <AddBottomButton label="Agregar otra meta de ahorro" onClick={addSavingsGoal} />
     </div>
   );
 }
@@ -1964,6 +1980,7 @@ function DebtSection({ sheetDb }) {
           return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Saldo pendiente · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Pagado hasta hoy: {formatCurrency(paidAmount)} · {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
+      <AddBottomButton label="Agregar otra deuda" onClick={() => document.querySelector(".debt-grid")?.closest("form")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
     </div>
   );
 }
@@ -2179,6 +2196,10 @@ function AddRowButton({ label, onClick }) {
   );
 }
 
+function AddBottomButton({ label, onClick }) {
+  return <button className="add-bottom-action" type="button" onClick={onClick}><Plus size={18} /> {label}</button>;
+}
+
 function DailyExpenseForm({ onSubmit, saving }) {
   const today = new Date().toISOString().slice(0, 10);
   const [expense, setExpense] = useState({
@@ -2363,6 +2384,7 @@ function AppShell({ auth }) {
           <img src={visualSavings} alt="" />
           <span>avance amable</span>
         </div>
+        {current === "cover" && menuOpen ? <section className="planner-grid mobile-menu-open cover-mobile-menu"><button className="menu-backdrop" type="button" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú" /><Sidebar activeSection={activeSection} month={month} year={year} progress={progress} onMonth={changeMonth} onSection={goTo} /></section> : null}
         {current === "cover" ? (
           <>
             <Cover onStart={() => setCurrent("checklist")} />
@@ -2394,19 +2416,19 @@ function AppShell({ auth }) {
       </main>
 
       <footer className="pager">
-        <button type="button" onClick={() => move(-1)}>
+        {pageIndex > 0 ? <button type="button" onClick={() => move(-1)}>
           <ArrowLeft size={15} />
           Anterior
-        </button>
+        </button> : <span />}
         <span>
           {pageIndex + 1} / {order.length}
         </span>
-        <button type="button" onClick={() => move(1)}>
+        {pageIndex < order.length - 1 ? <button type="button" onClick={() => move(1)}>
           Siguiente
           <ArrowRight size={15} />
-        </button>
+        </button> : <span />}
       </footer>
-      <nav className="mobile-bottom-nav" aria-label="Acciones rápidas"><button type="button" onClick={() => move(-1)} disabled={pageIndex === 0}><ArrowLeft size={18} /><span>Anterior</span></button><button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button><button type="button" onClick={() => move(1)} disabled={pageIndex === order.length - 1}><ArrowRight size={18} /><span>Siguiente</span></button></nav>
+      <nav className={`mobile-bottom-nav ${pageIndex === 0 ? "first-page" : ""} ${pageIndex === order.length - 1 ? "last-page" : ""}`} aria-label="Acciones rápidas">{pageIndex > 0 ? <button type="button" onClick={() => move(-1)}><ArrowLeft size={18} /><span>Anterior</span></button> : null}<button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button>{pageIndex < order.length - 1 ? <button type="button" onClick={() => move(1)}><ArrowRight size={18} /><span>Siguiente</span></button> : null}</nav>
     </div>
   );
 }

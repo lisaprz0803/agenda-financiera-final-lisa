@@ -2242,6 +2242,7 @@ select {
   appearance: none;
 }
 .simple-entry-card > .delete-row { justify-self: end; }
+.add-bottom-action { width: min(100%, 430px); min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; justify-self: center; margin: 4px auto 0; border: 2px solid var(--theme-accent); border-radius: 999px; background: rgba(255,255,255,.9); color: var(--theme-accent); padding: 0 20px; font-weight: 900; box-shadow: 0 10px 24px var(--theme-shadow); }
 .piggy-how { grid-column: 1 / -1; display: grid; gap: 5px; padding: 15px 18px; border-radius: 16px; background: #fff3d9; color: #795f26; }
 .piggy-linear { height: 13px; overflow: hidden; border-radius: 999px; background: rgba(214,111,159,.15); }
 .piggy-linear i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ef9bbc, #b98ad4); transition: width .5s ease; }
@@ -2301,6 +2302,7 @@ select {
   .planner-grid { display: block; }
   .planner-grid .sidebar { display: none; }
   .planner-grid.mobile-menu-open .sidebar { position: fixed; inset: 66px 14px 78px; z-index: 80; display: block; overflow-y: auto; border-radius: 20px; box-shadow: 0 24px 70px rgba(70,45,62,.32); }
+  .cover-mobile-menu { position: fixed; inset: 0; z-index: 75; }
   .menu-backdrop { position: fixed; inset: 0; z-index: 70; display: block; width: 100%; border: 0; background: rgba(63,43,57,.34); }
   .planner-panel { width: 100%; min-width: 0; }
   .planner-panel .simple-entry-card,
@@ -2308,6 +2310,8 @@ select {
   .planner-panel .simple-entry-grid label { min-width: 0; max-width: 100%; }
   .pager { display: none; }
   .mobile-bottom-nav { position: fixed; inset: auto 0 0; z-index: 90; display: grid; grid-template-columns: repeat(6,1fr); min-height: 64px; border-top: 1px solid rgba(139,111,104,.18); background: rgba(255,252,249,.97); backdrop-filter: blur(14px); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .mobile-bottom-nav.first-page,
+  .mobile-bottom-nav.last-page { grid-template-columns: repeat(5,1fr); }
   .mobile-bottom-nav button { display: grid; justify-items: center; gap: 2px; border: 0; background: transparent; color: #7b6470; font-size: 11px; font-weight: 800; }
   .mobile-bottom-nav button:disabled { opacity: .35; }
   .mobile-bottom-nav button:nth-child(3) svg { display: grid; place-items: center; width: 30px; height: 30px; padding: 6px; border-radius: 50%; background: #c878a5; color: white; }
