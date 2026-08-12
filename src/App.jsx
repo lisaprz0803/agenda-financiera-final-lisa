@@ -51,6 +51,8 @@ import debtBanner from "../assets/debt-banner.jpg";
 import dailyBanner from "../assets/daily-banner.jpg";
 import calendarBanner from "../assets/calendar-banner.jpg";
 import closeBanner from "../assets/close-banner.jpg";
+import dailyExpensesOriginal from "../assets/daily-expenses-original.png";
+import budgetDistributionOriginal from "../assets/budget-distribution-original.png";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -1849,8 +1851,8 @@ function BudgetSection({ sheetDb }) {
       <HelpTip text="Cuenta solamente el dinero que ya recibiste y descuenta lo que ya pagaste, gastaste o separaste." />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Lo que todavía falta para completar tu meta" />
       <VisualNote
-        image={dailyBanner}
-        alt="Plan financiero con cuaderno, calculadora y gráficos"
+        image={budgetDistributionOriginal}
+        alt="Frascos pastel para distribuir vivienda, comida, transporte, ahorro y ocio"
         title="Distribuye según tus prioridades reales"
         text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
         wide
@@ -1864,8 +1866,8 @@ function DailySpendingSection({ sheetDb }) {
   return (
     <div className="form-grid">
       <VisualNote
-        image={plannerBanner}
-        alt="Alcancía con calculadora y planificación financiera"
+        image={dailyExpensesOriginal}
+        alt="Canasta de compras con recibo, transporte, café, monedas y calculadora"
         title="Los gastos pequeños también cuentan"
         text="Anótalos sin culpa para entender el ritmo real de tu mes."
         wide
