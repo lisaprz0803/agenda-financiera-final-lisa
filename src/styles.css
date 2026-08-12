@@ -2400,6 +2400,25 @@ select {
   .mobile-bottom-nav button.active { color: #9e4f7d; }
   .mobile-bottom-nav button.active svg { background: #c878a5; color: white; transform: translateY(-1px); box-shadow: 0 5px 13px rgba(176, 88, 139, .24); }
   .mobile-bottom-nav .nav-step svg { border-radius: 10px; }
+  .mobile-bottom-nav.mobile-step-nav {
+    grid-template-columns: 1fr 1fr;
+    min-height: 58px;
+    padding: 5px 18px calc(5px + env(safe-area-inset-bottom));
+  }
+  .mobile-bottom-nav.mobile-step-nav.first-page,
+  .mobile-bottom-nav.mobile-step-nav.last-page { grid-template-columns: 1fr; }
+  .mobile-step-nav .nav-step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 46px;
+    font-size: 13px;
+  }
+  .mobile-step-nav .nav-step:first-child { justify-self: start; }
+  .mobile-step-nav .nav-step:last-child { justify-self: end; }
+  .mobile-step-nav.first-page .nav-step,
+  .mobile-step-nav.last-page .nav-step { justify-self: center; }
   .cover-screen { min-height: auto; }
   .cover-media { display: block; }
   .cover-media img { max-height: 210px; object-fit: cover; }
