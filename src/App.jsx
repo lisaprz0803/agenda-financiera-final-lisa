@@ -276,7 +276,8 @@ const defaultHousehold = {
   currency: "CLP",
   members: [{ id: "persona-1", name: "Persona 1" }],
   expenses: [],
-  debts: []
+  debts: [],
+  closeNotes: { achievement: "", adjustment: "", worthwhile: "", intention: "" }
 };
 
 function normalizeHousehold(value) {
@@ -313,7 +314,13 @@ function normalizeHousehold(value) {
     priority: String(debt.priority || "Media")
   })) : [];
   const currency = ["CLP", "USD", "EUR", "ARS", "MXN"].includes(value?.currency) ? value.currency : "CLP";
-  return { mode: value?.mode === "shared" ? "shared" : "individual", currency, members, expenses, debts };
+  const closeNotes = {
+    achievement: String(value?.closeNotes?.achievement || ""),
+    adjustment: String(value?.closeNotes?.adjustment || ""),
+    worthwhile: String(value?.closeNotes?.worthwhile || ""),
+    intention: String(value?.closeNotes?.intention || "")
+  };
+  return { mode: value?.mode === "shared" ? "shared" : "individual", currency, members, expenses, debts, closeNotes };
 }
 
 function getHouseholdBalances(household) {
@@ -2086,6 +2093,13 @@ function CloseSection({ sheetDb, onPrepareNextMonth }) {
     }
   }
 
+  function updateCloseNote(field, value) {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      closeNotes: { ...current.closeNotes, [field]: value }
+    }));
+  }
+
   return (
     <div className="stack close-page">
       <VisualNote
@@ -2110,10 +2124,10 @@ function CloseSection({ sheetDb, onPrepareNextMonth }) {
         onChange={(event) => sheetDb.updateReflection(event.target.value)}
       /></label>
       <div className="form-grid">
-        <Field label="Logro financiero" placeholder="Lo que sí funcionó" />
-        <Field label="Ajuste para el próximo mes" placeholder="Algo que quiero cambiar" />
-        <Field label="Un gasto que valió la pena" placeholder="Algo que disfruté o me ayudó" />
-        <Field label="El próximo mes quiero" placeholder="Una intención sencilla" />
+        <Field label="Logro financiero" placeholder="Lo que sí funcionó" value={sheetDb.household.closeNotes?.achievement || ""} onChange={(value) => updateCloseNote("achievement", value)} />
+        <Field label="Ajuste para el próximo mes" placeholder="Algo que quiero cambiar" value={sheetDb.household.closeNotes?.adjustment || ""} onChange={(value) => updateCloseNote("adjustment", value)} />
+        <Field label="Un gasto que valió la pena" placeholder="Algo que disfruté o me ayudó" value={sheetDb.household.closeNotes?.worthwhile || ""} onChange={(value) => updateCloseNote("worthwhile", value)} />
+        <Field label="El próximo mes quiero" placeholder="Una intención sencilla" value={sheetDb.household.closeNotes?.intention || ""} onChange={(value) => updateCloseNote("intention", value)} />
       </div>
       <div className="closing-actions">
         <button className="copy-next-action" type="button" onClick={prepareNextMonth} disabled={preparingNextMonth}>{preparingNextMonth ? <Loader2 className="spin" size={17} /> : <Copy size={17} />} {preparingNextMonth ? "Preparando…" : "Preparar el mes siguiente"}</button>
@@ -2376,11 +2390,11 @@ function DailyExpenseForm({ onSubmit, saving, onCancel }) {
   );
 }
 
-function Field({ label, placeholder, wide = false }) {
+function Field({ label, placeholder, wide = false, value, onChange }) {
   return (
     <label className={wide ? "field wide" : "field"}>
       <span>{label}</span>
-      <input placeholder={placeholder} />
+      <input placeholder={placeholder} value={value} onChange={(event) => onChange?.(event.target.value)} />
     </label>
   );
 }
