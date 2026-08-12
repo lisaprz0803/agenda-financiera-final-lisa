@@ -1883,6 +1883,13 @@ function BudgetSection({ sheetDb }) {
   const balanceStatus = getBalanceStatus(adjustedProjectedBalance);
   return (
     <div className="form-grid">
+      <VisualNote
+        image={budgetDistributionOriginal}
+        alt="Frascos pastel para distribuir vivienda, comida, transporte, ahorro y ocio"
+        title="Distribuye según tus prioridades reales"
+        text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
+        wide
+      />
       <ReadOnlyCard label="Ingresos esperados" value={formatCurrency(summary.incomeTotal)} helper="Todo el dinero que esperas recibir" />
       <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Total que te corresponde pagar" />
       <ReadOnlyCard label="Gastos diarios" value={formatCurrency(summary.dailyExpenses)} helper={`${dailyExpenses} registros`} />
@@ -1899,13 +1906,6 @@ function BudgetSection({ sheetDb }) {
       <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Dinero realmente disponible en este momento" wide />
       <HelpTip text="Cuenta solamente el dinero que ya recibiste y descuenta lo que ya pagaste, gastaste o separaste." />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Lo que todavía falta para completar tu meta" />
-      <VisualNote
-        image={budgetDistributionOriginal}
-        alt="Frascos pastel para distribuir vivienda, comida, transporte, ahorro y ocio"
-        title="Distribuye según tus prioridades reales"
-        text="Tu presupuesto puede ajustarse mes a mes. Lo importante es verlo completo."
-        wide
-      />
     </div>
   );
 }
@@ -2059,6 +2059,14 @@ function CloseSection({ sheetDb }) {
   const balanceStatus = getBalanceStatus(summary.projectedBalance);
   const paidCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pagado").length;
   const pendingCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pendiente").length;
+  const closingMessage = summary.projectedBalance >= 0
+    ? "Terminaste con margen. Decide cuánto quieres proteger para el próximo mes."
+    : "No es un fracaso: ya sabes exactamente cuánto necesitas ajustar el próximo mes.";
+  const nextStep = pendingCount
+    ? `Revisar ${pendingCount} ${pendingCount === 1 ? "pago pendiente" : "pagos pendientes"}`
+    : summary.savingsProgress < 100
+      ? `Completar el ${Math.max(0, 100 - summary.savingsProgress)}% que falta de tu meta`
+      : "Comenzar el próximo mes con tus pagos y ahorro organizados";
 
   function addSticker(sticker) {
     const label = `${sticker.icon} ${sticker.label}`;
@@ -2066,20 +2074,22 @@ function CloseSection({ sheetDb }) {
   }
 
   return (
-    <div className="stack">
+    <div className="stack close-page">
       <VisualNote
         image={closeBanner}
         alt="Hoja de cierre mensual con estrella y líneas de reflexión"
         title="Haz un cierre amable"
         text="Reconoce lo que lograste, lo que aprendiste y lo que quieres mejorar."
+        wide
       />
+      <div className="closing-intro"><span>✨ Tu mes en una mirada</span><strong>{closingMessage}</strong></div>
       <section className={`closing-dashboard ${balanceStatus.tone}`}>
         <div className="closing-balance"><span>Resultado del mes</span><strong>{balanceStatus.label}</strong><b>{formatCurrency(summary.projectedBalance)}</b><p>{balanceStatus.helper}</p></div>
         <div className="closing-metrics"><div><CheckCircle2 size={20} /><strong>{paidCount}</strong><span>pagos completados</span></div><div><CalendarDays size={20} /><strong>{pendingCount}</strong><span>pagos pendientes</span></div><div><PiggyBank size={20} /><strong>{summary.savingsProgress}%</strong><span>de tu meta ahorrada</span></div></div>
         <div className="closing-savings"><span>Ahorro separado</span><strong>{formatCurrency(summary.savingsSaved)}</strong><i><b style={{ width: `${summary.savingsProgress}%` }} /></i></div>
       </section>
-      <div className="pdf-action-wrap"><button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Imprimir o guardar como PDF</button><small>En la ventana que se abre, elige “Guardar como PDF”.</small></div>
-      <button className="copy-next-action" type="button" onClick={sheetDb.copyPlanToNextMonth}><Copy size={17} /> Copiar pagos y metas al mes siguiente</button>
+      <section className="next-step-card"><span>Tu siguiente paso recomendado</span><strong>{nextStep}</strong><small>Una sola acción clara para comenzar con menos presión.</small></section>
+      <div className="closing-section-title"><span>🌷</span><div><strong>¿Qué te dejó este mes?</strong><small>Elige un recordatorio y escribe solo lo que te resulte útil.</small></div></div>
       <div className="sticker-board" aria-label="Stickers de progreso">
         {progressStickers.map((sticker) => (
           <button key={sticker.label} type="button" onClick={() => addSticker(sticker)}>
@@ -2099,6 +2109,10 @@ function CloseSection({ sheetDb }) {
         <Field label="Ajuste para el próximo mes" placeholder="Algo que quiero cambiar" />
         <Field label="Un gasto que valió la pena" placeholder="Algo que disfruté o me ayudó" />
         <Field label="El próximo mes quiero" placeholder="Una intención sencilla" />
+      </div>
+      <div className="closing-actions">
+        <button className="copy-next-action" type="button" onClick={sheetDb.copyPlanToNextMonth}><Copy size={17} /> Preparar el mes siguiente</button>
+        <div className="pdf-action-wrap"><button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Guardar mi cierre como PDF</button><small>En la ventana que se abre, elige “Guardar como PDF”.</small></div>
       </div>
     </div>
   );
