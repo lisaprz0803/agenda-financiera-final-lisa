@@ -1555,10 +1555,10 @@ function IncomeSection({ sheetDb }) {
         text="Registra tu sueldo y cualquier ingreso adicional antes de organizar tus compromisos."
         wide
       />
-      <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div><AddRowButton label="Agregar ingreso" onClick={addIncome} /></div>
+      <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ingreso-${rowIndex}`}>
-          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> {row[0] || `Ingreso ${rowIndex + 1}`} {row[2] ? `· ${formatCurrency(parseMoney(row[2]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => setEditingIndex(editingIndex === rowIndex ? null : rowIndex)}>{editingIndex === rowIndex ? "Cerrar" : "Editar"}</button></div>
+          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> {row[0] || `Ingreso ${rowIndex + 1}`} {row[2] ? `· ${formatCurrency(parseMoney(row[2]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => { const closing = editingIndex === rowIndex; setEditingIndex(closing ? null : rowIndex); if (closing) setNewRowIndex(null); }}>{editingIndex === rowIndex ? "Listo" : "Editar"}</button></div>
           {editingIndex === rowIndex ? <>
           <div className="simple-entry-grid">
             <label><span>Fuente</span><input value={row[0]} placeholder="Ej: sueldo" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 0, e.target.value)} /></label>
@@ -1581,7 +1581,7 @@ function IncomeSection({ sheetDb }) {
         <span>Total de ingresos</span>
         <strong>{formatCurrency(getFinancialSummary(sheetDb.draft).incomeTotal)}</strong>
       </div>
-      <AddBottomButton label="Agregar otro ingreso" onClick={addIncome} />
+      {editingIndex === null ? <FloatingAddButton label="Agregar ingreso" onClick={addIncome} /> : null}
     </div>
   );
 }
@@ -1607,10 +1607,10 @@ function PaymentsSection({ sheetDb }) {
         text="Ten tus pagos a la vista para evitar sorpresas y decidir con menos enredo."
         wide
       />
-      <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div><AddRowButton label="Agregar pago" onClick={addPayment} /></div>
+      <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div></div>
         {payments.map((row, rowIndex) => (
           <div className="simple-entry-card" key={`pago-${rowIndex}`}>
-            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> {row[1] || `Pago ${rowIndex + 1}`} {row[4] || row[3] ? `· ${formatCurrency(parseMoney(row[4] || row[3]))}` : ""}</strong><div><CategorySticker category={findOption(row[0], categoryOptions)} /><button className="edit-entry" type="button" onClick={() => setEditingIndex(editingIndex === rowIndex ? null : rowIndex)}>{editingIndex === rowIndex ? "Cerrar" : "Editar"}</button></div></div>
+            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> {row[1] || `Pago ${rowIndex + 1}`} {row[4] || row[3] ? `· ${formatCurrency(parseMoney(row[4] || row[3]))}` : ""}</strong><div><CategorySticker category={findOption(row[0], categoryOptions)} /><button className="edit-entry" type="button" onClick={() => { const closing = editingIndex === rowIndex; setEditingIndex(closing ? null : rowIndex); if (closing) setNewRowIndex(null); }}>{editingIndex === rowIndex ? "Listo" : "Editar"}</button></div></div>
             {editingIndex === rowIndex ? <>
             <div className="simple-entry-grid">
               <label><span>Categoría</span><select value={findOption(row[0], categoryOptions)} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 0, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
@@ -1635,7 +1635,7 @@ function PaymentsSection({ sheetDb }) {
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
       </div>
-      <AddBottomButton label="Agregar otro pago" onClick={addPayment} />
+      {editingIndex === null ? <FloatingAddButton label="Agregar pago" onClick={addPayment} /> : null}
     </div>
   );
 }
@@ -1805,7 +1805,7 @@ function HouseholdSection({ sheetDb }) {
         </div>
       </section>
 
-      {!formOpen ? <AddBottomButton label="Agregar gasto compartido" onClick={() => setFormOpen(true)} /> : <form className="shared-expense-form entry-form-reveal" onSubmit={submitExpense}>
+      {formOpen ? <form className="shared-expense-form entry-form-reveal" onSubmit={submitExpense}>
         <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>Completa estos datos. La agenda dividirá el monto automáticamente.</p></div></div>
         <div className="shared-form-grid">
           <label><span>Fecha</span><input type="date" value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
@@ -1834,7 +1834,7 @@ function HouseholdSection({ sheetDb }) {
           <Plus size={18} /> Dividir y agregar gasto
         </button>
         <button className="cancel-entry" type="button" onClick={() => setFormOpen(false)}>Cancelar</button>
-      </form>}
+      </form> : null}
 
       <div className="shared-list">
         <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Aquí verás tu parte y la de cada persona. Puedes corregir los montos si no es mitad y mitad.</p></div></div>
@@ -1862,6 +1862,7 @@ function HouseholdSection({ sheetDb }) {
           );
         }) : <div className="empty-state">Todavía no hay gastos compartidos. Agrega el primero para ver los saldos.</div>}
       </div>
+      {!formOpen ? <FloatingAddButton label="Agregar gasto compartido" onClick={() => setFormOpen(true)} /> : null}
       </>}
     </div>
   );
@@ -1922,9 +1923,9 @@ function DailySpendingSection({ sheetDb }) {
         wide
       />
       <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
-      {formOpen ? <DailyExpenseForm onSubmit={async (expense) => { await sheetDb.appendDailyExpense(expense); setFormOpen(false); }} saving={sheetDb.status.saving} onCancel={() => setFormOpen(false)} /> : <AddBottomButton label="Agregar gasto diario" onClick={() => setFormOpen(true)} />}
+      {formOpen ? <DailyExpenseForm onSubmit={async (expense) => { await sheetDb.appendDailyExpense(expense); setFormOpen(false); }} saving={sheetDb.status.saving} onCancel={() => setFormOpen(false)} /> : null}
       <DailyExpensesList sheetDb={sheetDb} />
-      {sheetDb.draft.gastos.length && !formOpen ? <AddBottomButton label="Agregar otro gasto" onClick={() => setFormOpen(true)} /> : null}
+      {!formOpen ? <FloatingAddButton label="Agregar gasto" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
 }
@@ -1944,10 +1945,10 @@ function SavingsSection({ sheetDb }) {
   }
   return (
     <div className="savings-layout">
-      <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div><AddRowButton label="Agregar meta de ahorro" onClick={addSavingsGoal} /></div>
+      <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ahorro-${rowIndex}`}>
-          <div className="entry-card-heading"><strong><PiggyBank size={18} /> {row[0] || `Meta ${rowIndex + 1}`} {row[1] ? `· ${formatCurrency(parseMoney(row[1]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => setEditingIndex(editingIndex === rowIndex ? null : rowIndex)}>{editingIndex === rowIndex ? "Cerrar" : "Editar"}</button></div>
+          <div className="entry-card-heading"><strong><PiggyBank size={18} /> {row[0] || `Meta ${rowIndex + 1}`} {row[1] ? `· ${formatCurrency(parseMoney(row[1]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => { const closing = editingIndex === rowIndex; setEditingIndex(closing ? null : rowIndex); if (closing) setNewRowIndex(null); }}>{editingIndex === rowIndex ? "Listo" : "Editar"}</button></div>
           {editingIndex === rowIndex ? <>
           <div className="simple-entry-grid">
             <label><span>¿Para qué ahorras?</span><input value={row[0]} placeholder="Ej: vacaciones" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 0, e.target.value)} /></label>
@@ -1968,7 +1969,7 @@ function SavingsSection({ sheetDb }) {
       {!rows.length ? <div className="empty-state compact-empty">Aún no tienes metas. Las casillas aparecerán al presionar “Agregar meta de ahorro”.</div> : null}
       <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
-      <AddBottomButton label="Agregar otra meta de ahorro" onClick={addSavingsGoal} />
+      {editingIndex === null ? <FloatingAddButton label="Agregar meta" onClick={addSavingsGoal} /> : null}
     </div>
   );
 }
@@ -2025,7 +2026,7 @@ function DebtSection({ sheetDb }) {
         text="Ordenar cuotas y saldos pendientes te ayuda a decidir cuál atender primero."
         wide
       />
-      {!formOpen ? <AddBottomButton label="Agregar deuda" onClick={() => setFormOpen(true)} /> : <form className="simple-entry-card entry-form-reveal" onSubmit={submit}>
+      {formOpen ? <form className="simple-entry-card entry-form-reveal" onSubmit={submit}>
         <div className="entry-card-heading"><strong><TrendingDown size={18} /> Agregar deuda</strong></div>
         <div className="simple-entry-grid debt-grid">
           <label><span>Nombre</span><input value={form.name} onChange={(e) => update("name", e.target.value)} placeholder="Ej: tarjeta de crédito" required /></label>
@@ -2039,7 +2040,7 @@ function DebtSection({ sheetDb }) {
         </div>
         <button className="shared-submit" type="submit"><Plus size={17} /> Agregar deuda</button>
         <button className="cancel-entry" type="button" onClick={() => setFormOpen(false)}>Cancelar</button>
-      </form>}
+      </form> : null}
       <div className="debt-list">
         {debts.length ? debts.map((debt) => {
           const percent = debt.installmentsTotal ? Math.min(100, Math.round((debt.installmentsPaid / debt.installmentsTotal) * 100)) : 0;
@@ -2048,7 +2049,7 @@ function DebtSection({ sheetDb }) {
           return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Saldo pendiente · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Pagado hasta hoy: {formatCurrency(paidAmount)} · {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
-      {debts.length && !formOpen ? <AddBottomButton label="Agregar otra deuda" onClick={() => setFormOpen(true)} /> : null}
+      {!formOpen ? <FloatingAddButton label="Agregar deuda" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
 }
@@ -2266,6 +2267,10 @@ function AddRowButton({ label, onClick }) {
 
 function AddBottomButton({ label, onClick }) {
   return <button className="add-bottom-action" type="button" onClick={onClick}><Plus size={18} /> {label}</button>;
+}
+
+function FloatingAddButton({ label, onClick }) {
+  return <button className="floating-add-action" type="button" onClick={onClick}><Plus size={19} /> {label}</button>;
 }
 
 function DailyExpenseForm({ onSubmit, saving, onCancel }) {
