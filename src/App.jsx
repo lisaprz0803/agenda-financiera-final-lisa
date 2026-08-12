@@ -2534,7 +2534,7 @@ function AppShell({ auth }) {
         <button className={current === "cover" ? "nav-home active" : "nav-home"} type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button>
         <button className={current === "gastos" ? "nav-expense active" : "nav-expense"} type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button>
         <button className={current === "presupuesto" ? "nav-summary active" : "nav-summary"} type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button>
-        <button className={menuOpen ? "nav-menu active" : "nav-menu"} type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button>
+        <button className={menuOpen ? "nav-menu active" : "nav-menu"} type="button" onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen}><Menu size={18} /><span>{menuOpen ? "Cerrar" : "Menú"}</span></button>
         {pageIndex < order.length - 1 ? <button className="nav-step" type="button" onClick={() => move(1)}><ArrowRight size={18} /><span>Siguiente</span></button> : null}
       </nav>
     </div>

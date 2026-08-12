@@ -2383,9 +2383,9 @@ select {
   .workspace { width: 100%; padding: 10px 10px 84px; }
   .planner-grid { display: block; }
   .planner-grid .sidebar { display: none; }
-  .planner-grid.mobile-menu-open .sidebar { position: fixed; inset: 66px 14px 78px; z-index: 80; display: block; overflow-y: auto; border-radius: 20px; box-shadow: 0 24px 70px rgba(70,45,62,.32); }
-  .cover-mobile-menu { position: fixed; inset: 0; z-index: 75; }
-  .menu-backdrop { position: fixed; inset: 0; z-index: 70; display: block; width: 100%; border: 0; background: rgba(63,43,57,.34); }
+  .planner-grid.mobile-menu-open .sidebar { position: fixed; inset: 66px 14px 78px; z-index: 105; display: block; overflow-y: auto; border-radius: 20px; box-shadow: 0 24px 70px rgba(70,45,62,.32); }
+  .cover-mobile-menu { position: fixed; inset: 0; z-index: 100; }
+  .menu-backdrop { position: fixed; inset: 0; z-index: 100; display: block; width: 100%; border: 0; background: rgba(63,43,57,.34); }
   .planner-panel { width: 100%; min-width: 0; }
   .planner-panel .simple-entry-card,
   .planner-panel .simple-entry-grid,
