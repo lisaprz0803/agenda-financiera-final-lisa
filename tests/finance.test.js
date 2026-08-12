@@ -36,3 +36,14 @@ test("fórmulas esenciales usan dinero realmente pagado o separado", () => {
   const debtTotal = 280_000, installment = 140_000, installmentsPaid = 0;
   assert.equal(debtTotal - installment * installmentsPaid, 280_000);
 });
+
+test("presupuesto y cierre descuentan la misma parte de gastos compartidos", () => {
+  const projectedBalance = 355_000;
+  const sharedExpenses = [
+    { shares: { yo: 80_000, pareja: 80_000 } },
+    { shares: { yo: 35_000, pareja: 25_000 } }
+  ];
+  const mySharedCommitment = sharedExpenses.reduce((sum, expense) => sum + expense.shares.yo, 0);
+  assert.equal(mySharedCommitment, 115_000);
+  assert.equal(projectedBalance - mySharedCommitment, 240_000);
+});

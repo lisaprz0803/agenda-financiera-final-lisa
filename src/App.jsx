@@ -2057,10 +2057,16 @@ function DebtSection({ sheetDb }) {
 function CloseSection({ sheetDb, onPrepareNextMonth }) {
   const [preparingNextMonth, setPreparingNextMonth] = useState(false);
   const summary = getFinancialSummary(sheetDb.draft);
-  const balanceStatus = getBalanceStatus(summary.projectedBalance);
+  const personalMember = sheetDb.household.members[0];
+  const sharedCommitment = sheetDb.household.expenses.reduce(
+    (sum, expense) => sum + (Number(expense.shares?.[personalMember?.id]) || 0),
+    0
+  );
+  const finalProjectedBalance = summary.projectedBalance - sharedCommitment;
+  const balanceStatus = getBalanceStatus(finalProjectedBalance);
   const paidCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pagado").length;
   const pendingCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pendiente").length;
-  const closingMessage = summary.projectedBalance >= 0
+  const closingMessage = finalProjectedBalance >= 0
     ? "Terminaste con margen. Decide cuánto quieres proteger para el próximo mes."
     : "No es un fracaso: ya sabes exactamente cuánto necesitas ajustar el próximo mes.";
   const nextStep = pendingCount
@@ -2091,7 +2097,7 @@ function CloseSection({ sheetDb, onPrepareNextMonth }) {
       />
       <div className="closing-intro"><span>✨ Tu mes en una mirada</span><strong>{closingMessage}</strong></div>
       <section className={`closing-dashboard ${balanceStatus.tone}`}>
-        <div className="closing-balance"><span>Resultado del mes</span><strong>{balanceStatus.label}</strong><b>{formatCurrency(summary.projectedBalance)}</b><p>{balanceStatus.helper}</p></div>
+        <div className="closing-balance"><span>Resultado del mes</span><strong>{balanceStatus.label}</strong><b>{formatCurrency(finalProjectedBalance)}</b><p>{balanceStatus.helper}</p>{sharedCommitment ? <small>Incluye tu parte de gastos compartidos: {formatCurrency(sharedCommitment)}</small> : null}</div>
         <div className="closing-metrics"><div><CheckCircle2 size={20} /><strong>{paidCount}</strong><span>pagos completados</span></div><div><CalendarDays size={20} /><strong>{pendingCount}</strong><span>pagos pendientes</span></div><div><PiggyBank size={20} /><strong>{summary.savingsProgress}%</strong><span>de tu meta ahorrada</span></div></div>
         <div className="closing-savings"><span>Ahorro separado</span><strong>{formatCurrency(summary.savingsSaved)}</strong><i><b style={{ width: `${summary.savingsProgress}%` }} /></i></div>
       </section>
