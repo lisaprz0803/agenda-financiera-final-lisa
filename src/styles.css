@@ -2288,9 +2288,10 @@ select {
 
 .floating-add-action {
   position: static;
-  justify-self: start;
+  justify-self: center;
   z-index: auto;
   min-height: 46px;
+  width: min(100%, 430px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2305,6 +2306,7 @@ select {
   box-shadow: 0 9px 20px rgba(109, 70, 104, .16);
   cursor: pointer;
   animation: entryFormReveal .24s ease both;
+  margin-top: 6px;
 }
 
 .floating-add-action:hover { transform: translateY(-2px); }
