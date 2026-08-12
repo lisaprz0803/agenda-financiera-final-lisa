@@ -1726,6 +1726,13 @@ function HouseholdSection({ sheetDb }) {
     }));
   }
 
+  function markEveryonePaidTheirShare() {
+    sheetDb.updateHousehold((current) => ({
+      ...current,
+      expenses: current.expenses.map((expense) => ({ ...expense, paidBy: "shared", status: "Pagado" }))
+    }));
+  }
+
   const householdTotal = household.expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const previewAmount = parseMoney(form.amount);
   const previewShare = household.members.length ? Math.round(previewAmount / household.members.length) : 0;
@@ -1750,11 +1757,11 @@ function HouseholdSection({ sheetDb }) {
           <div className={`balance-card ${balances[member.id] >= 0 ? "positive" : "negative"}`} key={member.id}>
             <span>{member.name}</span>
             <strong>{formatCurrency(Math.abs(balances[member.id]))}</strong>
-            <small>{balances[member.id] > 0 ? "a favor" : balances[member.id] < 0 ? "pendiente" : "al día"}</small>
+            <small>{balances[member.id] > 0 ? "adelantó de más" : balances[member.id] < 0 ? "falta cubrir" : "al día"}</small>
           </div>
         ))}
       </div>
-      {household.expenses.length ? <div className="settlement-guide"><strong>Resumen entre ustedes</strong>{household.members.some((member) => balances[member.id] < 0) ? household.members.filter((member) => balances[member.id] < 0).map((debtor) => { const creditor = household.members.filter((member) => balances[member.id] > 0).sort((a,b) => balances[b.id] - balances[a.id])[0]; return creditor ? <span key={debtor.id}><b>{debtor.name}</b> tiene pendiente entregar <b>{formatCurrency(Math.min(Math.abs(balances[debtor.id]), balances[creditor.id]))}</b> a <b>{creditor.name}</b>.</span> : null; }) : <span className="settlement-ok">✓ Están al día. No hay dinero pendiente entre ustedes.</span>}</div> : null}
+      {household.expenses.length ? <div className="settlement-guide"><div><strong>¿Cómo quedaron las cuentas?</strong><small>Esto es solo una ayuda; no obliga a hacer una transferencia.</small></div>{household.members.some((member) => balances[member.id] < 0) ? <><span>Según quién registró el pago, una persona adelantó más dinero que la otra.</span><button className="settled-together-button" type="button" onClick={markEveryonePaidTheirShare}><CheckCircle2 size={17} /> Cada uno ya pagó su parte</button><small>Presiona aquí si tú y Catriel pagaron al mismo tiempo o cada uno cubrió lo suyo.</small></> : <span className="settlement-ok">✓ Cada persona cubrió su parte. No hay ajustes pendientes.</span>}</div> : null}
 
       <section className="member-card">
         <div className="list-heading">
