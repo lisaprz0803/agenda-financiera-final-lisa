@@ -2321,6 +2321,21 @@ select {
   .search-field input, .filter-field select { flex: 1; width: 100%; }
   .home-upcoming > span { grid-template-columns: 1fr auto; }
   .home-upcoming > span strong { grid-column: 1 / -1; }
+
+  /* Evita que las barras fijas se monten sobre el teclado virtual de iPhone. */
+  .app-shell:has(input:focus, textarea:focus) .pager,
+  .app-shell:has(input:focus, textarea:focus) .mobile-bottom-nav {
+    display: none;
+  }
+
+  body:has(input:focus, textarea:focus) {
+    padding-bottom: 18px;
+  }
+
+  input,
+  textarea {
+    scroll-margin-bottom: 24px;
+  }
 }
 
 @media print {
