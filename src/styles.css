@@ -527,18 +527,31 @@ code {
   position: absolute;
   inset: -24px 28px 20px -18px;
   border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.42);
+  background: linear-gradient(135deg, rgba(205, 164, 214, .58), rgba(231, 154, 184, .52));
+  border: 1px solid rgba(159, 113, 166, .2);
+  box-shadow: 0 20px 48px rgba(122, 78, 112, .14);
   transform: rotate(-3deg);
+}
+
+.cover-media::after {
+  content: "";
+  position: absolute;
+  inset: 18px -16px -18px 38px;
+  z-index: -1;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(169, 215, 190, .38), rgba(255, 210, 184, .34));
+  transform: rotate(2deg);
 }
 
 .cover-media img {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 7;
+  aspect-ratio: 16 / 9;
   max-height: 620px;
   object-fit: cover;
   object-position: center;
-  background: rgba(255, 255, 255, 0.64);
+  background: #e7c7d4;
+  border: 2px solid rgba(255, 235, 226, .78);
   border-radius: 14px;
   box-shadow: var(--shadow);
 }

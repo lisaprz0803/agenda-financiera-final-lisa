@@ -42,7 +42,7 @@ import cardTerminal from "../assets/card-terminal.jpeg";
 import piggyCalculator from "../assets/piggy-calculator.jpeg";
 import piggyPlant from "../assets/piggy-plant.jpeg";
 import plannerBanner from "../assets/planner-banner-v2.jpg";
-import heroCoverV2 from "../assets/hero-cover-v2.jpg";
+import heroCoverPremium from "../assets/hero-cover-premium.png";
 import sharedBanner from "../assets/shared-banner-v2.jpg";
 import checklistBanner from "../assets/checklist-banner.jpg";
 import incomeBanner from "../assets/income-banner.jpg";
@@ -1183,7 +1183,7 @@ function Cover({ onStart }) {
   return (
     <section className="cover-screen page-transition">
       <div className="cover-media">
-        <img src={heroCoverV2} alt="Alcancía, agenda, calendario, calculadora y billetera en tonos pastel" />
+        <img src={heroCoverPremium} alt="Agenda financiera, alcancía, sobres de presupuesto, calculadora y monedas en tonos pastel" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
