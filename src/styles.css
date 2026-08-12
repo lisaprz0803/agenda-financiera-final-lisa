@@ -2396,7 +2396,10 @@ select {
   .mobile-bottom-nav.last-page { grid-template-columns: repeat(5,1fr); }
   .mobile-bottom-nav button { display: grid; justify-items: center; gap: 2px; border: 0; background: transparent; color: #7b6470; font-size: 11px; font-weight: 800; }
   .mobile-bottom-nav button:disabled { opacity: .35; }
-  .mobile-bottom-nav button:nth-child(3) svg { display: grid; place-items: center; width: 30px; height: 30px; padding: 6px; border-radius: 50%; background: #c878a5; color: white; }
+  .mobile-bottom-nav button svg { width: 30px; height: 30px; padding: 6px; border-radius: 50%; transition: background .2s ease, color .2s ease, transform .2s ease; }
+  .mobile-bottom-nav button.active { color: #9e4f7d; }
+  .mobile-bottom-nav button.active svg { background: #c878a5; color: white; transform: translateY(-1px); box-shadow: 0 5px 13px rgba(176, 88, 139, .24); }
+  .mobile-bottom-nav .nav-step svg { border-radius: 10px; }
   .cover-screen { min-height: auto; }
   .cover-media { display: block; }
   .cover-media img { max-height: 210px; object-fit: cover; }

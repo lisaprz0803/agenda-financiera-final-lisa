@@ -2529,7 +2529,14 @@ function AppShell({ auth }) {
           <ArrowRight size={15} />
         </button> : <span />}
       </footer>
-      <nav className={`mobile-bottom-nav ${pageIndex === 0 ? "first-page" : ""} ${pageIndex === order.length - 1 ? "last-page" : ""}`} aria-label="Acciones rápidas">{pageIndex > 0 ? <button type="button" onClick={() => move(-1)}><ArrowLeft size={18} /><span>Anterior</span></button> : null}<button type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button><button type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button><button type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button><button type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button>{pageIndex < order.length - 1 ? <button type="button" onClick={() => move(1)}><ArrowRight size={18} /><span>Siguiente</span></button> : null}</nav>
+      <nav className={`mobile-bottom-nav ${pageIndex === 0 ? "first-page" : ""} ${pageIndex === order.length - 1 ? "last-page" : ""}`} aria-label="Acciones rápidas">
+        {pageIndex > 0 ? <button className="nav-step" type="button" onClick={() => move(-1)}><ArrowLeft size={18} /><span>Anterior</span></button> : null}
+        <button className={current === "cover" ? "nav-home active" : "nav-home"} type="button" onClick={() => goTo("cover")}><LayoutDashboard size={18} /><span>Inicio</span></button>
+        <button className={current === "gastos" ? "nav-expense active" : "nav-expense"} type="button" onClick={goToQuickExpense}><Plus size={18} /><span>Gasto</span></button>
+        <button className={current === "presupuesto" ? "nav-summary active" : "nav-summary"} type="button" onClick={() => goTo("presupuesto")}><CircleDollarSign size={18} /><span>Resumen</span></button>
+        <button className={menuOpen ? "nav-menu active" : "nav-menu"} type="button" onClick={() => setMenuOpen(true)}><Menu size={18} /><span>Menú</span></button>
+        {pageIndex < order.length - 1 ? <button className="nav-step" type="button" onClick={() => move(1)}><ArrowRight size={18} /><span>Siguiente</span></button> : null}
+      </nav>
     </div>
   );
 }
