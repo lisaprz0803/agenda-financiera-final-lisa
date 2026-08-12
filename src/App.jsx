@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
+import { BACKUP_KEY, DATA_VERSION, createAutomaticBackup, migrateStore, readSafeStore } from "./dataSafety.js";
 import {
   ArrowLeft,
   ArrowRight,
@@ -358,7 +359,7 @@ function getUserKey(auth) {
 
 function readLocalMonth(userKey, monthKey) {
   try {
-    const allData = JSON.parse(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+    const { data: allData } = readSafeStore(localStorage, MONTHLY_STORE_KEY);
     return allData[userKey]?.[monthKey] || null;
   } catch {
     return null;
@@ -367,9 +368,9 @@ function readLocalMonth(userKey, monthKey) {
 
 function writeLocalMonth(userKey, monthKey, payload) {
   try {
-    const allData = JSON.parse(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+    const { data: allData } = readSafeStore(localStorage, MONTHLY_STORE_KEY);
     const userData = allData[userKey] || {};
-    localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify({ ...allData, [userKey]: { ...userData, [monthKey]: payload } }));
+    localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify({ ...allData, [userKey]: { ...userData, [monthKey]: { ...payload, dataVersion: DATA_VERSION } } }));
   } catch {
     // Local persistence is best effort.
   }
@@ -377,7 +378,8 @@ function writeLocalMonth(userKey, monthKey, payload) {
 
 function removeLocalMonth(userKey, monthKey) {
   try {
-    const allData = JSON.parse(localStorage.getItem(MONTHLY_STORE_KEY) || "{}");
+    createAutomaticBackup(localStorage, MONTHLY_STORE_KEY, `antes de borrar ${monthKey}`);
+    const { data: allData } = readSafeStore(localStorage, MONTHLY_STORE_KEY);
     if (allData[userKey]) delete allData[userKey][monthKey];
     localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify(allData));
   } catch {
@@ -1041,7 +1043,8 @@ function useSheetDatabase(auth, monthKey) {
     try {
       const payload = JSON.parse(await file.text());
       if (!payload || typeof payload !== "object") throw new Error("invalid");
-      localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify(payload));
+      createAutomaticBackup(localStorage, MONTHLY_STORE_KEY, "antes de importar un respaldo");
+      localStorage.setItem(MONTHLY_STORE_KEY, JSON.stringify(migrateStore(payload)));
       localStorage.removeItem(`agenda_financiera_demo_${monthKey}`);
       await loadMonthData();
       setStatus((current) => ({ ...current, message: "Respaldo importado correctamente.", error: "" }));
@@ -1328,6 +1331,7 @@ function SetupSection({ sheetDb, onContinue, month, year }) {
   const backupInputRef = useRef(null);
   const [backupMessage, setBackupMessage] = useState("");
   const demoMode = localStorage.getItem(`agenda_financiera_demo_${getMonthKey(month, year)}`) === "true";
+  const automaticBackup = (() => { try { return JSON.parse(localStorage.getItem(BACKUP_KEY) || "null"); } catch { return null; } })();
 
   function selectMode(mode) {
     sheetDb.updateHousehold((current) => ({
@@ -1443,6 +1447,7 @@ function SetupSection({ sheetDb, onContinue, month, year }) {
         <div className="data-actions"><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Borrar {monthNames[month]} {year} y comenzar de cero</button></div>
         <div className="backup-actions"><button type="button" className="add-row" onClick={exportBackup}><Download size={15} /> Descargar respaldo</button><button type="button" className="add-row" onClick={copyBackup}><Copy size={15} /> Copiar respaldo</button><button type="button" className="add-row" onClick={() => backupInputRef.current?.click()}><Upload size={15} /> Importar respaldo</button><input ref={backupInputRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) { sheetDb.importBackup(file); setBackupMessage(`✓ Archivo ${file.name} seleccionado para importar.`); } event.target.value = ""; }} /></div>
         {backupMessage ? <div className="backup-message" role="status">{backupMessage}</div> : null}
+        {automaticBackup?.createdAt ? <div className="automatic-backup-note"><CheckCircle2 size={16} /><span>Respaldo de seguridad automático: {new Date(automaticBackup.createdAt).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}</span></div> : null}
         <small>Tus datos se guardan en este dispositivo. Guarda el archivo de respaldo sin modificarlo. El botón para comenzar de cero borra únicamente el mes indicado.</small>
       </div>
       <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>

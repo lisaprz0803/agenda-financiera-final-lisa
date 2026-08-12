@@ -2,6 +2,9 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./styles.css";
+import { createAutomaticBackup } from "./dataSafety.js";
+
+createAutomaticBackup(localStorage, "agenda_financiera_monthly_data", "antes de cargar una nueva versión");
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
