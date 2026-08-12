@@ -1253,7 +1253,7 @@ function Sidebar({ activeSection, month, year, progress, onMonth, onSection }) {
   );
 }
 
-function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) {
+function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, onPrepareNextMonth }) {
   const section = sections.find((item) => item.id === activeSection);
   const Icon = section.icon;
 
@@ -1296,7 +1296,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year }) 
         {activeSection === "gastos" ? <DailySpendingSection sheetDb={sheetDb} /> : null}
         {activeSection === "ahorro" ? <SavingsSection sheetDb={sheetDb} /> : null}
         {activeSection === "deudas" ? <DebtSection sheetDb={sheetDb} /> : null}
-        {activeSection === "cierre" ? <CloseSection sheetDb={sheetDb} /> : null}
+        {activeSection === "cierre" ? <CloseSection sheetDb={sheetDb} onPrepareNextMonth={onPrepareNextMonth} /> : null}
       </div>
     </article>
   );
@@ -2054,7 +2054,8 @@ function DebtSection({ sheetDb }) {
   );
 }
 
-function CloseSection({ sheetDb }) {
+function CloseSection({ sheetDb, onPrepareNextMonth }) {
+  const [preparingNextMonth, setPreparingNextMonth] = useState(false);
   const summary = getFinancialSummary(sheetDb.draft);
   const balanceStatus = getBalanceStatus(summary.projectedBalance);
   const paidCount = sheetDb.draft.pagos.filter((row) => hasMeaningfulPayment(row) && row[6] === "Pagado").length;
@@ -2067,6 +2068,17 @@ function CloseSection({ sheetDb }) {
     : summary.savingsProgress < 100
       ? `Completar el ${Math.max(0, 100 - summary.savingsProgress)}% que falta de tu meta`
       : "Comenzar el próximo mes con tus pagos y ahorro organizados";
+
+  async function prepareNextMonth() {
+    if (preparingNextMonth) return;
+    setPreparingNextMonth(true);
+    try {
+      await sheetDb.copyPlanToNextMonth();
+      onPrepareNextMonth();
+    } finally {
+      setPreparingNextMonth(false);
+    }
+  }
 
   return (
     <div className="stack close-page">
@@ -2098,7 +2110,7 @@ function CloseSection({ sheetDb }) {
         <Field label="El próximo mes quiero" placeholder="Una intención sencilla" />
       </div>
       <div className="closing-actions">
-        <button className="copy-next-action" type="button" onClick={sheetDb.copyPlanToNextMonth}><Copy size={17} /> Preparar el mes siguiente</button>
+        <button className="copy-next-action" type="button" onClick={prepareNextMonth} disabled={preparingNextMonth}>{preparingNextMonth ? <Loader2 className="spin" size={17} /> : <Copy size={17} />} {preparingNextMonth ? "Preparando…" : "Preparar el mes siguiente"}</button>
         <div className="pdf-action-wrap"><button className="export-action" type="button" onClick={() => window.print()}><Download size={17} /> Guardar mi cierre como PDF</button><small>En la ventana que se abre, elige “Guardar como PDF”.</small></div>
       </div>
     </div>
@@ -2410,6 +2422,15 @@ function AppShell({ auth }) {
     });
   }
 
+  function openPreparedNextMonth() {
+    const nextDate = new Date(year, month + 1, 1);
+    setYear(nextDate.getFullYear());
+    setMonth(nextDate.getMonth());
+    setCurrent("checklist");
+    setMenuOpen(false);
+    window.setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: "smooth" }), 40);
+  }
+
   function move(delta) {
     const nextIndex = Math.max(0, Math.min(order.length - 1, pageIndex + delta));
     setCurrent(order[nextIndex]);
@@ -2489,6 +2510,7 @@ function AppShell({ auth }) {
               sheetDb={sheetDb}
               month={month}
               year={year}
+              onPrepareNextMonth={openPreparedNextMonth}
             />
           </section>
         )}
