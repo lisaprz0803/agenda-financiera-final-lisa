@@ -1858,7 +1858,7 @@ function HouseholdSection({ sheetDb, month, year }) {
           </div>
         ))}
       </div>
-      {household.expenses.length ? <div className="settlement-guide"><div><strong>¿Cómo quedaron las cuentas?</strong><small>Esto es solo una ayuda; no obliga a hacer una transferencia.</small></div>{household.members.some((member) => balances[member.id] < 0) ? <><span>Según quién registró el pago, una persona adelantó más dinero que la otra.</span><button className="settled-together-button" type="button" onClick={markEveryonePaidTheirShare}><CheckCircle2 size={17} /> Cada uno ya pagó su parte</button><small>Presiona aquí si tú y Catriel pagaron al mismo tiempo o cada uno cubrió lo suyo.</small></> : <span className="settlement-ok">✓ Cada persona cubrió su parte. No hay ajustes pendientes.</span>}</div> : null}
+      {household.expenses.length ? <div className="settlement-guide"><div><strong>¿Cómo quedaron las cuentas?</strong></div>{household.members.some((member) => balances[member.id] < 0) ? <><span>Según quién registró el pago, una persona adelantó más dinero que la otra.</span><button className="settled-together-button" type="button" onClick={markEveryonePaidTheirShare}><CheckCircle2 size={17} /> Cada uno ya pagó su parte</button><small>Presiona aquí si tú y Catriel pagaron al mismo tiempo o cada uno cubrió lo suyo.</small></> : <span className="settlement-ok">✓ Cada persona cubrió su parte. No hay ajustes pendientes.</span>}</div> : null}
 
       <section className="member-card">
         <div className="list-heading">
