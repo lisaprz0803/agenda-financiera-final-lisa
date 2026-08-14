@@ -46,7 +46,7 @@ import piggyPlant from "../assets/piggy-plant.jpeg";
 import plannerBanner from "../assets/planner-banner-v2.jpg";
 import heroCoverPremium from "../assets/hero-cover-premium.png";
 import sharedBanner from "../assets/shared-banner-v2.jpg";
-import checklistBanner from "../assets/checklist-banner.jpg";
+import monthRouteBanner from "../assets/month-route-banner.png";
 import incomeBanner from "../assets/income-banner.jpg";
 import paymentsBanner from "../assets/payments-banner.jpg";
 import debtBanner from "../assets/debt-banner.jpg";
@@ -1469,7 +1469,7 @@ function SetupSection({ sheetDb, onContinue, month, year }) {
             </label>
           ))}
         </div>
-        {sheetDb.household.mode === "shared" ? <button className="add-row" type="button" onClick={addMember} disabled={members.length >= 4}><Plus size={15} /> Agregar otra persona</button> : null}
+        {sheetDb.household.mode === "shared" ? <button className="add-row" type="button" onClick={addMember} disabled={members.length >= 4}><Plus size={15} /> Agregar persona</button> : null}
       </div>
       <div className="setup-note-card">
         <strong>{sheetDb.household.mode === "individual" ? "Modo individual" : `Modo compartido · ${members.length} personas`}</strong>
@@ -1530,7 +1530,15 @@ function ChecklistSection({ sheetDb, onSection }) {
   }
 
   return (
-    <div className="checklist-layout">
+    <div className="checklist-page stack">
+      <VisualNote
+        image={monthRouteBanner}
+        alt="Camino financiero con etapas de hogar, equilibrio, crecimiento y meta"
+        title="Tu ruta del mes, paso a paso"
+        text="Empieza por lo esencial y avanza a tu ritmo. Cada etapa te acerca a una meta más clara."
+        wide
+      />
+      <div className="checklist-layout">
       <div className="checklist-card">
         <div className="checklist-summary">
           <strong>{done}/{checklistItems.length}</strong>
@@ -1547,12 +1555,7 @@ function ChecklistSection({ sheetDb, onSection }) {
           ))}
         </div>
       </div>
-      <VisualNote
-        image={checklistBanner}
-        alt="Checklist financiero en tonos lila"
-        title="Celebrar un avance también cuenta"
-        text="Aunque sea pequeño, deja registro de lo que sí hiciste esta semana."
-      />
+      </div>
     </div>
   );
 }
@@ -1594,7 +1597,7 @@ function IncomeSection({ sheetDb }) {
             disabled={sheetDb.status.saving}
             onClick={() => sheetDb.deleteRow("ingresos", rowIndex)}
           />
-          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ingresos", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar</button> : null}
+          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ingresos", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar y eliminar este registro</button> : null}
           <FinishEditButton onClick={() => { setEditingIndex(null); setNewRowIndex(null); }} />
           </> : <div className="saved-entry-summary"><span>{row[1] || "Sin fecha"}</span><span className={`pill ${getStatusClass(row[3] || "Por revisar")}`}>{row[3] || "Por revisar"}</span></div>}
         </div>
@@ -1604,7 +1607,7 @@ function IncomeSection({ sheetDb }) {
         <span>Total de ingresos</span>
         <strong>{formatCurrency(getFinancialSummary(sheetDb.draft).incomeTotal)}</strong>
       </div>
-      {editingIndex === null ? <FloatingAddButton label="Agregar otro ingreso" onClick={addIncome} /> : null}
+      {editingIndex === null ? <FloatingAddButton label="Agregar ingreso" onClick={addIncome} /> : null}
     </div>
   );
 }
@@ -1649,7 +1652,7 @@ function PaymentsSection({ sheetDb }) {
               onClick={() => sheetDb.deleteRow("pagos", rowIndex)}
             />
             <button className="duplicate-row" type="button" onClick={() => sheetDb.addRow("pagos", [...row])}><Copy size={15} /> Duplicar este pago</button>
-            {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("pagos", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar</button> : null}
+            {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("pagos", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar y eliminar este registro</button> : null}
             <FinishEditButton onClick={() => { setEditingIndex(null); setNewRowIndex(null); }} />
             </> : <div className="saved-entry-summary"><span>{row[2] || "Sin fecha"}</span><span className={`pill ${getStatusClass(row[6] || "Por revisar")}`}>{row[6] || "Por revisar"}</span></div>}
           </div>
@@ -1659,7 +1662,7 @@ function PaymentsSection({ sheetDb }) {
         <strong>Total de pagos personales:</strong> {formatCurrency(summary.monthlyPayments)}
         <span>Se calcula con la columna <strong>Mi parte</strong> y se refleja en presupuesto y proyección.</span>
       </div>
-      {editingIndex === null ? <FloatingAddButton label="Agregar otro pago" onClick={addPayment} /> : null}
+      {editingIndex === null ? <FloatingAddButton label="Agregar pago" onClick={addPayment} /> : null}
     </div>
   );
 }
@@ -1931,7 +1934,7 @@ function HouseholdSection({ sheetDb, month, year }) {
           {shareMessage ? <div className="inline-success" role="status">{shareMessage}</div> : null}
         </div> : null}
       </section> : null}
-      {!formOpen ? <FloatingAddButton label="Agregar otro gasto compartido" onClick={() => setFormOpen(true)} /> : null}
+      {!formOpen ? <FloatingAddButton label="Agregar gasto compartido" onClick={() => setFormOpen(true)} /> : null}
       </>}
     </div>
   );
@@ -1998,7 +2001,7 @@ function DailySpendingSection({ sheetDb }) {
       <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
       {formOpen ? <DailyExpenseForm onSubmit={async (expense) => { await sheetDb.appendDailyExpense(expense); setFormOpen(false); }} saving={sheetDb.status.saving} onCancel={() => setFormOpen(false)} /> : null}
       <DailyExpensesList sheetDb={sheetDb} />
-      {!formOpen ? <FloatingAddButton label="Agregar otro gasto" onClick={() => setFormOpen(true)} /> : null}
+      {!formOpen ? <FloatingAddButton label="Agregar gasto" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
 }
@@ -2035,7 +2038,7 @@ function SavingsSection({ sheetDb }) {
             disabled={sheetDb.status.saving}
             onClick={() => sheetDb.deleteRow("ahorros", rowIndex)}
           />
-          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ahorros", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar</button> : null}
+          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ahorros", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar y eliminar este registro</button> : null}
           <FinishEditButton onClick={() => { setEditingIndex(null); setNewRowIndex(null); }} />
           </> : <div className="saved-entry-summary"><span>Ahorrado: {formatCurrency(parseMoney(row[2]))}</span><span>{row[3] || "Sin fecha meta"}</span></div>}
         </div>
@@ -2043,7 +2046,7 @@ function SavingsSection({ sheetDb }) {
       {!rows.length ? <div className="empty-state compact-empty">Aún no tienes metas. Las casillas aparecerán al presionar “Agregar meta de ahorro”.</div> : null}
       <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
-      {editingIndex === null ? <FloatingAddButton label="Agregar otra meta" onClick={addSavingsGoal} /> : null}
+      {editingIndex === null ? <FloatingAddButton label="Agregar meta" onClick={addSavingsGoal} /> : null}
     </div>
   );
 }
@@ -2123,7 +2126,7 @@ function DebtSection({ sheetDb }) {
           return <article className="debt-card" key={debt.id}><div><span>{debt.priority} prioridad</span><strong>{debt.name}</strong><small>Próximo pago: {debt.nextDate || "Sin fecha"}</small></div><div><strong>{formatCurrency(remaining)}</strong><small>Saldo pendiente · cuota {formatCurrency(debt.installment)}</small></div><div className="debt-progress"><span>Pagado hasta hoy: {formatCurrency(paidAmount)} · {debt.installmentsPaid} de {debt.installmentsTotal || "—"} cuotas</span><i><b style={{ width: `${percent}%` }} /></i></div><span className={`pill ${getStatusClass(debt.status)}`}>{debt.status}</span><button className="delete-row" type="button" onClick={() => removeDebt(debt.id)} aria-label={`Eliminar ${debt.name}`}><Trash2 size={15} /></button></article>;
         }) : <div className="empty-state">No tienes deudas registradas. Si no tienes ninguna, ¡también es un logro!</div>}
       </div>
-      {!formOpen ? <FloatingAddButton label="Agregar otra deuda" onClick={() => setFormOpen(true)} /> : null}
+      {!formOpen ? <FloatingAddButton label="Agregar deuda" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
 }

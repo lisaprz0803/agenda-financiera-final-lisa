@@ -35,15 +35,19 @@
 
 html {
   min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
   background: #fff8f3;
 }
 
 .app-shell {
+  width: 100%;
+  overflow-x: clip;
   transition: background 480ms ease, color 300ms ease;
 }
 
@@ -1433,9 +1437,13 @@ select {
 
 .checklist-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.48fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: start;
+}
+
+.checklist-page .visual-note.wide {
+  margin-bottom: 0;
 }
 
 .checklist-card,
