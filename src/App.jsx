@@ -1266,6 +1266,11 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, on
   const section = sections.find((item) => item.id === activeSection);
   const Icon = section.icon;
 
+  function continueToIncome() {
+    onSection("ingresos");
+    window.setTimeout(() => document.querySelector(".floating-add-action")?.click(), 120);
+  }
+
   return (
     <article className="planner-panel page-transition">
       <header className="panel-header">
@@ -1284,7 +1289,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, on
       <QuoteCard text={section.message} />
 
       <div className="panel-body">
-        {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={() => onSection("ingresos")} month={month} year={year} /> : null}
+        {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={continueToIncome} month={month} year={year} /> : null}
         {activeSection === "calendario" ? (
           <div className="stack">
             <VisualNote
@@ -1516,6 +1521,14 @@ function ChecklistSection({ sheetDb, onSection }) {
   const isDone = (item) => Boolean(automatic[item.id] || checked[item.id]);
   const done = checklistItems.filter(isDone).length;
 
+  function openChecklistAction(item) {
+    if (item.id === "budget") toggle(item);
+    onSection(item.section);
+    if (["income", "payments", "debts", "savings", "expenses"].includes(item.id)) {
+      window.setTimeout(() => document.querySelector(".floating-add-action")?.click(), 120);
+    }
+  }
+
   return (
     <div className="checklist-layout">
       <div className="checklist-card">
@@ -1529,7 +1542,7 @@ function ChecklistSection({ sheetDb, onSection }) {
             <div className={isDone(item) ? "task checked" : "task"} key={item.id}>
               <input aria-label={`Marcar ${item.label}`} type="checkbox" checked={isDone(item)} onChange={() => toggle(item)} />
               <span>{item.label}</span>
-              <button type="button" onClick={() => { if (item.id === "budget") toggle(item); onSection(item.section); }}>{isDone(item) ? "Revisar" : item.action}<ArrowRight size={14} /></button>
+              <button type="button" onClick={() => openChecklistAction(item)}>{isDone(item) ? "Revisar" : item.action}<ArrowRight size={14} /></button>
             </div>
           ))}
         </div>
@@ -1913,7 +1926,7 @@ function HouseholdSection({ sheetDb, month, year }) {
             <button className="share-whatsapp" type="button" onClick={shareByWhatsApp}><MessageCircle size={17} /> WhatsApp</button>
             <button className="share-email" type="button" onClick={shareByEmail}><Mail size={17} /> Correo</button>
             <button type="button" onClick={copySharedSummary}><Copy size={17} /> Copiar</button>
-            <button type="button" onClick={() => window.print()}><Download size={17} /> Guardar PDF</button>
+            <button type="button" onClick={() => window.print()}><Download size={17} /> Imprimir / guardar PDF</button>
           </div>
           {shareMessage ? <div className="inline-success" role="status">{shareMessage}</div> : null}
         </div> : null}
@@ -2522,7 +2535,7 @@ function AppShell({ auth }) {
   function goToQuickExpense() {
     setCurrent("gastos");
     setMenuOpen(false);
-    window.setTimeout(() => document.querySelector(".daily-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    window.setTimeout(() => document.querySelector(".floating-add-action")?.click(), 120);
   }
 
   return (
