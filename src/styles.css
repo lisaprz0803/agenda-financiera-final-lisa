@@ -780,11 +780,27 @@ code {
 .planner-section-banner img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 6;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   object-position: center;
   border: 1px solid var(--theme-line);
   border-radius: var(--radius);
+}
+
+.cover-budget-action {
+  width: fit-content;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 45%, white);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--theme-accent);
+  padding: 0 18px;
+  font-weight: 850;
+  cursor: pointer;
 }
 
 /* La ilustración ahora vive en el encabezado; conserva el contenido sin repetir el banner. */
@@ -2463,12 +2479,16 @@ select {
   .planner-panel .simple-entry-grid,
   .planner-panel .simple-entry-grid label { min-width: 0; max-width: 100%; }
   .pager { display: none; }
-  .mobile-bottom-nav { position: fixed; inset: auto 0 0; z-index: 90; display: grid; grid-template-columns: repeat(6,1fr); min-height: 64px; border-top: 1px solid rgba(139,111,104,.18); background: rgba(255,252,249,.97); backdrop-filter: blur(14px); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .mobile-bottom-nav { position: fixed; inset: auto 0 0; z-index: 90; display: grid; grid-template-columns: 1fr auto 1fr; min-height: 64px; border-top: 1px solid rgba(139,111,104,.18); background: rgba(255,252,249,.97); backdrop-filter: blur(14px); padding: 6px 14px calc(6px + env(safe-area-inset-bottom)); }
   .mobile-bottom-nav.first-page,
-  .mobile-bottom-nav.last-page { grid-template-columns: repeat(5,1fr); }
+  .mobile-bottom-nav.last-page { grid-template-columns: 1fr auto; }
+  .mobile-bottom-nav.first-page { grid-template-columns: 1fr; }
+  .mobile-bottom-nav .nav-step:first-child { justify-self: start; }
+  .mobile-bottom-nav .nav-step:last-child { justify-self: end; }
   .mobile-bottom-nav button { display: grid; justify-items: center; gap: 2px; border: 0; background: transparent; color: #7b6470; font-size: 11px; font-weight: 800; }
   .mobile-bottom-nav button:disabled { opacity: .35; }
   .mobile-bottom-nav button svg { width: 30px; height: 30px; padding: 6px; border-radius: 50%; transition: background .2s ease, color .2s ease, transform .2s ease; }
+  .mobile-page-count { align-self: center; justify-self: center; color: #9e4f7d; font-size: 12px; font-weight: 900; white-space: nowrap; }
   .mobile-bottom-nav button.active { color: #9e4f7d; }
   .mobile-bottom-nav button.active svg { background: #c878a5; color: white; transform: translateY(-1px); box-shadow: 0 5px 13px rgba(176, 88, 139, .24); }
   .mobile-bottom-nav .nav-step svg { border-radius: 10px; }

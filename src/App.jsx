@@ -55,6 +55,7 @@ import calendarBanner from "../assets/calendar-banner.jpg";
 import closeBanner from "../assets/close-banner.jpg";
 import dailyExpensesOriginal from "../assets/daily-expenses-original.png";
 import budgetDistributionOriginal from "../assets/budget-distribution-original.png";
+import budgetBanner from "../assets/budget-banner-v2.png";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -194,7 +195,7 @@ const sectionBanners = {
   deudas: { image: debtBanner, alt: "Tarjeta, dinero y terminal de pago" },
   ahorro: { image: savingsBanner, alt: "Alcancía rosa, frasco con monedas y progreso de ahorro en tonos pastel" },
   gastos: { image: dailyExpensesOriginal, alt: "Compras cotidianas, recibo, monedas y calculadora" },
-  presupuesto: { image: budgetDistributionOriginal, alt: "Frascos pastel para distribuir el presupuesto" },
+  presupuesto: { image: budgetBanner, alt: "Cuaderno de presupuesto, calculadora y sobres en tonos pastel" },
   calendario: { image: calendarBanner, alt: "Alcancía junto a plantas, monedas y gráficos" },
   cierre: { image: closeBanner, alt: "Hoja de cierre mensual con estrella y líneas de reflexión" }
 };
@@ -699,9 +700,9 @@ function hasMeaningfulPayment(row) {
 }
 
 function getBalanceStatus(value) {
-  if (value > 0) return { label: "Saldo a favor", helper: "Después de cubrir lo planificado, este dinero quedaría disponible.", tone: "positive" };
-  if (value < 0) return { label: "Saldo en contra", helper: "Tus compromisos superan tus ingresos. Revisa pagos, gastos o ahorro.", tone: "negative" };
-  return { label: "Saldo equilibrado", helper: "Tus ingresos y compromisos están nivelados.", tone: "neutral" };
+  if (value > 0) return { label: "Te quedaría a favor", helper: "Es lo que quedaría después de restar a tus ingresos todo lo planificado para el mes.", tone: "positive" };
+  if (value < 0) return { label: "Te faltaría cubrir", helper: "Lo planificado supera tus ingresos por este monto. Revisa pagos, gastos o ahorro.", tone: "negative" };
+  return { label: "Quedarías justo", helper: "Tus ingresos alcanzan exactamente para todo lo planificado.", tone: "neutral" };
 }
 
 function parseSheetValues(payload) {
@@ -1202,7 +1203,7 @@ function StatStrip({ sheetDb }) {
   );
 }
 
-function Cover({ onStart }) {
+function Cover({ onStart, onBudget }) {
   return (
     <section className="cover-screen page-transition">
       <div className="cover-media">
@@ -1220,6 +1221,10 @@ function Cover({ onStart }) {
         <button className="primary-action" type="button" onClick={onStart}>
           <CheckCircle2 size={16} />
           Ver por dónde empezar
+        </button>
+        <button className="cover-budget-action" type="button" onClick={onBudget}>
+          <CircleDollarSign size={16} />
+          Ver presupuesto disponible
         </button>
         <small className="cover-reassurance">No necesitas saber de finanzas. La agenda te guía paso a paso.</small>
         <div className="onboarding-steps"><span><b>1</b> Elige tu modo</span><span><b>2</b> Registra lo importante</span><span><b>3</b> Mira cuánto te queda</span></div>
@@ -1995,7 +2000,7 @@ function BudgetSection({ sheetDb }) {
         wide
       />
       <HelpTip text="Este resultado mira todo el mes: ingresos esperados menos pagos, gastos, el ahorro que ya separaste y tu parte compartida. La meta completa no se descuenta hasta que realmente la ahorras." />
-      <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Dinero realmente disponible en este momento" wide />
+      <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Lo recibido menos lo que ya pagaste, gastaste y separaste para ahorrar" wide />
       <HelpTip text="Cuenta solamente el dinero que ya recibiste y descuenta lo que ya pagaste, gastaste o separaste." />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Lo que todavía falta para completar tu meta" />
     </div>
@@ -2596,9 +2601,8 @@ function AppShell({ auth }) {
         {current === "cover" && menuOpen ? <section className="planner-grid mobile-menu-open cover-mobile-menu"><button className="menu-backdrop" type="button" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú" /><Sidebar activeSection={activeSection} month={month} year={year} progress={progress} onMonth={changeMonth} onSection={goTo} /></section> : null}
         {current === "cover" ? (
           <>
-            <Cover onStart={() => setCurrent("checklist")} />
+            <Cover onStart={() => setCurrent("checklist")} onBudget={() => setCurrent("presupuesto")} />
             <SyncBanner auth={auth} sheetDb={sheetDb} />
-            <StatStrip sheetDb={sheetDb} />
           </>
         ) : (
           <section className={menuOpen ? "planner-grid mobile-menu-open" : "planner-grid"}>
@@ -2631,7 +2635,7 @@ function AppShell({ auth }) {
           Anterior
         </button> : <span />}
         <span>
-          {pageIndex + 1} / {order.length}
+          {pageIndex === 0 ? "Portada" : `${pageIndex} de ${sections.length}`}
         </span>
         {pageIndex < order.length - 1 ? <button type="button" onClick={() => move(1)}>
           Siguiente
@@ -2640,6 +2644,7 @@ function AppShell({ auth }) {
       </footer>
       <nav className={`mobile-bottom-nav mobile-step-nav ${pageIndex === 0 ? "first-page" : ""} ${pageIndex === order.length - 1 ? "last-page" : ""}`} aria-label="Navegación entre páginas">
         {pageIndex > 0 ? <button className="nav-step" type="button" onClick={() => move(-1)}><ArrowLeft size={18} /><span>Anterior</span></button> : null}
+        {pageIndex > 0 ? <span className="mobile-page-count">{pageIndex} de {sections.length}</span> : null}
         {pageIndex < order.length - 1 ? <button className="nav-step" type="button" onClick={() => move(1)}><ArrowRight size={18} /><span>Siguiente</span></button> : null}
       </nav>
     </div>
