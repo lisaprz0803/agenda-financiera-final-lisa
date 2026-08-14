@@ -2797,6 +2797,15 @@ select {
 .share-summary-actions .share-whatsapp { border-color: #a9d9b8; background: #eaf8ef; color: #34704c; }
 .share-summary-actions .share-email { border-color: #c9b9df; background: #f4effa; color: #705687; }
 
+/* Evita que los campos se estiren de lado a lado en pantallas grandes. */
+.simple-entry-card,
+.daily-form,
+.shared-expense-form {
+  width: min(100%, 900px);
+  justify-self: center;
+  margin-inline: auto;
+}
+
 /* Botones principales proporcionados al texto, sin barras innecesariamente largas. */
 .floating-add-action,
 .finish-entry,
@@ -2819,6 +2828,11 @@ select {
 }
 
 @media (max-width: 760px) {
+  .simple-entry-card,
+  .daily-form,
+  .shared-expense-form {
+    width: 100%;
+  }
   .share-summary-card .list-heading { align-items: stretch; flex-direction: column; }
   .toggle-share-summary { width: 100%; }
   .share-summary-actions { grid-template-columns: 1fr 1fr; }
