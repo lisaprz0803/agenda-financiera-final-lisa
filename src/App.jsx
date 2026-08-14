@@ -1191,7 +1191,7 @@ function StatStrip({ sheetDb }) {
   );
 }
 
-function Cover({ onStart, onBudget }) {
+function Cover({ onStart }) {
   return (
     <section className="cover-screen page-transition">
       <div className="cover-media">
@@ -1209,10 +1209,6 @@ function Cover({ onStart, onBudget }) {
         <button className="primary-action" type="button" onClick={onStart}>
           <CheckCircle2 size={16} />
           Ver por dónde empezar
-        </button>
-        <button className="cover-budget-action" type="button" onClick={onBudget}>
-          <CircleDollarSign size={16} />
-          Ver presupuesto disponible
         </button>
         <small className="cover-reassurance">No necesitas saber de finanzas. Solo empezar por un dato.</small>
         <div className="onboarding-steps"><span><b>1</b> Elige tu modo</span><span><b>2</b> Registra lo importante</span><span><b>3</b> Mira cuánto te queda</span></div>
@@ -1491,11 +1487,17 @@ function SetupSection({ sheetDb, onContinue, month, year }) {
         {demoMode ? <div className="demo-active-banner"><Sparkles size={18} /><div><strong>Estás usando datos de prueba</strong><span>Puedes recorrer la agenda sin confundirlos con tus finanzas reales.</span></div></div> : null}
         <label className="currency-field"><span>Moneda</span><select value={sheetDb.household.currency || "CLP"} onChange={(event) => selectCurrency(event.target.value)}><option value="CLP">Peso chileno (CLP)</option><option value="USD">Dólar (USD)</option><option value="EUR">Euro (EUR)</option><option value="ARS">Peso argentino (ARS)</option><option value="MXN">Peso mexicano (MXN)</option></select></label>
         <div className="pilot-mode-card"><Sparkles size={19} /><div><strong>¿Solo quieres probarla?</strong><span>Carga información ficticia para recorrer todas las secciones. Podrás borrarla después.</span></div><button type="button" className="add-row" onClick={sheetDb.loadExampleData}>Usar datos de prueba</button></div>
-        <div className="data-actions"><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Borrar {monthNames[month]} {year} y comenzar de cero</button></div>
-        <div className="backup-actions"><button type="button" className="add-row" onClick={exportBackup}><Download size={15} /> Descargar respaldo</button><button type="button" className="add-row" onClick={copyBackup}><Copy size={15} /> Copiar respaldo</button><button type="button" className="add-row" onClick={() => backupInputRef.current?.click()}><Upload size={15} /> Importar respaldo</button><input ref={backupInputRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) { sheetDb.importBackup(file); setBackupMessage(`✓ Archivo ${file.name} seleccionado para importar.`); } event.target.value = ""; }} /></div>
-        {backupMessage ? <div className="backup-message" role="status">{backupMessage}</div> : null}
-        {automaticBackup?.createdAt ? <div className="automatic-backup-note"><CheckCircle2 size={16} /><span>Respaldo de seguridad automático: {new Date(automaticBackup.createdAt).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}</span></div> : null}
-        <small>Tus datos se guardan en este dispositivo. Guarda el archivo de respaldo sin modificarlo. El botón para comenzar de cero borra únicamente el mes indicado.</small>
+        <details className="backup-tools">
+          <summary><Download size={17} /> Respaldo y seguridad</summary>
+          <div className="backup-tools-content">
+            <p>Guarda una copia o recupera tus datos cuando la necesites.</p>
+            <div className="backup-actions"><button type="button" className="add-row" onClick={exportBackup}><Download size={15} /> Descargar</button><button type="button" className="add-row" onClick={copyBackup}><Copy size={15} /> Copiar</button><button type="button" className="add-row" onClick={() => backupInputRef.current?.click()}><Upload size={15} /> Importar</button><input ref={backupInputRef} hidden type="file" accept="application/json,.json" onChange={(event) => { const file = event.target.files?.[0]; if (file) { sheetDb.importBackup(file); setBackupMessage(`✓ Archivo ${file.name} seleccionado para importar.`); } event.target.value = ""; }} /></div>
+            {backupMessage ? <div className="backup-message" role="status">{backupMessage}</div> : null}
+            {automaticBackup?.createdAt ? <div className="automatic-backup-note"><CheckCircle2 size={16} /><span>Respaldo automático: {new Date(automaticBackup.createdAt).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}</span></div> : null}
+            <small>Tus datos se guardan en este dispositivo. Conserva el archivo sin modificarlo.</small>
+            <div className="data-actions"><button type="button" className="danger-action" onClick={confirmReset}><Trash2 size={15} /> Borrar {monthNames[month]} {year} y comenzar de cero</button></div>
+          </div>
+        </details>
       </div>
       <button className="primary-action" type="button" onClick={onContinue}>Continuar con mis ingresos <ArrowRight size={16} /></button>
     </div>
@@ -1971,9 +1973,7 @@ function BudgetSection({ sheetDb }) {
         helper={balanceStatus.helper}
         wide
       />
-      <HelpTip text="Este resultado mira todo el mes: ingresos esperados menos pagos, gastos, el ahorro que ya separaste y tu parte compartida. La meta completa no se descuenta hasta que realmente la ahorras." />
       <ReadOnlyCard label="Disponible hoy" value={formatCurrency(availableToday)} helper="Lo recibido menos lo que ya pagaste, gastaste y separaste para ahorrar" wide />
-      <HelpTip text="Cuenta solamente el dinero que ya recibiste y descuenta lo que ya pagaste, gastaste o separaste." />
       <ReadOnlyCard label="Falta por ahorrar" value={formatCurrency(summary.savingsGap)} helper="Lo que todavía falta para completar tu meta" />
     </div>
   );
@@ -2229,10 +2229,6 @@ function ReadOnlyCard({ label, value, helper, wide = false }) {
       <small>{helper}</small>
     </div>
   );
-}
-
-function HelpTip({ text }) {
-  return <details className="help-tip"><summary><HelpCircle size={16} /> ¿Qué significa?</summary><p>{text}</p></details>;
 }
 
 function BudgetChart({ summary }) {
@@ -2572,7 +2568,7 @@ function AppShell({ auth }) {
         {current === "cover" && menuOpen ? <section className="planner-grid mobile-menu-open cover-mobile-menu"><button className="menu-backdrop" type="button" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú" /><Sidebar activeSection={activeSection} month={month} year={year} progress={progress} onMonth={changeMonth} onSection={goTo} /></section> : null}
         {current === "cover" ? (
           <>
-            <Cover onStart={() => setCurrent("checklist")} onBudget={() => setCurrent("presupuesto")} />
+            <Cover onStart={() => setCurrent("checklist")} />
             <SyncBanner auth={auth} sheetDb={sheetDb} />
           </>
         ) : (
