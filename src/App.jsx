@@ -1304,7 +1304,6 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, on
       </header>
 
       <SyncBanner auth={auth} sheetDb={sheetDb} />
-      <QuoteCard text={section.message} />
 
       <div className="panel-body">
         {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={continueToIncome} month={month} year={year} /> : null}
@@ -1562,7 +1561,6 @@ function ChecklistSection({ sheetDb, onSection }) {
           <strong>{done}/{checklistItems.length}</strong>
           <span>pasos completados</span>
         </div>
-        <p>Marca cada paso sin presión. No se trata de hacerlo perfecto, se trata de hacerlo visible.</p>
         <div className="checklist-items">
           {checklistItems.map((item) => (
             <div className={isDone(item) ? "task checked" : "task"} key={item.id}>
@@ -1862,7 +1860,7 @@ function HouseholdSection({ sheetDb, month, year }) {
 
       <section className="member-card">
         <div className="list-heading">
-          <div><h3>1. ¿Entre quiénes se divide?</h3><p>Escribe tu nombre y el de tu pareja. Puedes agregar hasta cuatro personas.</p></div>
+          <div><h3>1. ¿Entre quiénes se divide?</h3><p>Agrega hasta cuatro personas.</p></div>
           <button className="add-row" type="button" onClick={addMember} disabled={household.members.length >= 4}>
             <Plus size={15} /> Agregar persona
           </button>
@@ -1883,7 +1881,7 @@ function HouseholdSection({ sheetDb, month, year }) {
       </section>
 
       {formOpen ? <form className="shared-expense-form entry-form-reveal" onSubmit={submitExpense}>
-        <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>Completa estos datos. La agenda dividirá el monto automáticamente.</p></div></div>
+        <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>La agenda dividirá el monto automáticamente.</p></div></div>
         <div className="shared-form-grid">
           <label><span>Fecha</span><input type="date" value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
           <label><span>¿Qué pagaron?</span><input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Ej: supermercado" required /></label>
@@ -1914,7 +1912,7 @@ function HouseholdSection({ sheetDb, month, year }) {
       </form> : null}
 
       <div className="shared-list">
-        <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Aquí verás tu parte y la de cada persona. Puedes corregir los montos si no es mitad y mitad.</p></div></div>
+        <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Puedes ajustar los montos si no se divide por igual.</p></div></div>
         {household.expenses.length ? household.expenses.map((expense) => {
           const payer = household.members.find((member) => member.id === expense.paidBy);
           const shareTotal = Object.values(expense.shares).reduce((sum, value) => sum + Number(value || 0), 0);
@@ -2062,7 +2060,7 @@ function SavingsSection({ sheetDb }) {
         </div>
       ))}
       {!rows.length ? <div className="empty-state compact-empty">Aún no tienes metas. Las casillas aparecerán al presionar “Agregar meta de ahorro”.</div> : null}
-      <div className="piggy-how"><strong>¿Cómo se llena?</strong><span>1. Escribe tu meta. 2. Escribe cuánto separaste. 3. El cerdito calcula automáticamente: separado ÷ meta.</span></div>
+      <details className="help-tip piggy-how"><summary><HelpCircle size={16} /> ¿Cómo funciona?</summary><p>Escribe tu meta y cuánto separaste. El cerdito calculará el avance automáticamente.</p></details>
       <PiggySavingsProgress progress={progressNumber} saved={summary.savingsSaved} target={summary.savingsTarget} />
       {editingIndex === null ? <FloatingAddButton label="Agregar meta" onClick={addSavingsGoal} /> : null}
     </div>
@@ -2382,7 +2380,7 @@ function DeleteRowButton({ label, onClick, disabled }) {
 }
 
 function FinishEditButton({ onClick }) {
-  return <button className="finish-entry" type="button" onClick={onClick}><CheckCircle2 size={18} /> Listo, terminar</button>;
+  return <button className="finish-entry" type="button" onClick={onClick}>Listo ✅</button>;
 }
 
 function AddRowButton({ label, onClick }) {
@@ -2429,7 +2427,6 @@ function DailyExpenseForm({ onSubmit, saving, onCancel }) {
   return (
     <form className="daily-form wide" onSubmit={submit}>
       <h3>Agregar gasto diario</h3>
-      <p>Completa los datos básicos; la agenda actualizará tu saldo automáticamente.</p>
       <div className="simple-entry-grid">
         <label><span>Fecha</span><input type="date" value={expense.date} onChange={(event) => update("date", event.target.value)} aria-label="Fecha" /></label>
         <label><span>¿En qué gastaste?</span><input
