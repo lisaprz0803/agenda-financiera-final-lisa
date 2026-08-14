@@ -2777,11 +2777,52 @@ select {
 .share-summary-actions .share-whatsapp { border-color: #a9d9b8; background: #eaf8ef; color: #34704c; }
 .share-summary-actions .share-email { border-color: #c9b9df; background: #f4effa; color: #705687; }
 
+/* Botones principales proporcionados al texto, sin barras innecesariamente largas. */
+.floating-add-action,
+.finish-entry,
+.add-bottom-action,
+.shared-submit,
+.calendar-empty-action,
+.toggle-calendar {
+  width: fit-content;
+  min-width: 230px;
+  max-width: 100%;
+  padding-inline: 26px;
+}
+
+.cancel-entry {
+  width: fit-content;
+  max-width: 100%;
+  justify-self: center;
+  margin-inline: auto;
+  text-align: center;
+}
+
 @media (max-width: 760px) {
   .share-summary-card .list-heading { align-items: stretch; flex-direction: column; }
   .toggle-share-summary { width: 100%; }
   .share-summary-actions { grid-template-columns: 1fr 1fr; }
   .share-summary-actions button { border-radius: 14px; }
+
+  .floating-add-action,
+  .finish-entry,
+  .add-bottom-action,
+  .shared-submit,
+  .calendar-empty-action,
+  .toggle-calendar {
+    width: fit-content;
+    min-width: min(250px, 100%);
+    max-width: 100%;
+    min-height: 48px;
+    padding-inline: 22px;
+  }
+
+  .cancel-entry {
+    width: fit-content;
+    min-width: min(250px, 100%);
+    min-height: 46px;
+    padding-inline: 18px;
+  }
 }
 
 @media print {
