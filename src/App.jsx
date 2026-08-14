@@ -18,6 +18,8 @@ import {
   Menu,
   Pencil,
   Copy,
+  Mail,
+  MessageCircle,
   Search,
   Upload,
   LogOut,
@@ -1298,7 +1300,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, on
         {activeSection === "checklist" ? <ChecklistSection sheetDb={sheetDb} onSection={onSection} /> : null}
         {activeSection === "ingresos" ? <IncomeSection sheetDb={sheetDb} /> : null}
         {activeSection === "pagos" ? <PaymentsSection sheetDb={sheetDb} /> : null}
-        {activeSection === "hogar" ? <HouseholdSection sheetDb={sheetDb} /> : null}
+        {activeSection === "hogar" ? <HouseholdSection sheetDb={sheetDb} month={month} year={year} /> : null}
         {activeSection === "presupuesto" ? <BudgetSection sheetDb={sheetDb} month={month} year={year} /> : null}
         {activeSection === "gastos" ? <DailySpendingSection sheetDb={sheetDb} /> : null}
         {activeSection === "ahorro" ? <SavingsSection sheetDb={sheetDb} /> : null}
@@ -1647,7 +1649,7 @@ function PaymentsSection({ sheetDb }) {
   );
 }
 
-function HouseholdSection({ sheetDb }) {
+function HouseholdSection({ sheetDb, month, year }) {
   const { household } = sheetDb;
   const balances = getHouseholdBalances(household);
   const [form, setForm] = useState({
@@ -1660,6 +1662,8 @@ function HouseholdSection({ sheetDb }) {
     splitMode: "equal"
   });
   const [formOpen, setFormOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
 
   useEffect(() => {
     if (!household.members.some((member) => member.id === form.paidBy)) {
@@ -1761,8 +1765,38 @@ function HouseholdSection({ sheetDb }) {
   }
 
   const householdTotal = household.expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const pendingExpenses = household.expenses.filter((expense) => expense.status !== "Pagado");
+  const memberTotals = Object.fromEntries(household.members.map((member) => [member.id, household.expenses.reduce((sum, expense) => sum + (Number(expense.shares?.[member.id]) || 0), 0)]));
   const previewAmount = parseMoney(form.amount);
   const previewShare = household.members.length ? Math.round(previewAmount / household.members.length) : 0;
+
+  const sharedSummaryText = [
+    `Resumen compartido — ${monthNames[month]} ${year}`,
+    `Gastos totales: ${formatCurrency(householdTotal)}`,
+    ...household.members.map((member) => `${member.name}: ${formatCurrency(memberTotals[member.id])}`),
+    pendingExpenses.length ? `Pendientes (${pendingExpenses.length}):` : "Pendientes: ninguno",
+    ...pendingExpenses.map((expense) => `• ${expense.concept}: ${formatCurrency(expense.amount)}${expense.date ? ` — ${expense.date}` : ""} (${expense.status})`),
+    household.members.some((member) => balances[member.id] < 0)
+      ? "Estado: una persona adelantó más; revisen juntos si corresponde hacer un ajuste."
+      : "Estado: cada persona cubrió su parte; no hay ajustes pendientes."
+  ].join("\n");
+
+  async function copySharedSummary() {
+    try {
+      await navigator.clipboard.writeText(sharedSummaryText);
+      setShareMessage("✓ Resumen copiado. Ya puedes pegarlo donde quieras.");
+    } catch {
+      setShareMessage("No se pudo copiar automáticamente. Selecciona el texto del resumen y cópialo.");
+    }
+  }
+
+  function shareByWhatsApp() {
+    window.open(`https://wa.me/?text=${encodeURIComponent(sharedSummaryText)}`, "_blank", "noopener,noreferrer");
+  }
+
+  function shareByEmail() {
+    window.location.href = `mailto:?subject=${encodeURIComponent(`Resumen compartido — ${monthNames[month]} ${year}`)}&body=${encodeURIComponent(sharedSummaryText)}`;
+  }
 
   return (
     <div className="stack household-section">
@@ -1869,6 +1903,19 @@ function HouseholdSection({ sheetDb }) {
           );
         }) : <div className="empty-state">Todavía no hay gastos compartidos. Agrega el primero para ver los saldos.</div>}
       </div>
+      {household.expenses.length ? <section className="share-summary-card">
+        <div className="list-heading"><div><h3><Heart size={19} /> Compartir resumen del mes</h3><p>Revisa la información y envíala sin guardar correos ni teléfonos.</p></div><button className="toggle-share-summary" type="button" onClick={() => setShareOpen((value) => !value)}>{shareOpen ? "Ocultar" : "Ver resumen"}</button></div>
+        {shareOpen ? <div className="share-summary-content entry-form-reveal">
+          <pre>{sharedSummaryText}</pre>
+          <div className="share-summary-actions">
+            <button className="share-whatsapp" type="button" onClick={shareByWhatsApp}><MessageCircle size={17} /> WhatsApp</button>
+            <button className="share-email" type="button" onClick={shareByEmail}><Mail size={17} /> Correo</button>
+            <button type="button" onClick={copySharedSummary}><Copy size={17} /> Copiar</button>
+            <button type="button" onClick={() => window.print()}><Download size={17} /> Guardar PDF</button>
+          </div>
+          {shareMessage ? <div className="inline-success" role="status">{shareMessage}</div> : null}
+        </div> : null}
+      </section> : null}
       {!formOpen ? <FloatingAddButton label="Agregar otro gasto compartido" onClick={() => setFormOpen(true)} /> : null}
       </>}
     </div>
