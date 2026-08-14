@@ -2328,6 +2328,30 @@ select {
   -webkit-appearance: none;
   appearance: none;
 }
+
+/* Controles de elección: compactos porque no requieren escribir texto largo. */
+@media (min-width: 641px) {
+  .simple-entry-grid select,
+  .simple-entry-grid input[type="date"],
+  .shared-form-grid select,
+  .shared-form-grid input[type="date"] {
+    min-height: 36px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+}
+
+@media (max-width: 640px) {
+  .simple-entry-grid select,
+  .simple-entry-grid input[type="date"],
+  .shared-form-grid select,
+  .shared-form-grid input[type="date"] {
+    min-height: 46px;
+    padding-top: 7px;
+    padding-bottom: 7px;
+    font-size: 16px;
+  }
+}
 .simple-entry-card > .delete-row { justify-self: end; }
 .add-bottom-action { width: min(100%, 430px); min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; justify-self: center; margin: 4px auto 0; border: 2px solid var(--theme-accent); border-radius: 999px; background: rgba(255,255,255,.9); color: var(--theme-accent); padding: 0 20px; font-weight: 900; box-shadow: 0 10px 24px var(--theme-shadow); }
 
