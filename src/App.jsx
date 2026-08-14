@@ -2017,8 +2017,8 @@ function DailySpendingSection({ sheetDb }) {
         wide
       />
       <ReadOnlyCard label="Gastado hasta ahora" value={formatCurrency(summary.dailyExpenses)} helper={`${sheetDb.draft.gastos.length} movimientos registrados`} wide />
-      {formOpen ? <DailyExpenseForm onSubmit={async (expense) => { await sheetDb.appendDailyExpense(expense); setFormOpen(false); }} saving={sheetDb.status.saving} onCancel={() => setFormOpen(false)} /> : null}
       <DailyExpensesList sheetDb={sheetDb} />
+      {formOpen ? <DailyExpenseForm onSubmit={async (expense) => { await sheetDb.appendDailyExpense(expense); setFormOpen(false); }} saving={sheetDb.status.saving} onCancel={() => setFormOpen(false)} /> : null}
       {!formOpen ? <FloatingAddButton label="Agregar gasto" onClick={() => setFormOpen(true)} /> : null}
     </div>
   );
