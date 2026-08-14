@@ -55,7 +55,6 @@ import calendarBanner from "../assets/calendar-banner.jpg";
 import closeBanner from "../assets/close-banner.jpg";
 import dailyExpensesOriginal from "../assets/daily-expenses-original.png";
 import budgetDistributionOriginal from "../assets/budget-distribution-original.png";
-import budgetBanner from "../assets/budget-banner-v2.png";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -195,7 +194,7 @@ const sectionBanners = {
   deudas: { image: debtBanner, alt: "Tarjeta, dinero y terminal de pago" },
   ahorro: { image: savingsBanner, alt: "Alcancía rosa, frasco con monedas y progreso de ahorro en tonos pastel" },
   gastos: { image: dailyExpensesOriginal, alt: "Compras cotidianas, recibo, monedas y calculadora" },
-  presupuesto: { image: budgetBanner, alt: "Cuaderno de presupuesto, calculadora y sobres en tonos pastel" },
+  presupuesto: { image: budgetDistributionOriginal, alt: "Frascos pastel para distribuir vivienda, comida, transporte, ahorro y ocio" },
   calendario: { image: calendarBanner, alt: "Alcancía junto a plantas, monedas y gráficos" },
   cierre: { image: closeBanner, alt: "Hoja de cierre mensual con estrella y líneas de reflexión" }
 };
