@@ -1218,7 +1218,7 @@ function Cover({ onStart, onBudget }) {
         </div>
         <h1>¿DÓNDE SE FUE MI PLATA?</h1>
         <p className="subtitle">Agenda interactiva para darle forma a tu dinero.</p>
-        <p className="quote">Organizar tus finanzas también es una forma de cuidarte.</p>
+        <p className="quote">Vamos a descubrir dónde se fue tu plata, sin culpa y sin enredos.</p>
         <button className="primary-action" type="button" onClick={onStart}>
           <CheckCircle2 size={16} />
           Ver por dónde empezar
@@ -1227,7 +1227,7 @@ function Cover({ onStart, onBudget }) {
           <CircleDollarSign size={16} />
           Ver presupuesto disponible
         </button>
-        <small className="cover-reassurance">No necesitas saber de finanzas. La agenda te guía paso a paso.</small>
+        <small className="cover-reassurance">No necesitas saber de finanzas. Solo empezar por un dato.</small>
         <div className="onboarding-steps"><span><b>1</b> Elige tu modo</span><span><b>2</b> Registra lo importante</span><span><b>3</b> Mira cuánto te queda</span></div>
       </div>
     </section>
@@ -1310,6 +1310,7 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, on
       </header>
 
       <SyncBanner auth={auth} sheetDb={sheetDb} />
+      <QuoteCard text={section.message} />
 
       <div className="panel-body">
         {activeSection === "configuracion" ? <SetupSection sheetDb={sheetDb} onContinue={continueToIncome} month={month} year={year} /> : null}

@@ -779,10 +779,12 @@ code {
 
 .planner-section-banner img {
   display: block;
-  width: 100%;
-  height: auto;
+  width: min(100%, 1050px);
+  height: clamp(150px, 20vw, 280px);
+  margin-inline: auto;
   object-fit: contain;
   object-position: center;
+  background: color-mix(in srgb, var(--theme-bg-1) 58%, white);
   border: 1px solid var(--theme-line);
   border-radius: var(--radius);
 }
