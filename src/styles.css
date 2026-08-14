@@ -2534,6 +2534,32 @@ select {
   color: #568268;
 }
 
+.finish-entry {
+  width: min(100%, 430px);
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  justify-self: center;
+  margin: 14px auto 0;
+  border: 1px solid #8fc4a3;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #eaf8ef, #d9f0e1);
+  color: #347052;
+  padding: 0 18px;
+  font: inherit;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(67, 123, 88, .12);
+  cursor: pointer;
+}
+
+.simple-entry-card:has(.finish-entry) > .delete-row,
+.simple-entry-card:has(.finish-entry) > .duplicate-row,
+.simple-entry-card:has(.finish-entry) > .cancel-entry {
+  margin-bottom: 0;
+}
+
 .entry-card-heading > div {
   display: flex;
   align-items: center;
@@ -2570,6 +2596,8 @@ select {
   .next-step-card { grid-template-columns: 1fr; }
   .next-step-card span { grid-row: auto; }
   .closing-actions { grid-template-columns: 1fr; padding: 14px; }
+  .finish-entry,
+  .floating-add-action { width: min(100%, 430px); min-height: 50px; }
   .closing-actions .copy-next-action,
   .closing-actions .export-action {
     width: min(100%, 430px);

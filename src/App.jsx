@@ -1567,7 +1567,7 @@ function IncomeSection({ sheetDb }) {
       <div className="section-action-row"><div><strong>Mis ingresos</strong><span>Completa solo estos cinco datos.</span></div></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ingreso-${rowIndex}`}>
-          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> {row[0] || `Ingreso ${rowIndex + 1}`} {row[2] ? `· ${formatCurrency(parseMoney(row[2]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => { const closing = editingIndex === rowIndex; setEditingIndex(closing ? null : rowIndex); if (closing) setNewRowIndex(null); }}>{editingIndex === rowIndex ? "Listo" : "Editar"}</button></div>
+          <div className="entry-card-heading"><strong><CircleDollarSign size={18} /> {row[0] || `Ingreso ${rowIndex + 1}`} {row[2] ? `· ${formatCurrency(parseMoney(row[2]))}` : ""}</strong>{editingIndex !== rowIndex ? <button className="edit-entry" type="button" onClick={() => setEditingIndex(rowIndex)}>Editar</button> : null}</div>
           {editingIndex === rowIndex ? <>
           <div className="simple-entry-grid">
             <label><span>Fuente</span><input value={row[0]} placeholder="Ej: sueldo" onChange={(e) => sheetDb.updateCell("ingresos", rowIndex, 0, e.target.value)} /></label>
@@ -1581,7 +1581,8 @@ function IncomeSection({ sheetDb }) {
             disabled={sheetDb.status.saving}
             onClick={() => sheetDb.deleteRow("ingresos", rowIndex)}
           />
-          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ingresos", rowIndex); setNewRowIndex(null); }}>Cancelar</button> : null}
+          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ingresos", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar</button> : null}
+          <FinishEditButton onClick={() => { setEditingIndex(null); setNewRowIndex(null); }} />
           </> : <div className="saved-entry-summary"><span>{row[1] || "Sin fecha"}</span><span className={`pill ${getStatusClass(row[3] || "Por revisar")}`}>{row[3] || "Por revisar"}</span></div>}
         </div>
       ))}
@@ -1619,7 +1620,7 @@ function PaymentsSection({ sheetDb }) {
       <div className="section-action-row"><div><strong>Mis pagos</strong><span>La fecha aparecerá automáticamente en el calendario.</span></div></div>
         {payments.map((row, rowIndex) => (
           <div className="simple-entry-card" key={`pago-${rowIndex}`}>
-            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> {row[1] || `Pago ${rowIndex + 1}`} {row[4] || row[3] ? `· ${formatCurrency(parseMoney(row[4] || row[3]))}` : ""}</strong><div><CategorySticker category={findOption(row[0], categoryOptions)} /><button className="edit-entry" type="button" onClick={() => { const closing = editingIndex === rowIndex; setEditingIndex(closing ? null : rowIndex); if (closing) setNewRowIndex(null); }}>{editingIndex === rowIndex ? "Listo" : "Editar"}</button></div></div>
+            <div className="entry-card-heading"><strong><CheckCircle2 size={18} /> {row[1] || `Pago ${rowIndex + 1}`} {row[4] || row[3] ? `· ${formatCurrency(parseMoney(row[4] || row[3]))}` : ""}</strong><div><CategorySticker category={findOption(row[0], categoryOptions)} />{editingIndex !== rowIndex ? <button className="edit-entry" type="button" onClick={() => setEditingIndex(rowIndex)}>Editar</button> : null}</div></div>
             {editingIndex === rowIndex ? <>
             <div className="simple-entry-grid">
               <label><span>Categoría</span><select value={findOption(row[0], categoryOptions)} onChange={(e) => sheetDb.updateCell("pagos", rowIndex, 0, e.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
@@ -1635,7 +1636,8 @@ function PaymentsSection({ sheetDb }) {
               onClick={() => sheetDb.deleteRow("pagos", rowIndex)}
             />
             <button className="duplicate-row" type="button" onClick={() => sheetDb.addRow("pagos", [...row])}><Copy size={15} /> Duplicar este pago</button>
-            {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("pagos", rowIndex); setNewRowIndex(null); }}>Cancelar</button> : null}
+            {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("pagos", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar</button> : null}
+            <FinishEditButton onClick={() => { setEditingIndex(null); setNewRowIndex(null); }} />
             </> : <div className="saved-entry-summary"><span>{row[2] || "Sin fecha"}</span><span className={`pill ${getStatusClass(row[6] || "Por revisar")}`}>{row[6] || "Por revisar"}</span></div>}
           </div>
         ))}
@@ -2006,7 +2008,7 @@ function SavingsSection({ sheetDb }) {
       <div className="section-action-row featured"><div><strong><PiggyBank size={19} /> Mis metas</strong><span>Primero agrega una meta; el cerdito hará el cálculo.</span></div></div>
       {rows.map((row, rowIndex) => (
         <div className="simple-entry-card" key={`ahorro-${rowIndex}`}>
-          <div className="entry-card-heading"><strong><PiggyBank size={18} /> {row[0] || `Meta ${rowIndex + 1}`} {row[1] ? `· ${formatCurrency(parseMoney(row[1]))}` : ""}</strong><button className="edit-entry" type="button" onClick={() => { const closing = editingIndex === rowIndex; setEditingIndex(closing ? null : rowIndex); if (closing) setNewRowIndex(null); }}>{editingIndex === rowIndex ? "Listo" : "Editar"}</button></div>
+          <div className="entry-card-heading"><strong><PiggyBank size={18} /> {row[0] || `Meta ${rowIndex + 1}`} {row[1] ? `· ${formatCurrency(parseMoney(row[1]))}` : ""}</strong>{editingIndex !== rowIndex ? <button className="edit-entry" type="button" onClick={() => setEditingIndex(rowIndex)}>Editar</button> : null}</div>
           {editingIndex === rowIndex ? <>
           <div className="simple-entry-grid">
             <label><span>¿Para qué ahorras?</span><input value={row[0]} placeholder="Ej: vacaciones" onChange={(e) => sheetDb.updateCell("ahorros", rowIndex, 0, e.target.value)} /></label>
@@ -2020,7 +2022,8 @@ function SavingsSection({ sheetDb }) {
             disabled={sheetDb.status.saving}
             onClick={() => sheetDb.deleteRow("ahorros", rowIndex)}
           />
-          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ahorros", rowIndex); setNewRowIndex(null); }}>Cancelar</button> : null}
+          {rowIndex === newRowIndex ? <button className="cancel-entry" type="button" onClick={() => { sheetDb.deleteRow("ahorros", rowIndex); setNewRowIndex(null); setEditingIndex(null); }}>Cancelar</button> : null}
+          <FinishEditButton onClick={() => { setEditingIndex(null); setNewRowIndex(null); }} />
           </> : <div className="saved-entry-summary"><span>Ahorrado: {formatCurrency(parseMoney(row[2]))}</span><span>{row[3] || "Sin fecha meta"}</span></div>}
         </div>
       ))}
@@ -2342,6 +2345,10 @@ function DeleteRowButton({ label, onClick, disabled }) {
       <Trash2 size={15} />
     </button>
   );
+}
+
+function FinishEditButton({ onClick }) {
+  return <button className="finish-entry" type="button" onClick={onClick}><CheckCircle2 size={18} /> Listo, terminar</button>;
 }
 
 function AddRowButton({ label, onClick }) {
