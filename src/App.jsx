@@ -2553,7 +2553,6 @@ function AppShell({ auth }) {
         <div className="brand">
           <Sparkles size={16} />
           ¿DÓNDE SE FUE MI PLATA?
-          <small>v23</small>
         </div>
         <nav className="topnav" aria-label="Navegación principal">
           <button className={current === "cover" ? "active" : ""} type="button" onClick={() => setCurrent("cover")}>
