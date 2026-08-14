@@ -37,7 +37,7 @@ import coverPiggy from "../assets/cover-piggy.jpeg";
 import paymentTerminal from "../assets/payment-terminal.jpeg";
 import sharedMoney from "../assets/shared-money.jpeg";
 import budgetDesk from "../assets/budget-desk.jpeg";
-import savingsPig from "../assets/savings-pig.jpeg";
+import savingsBanner from "../assets/savings-banner-v2.png";
 import financePlan from "../assets/finance-plan.jpeg";
 import moneyHandoff from "../assets/money-handoff.jpeg";
 import cardTerminal from "../assets/card-terminal.jpeg";
@@ -101,7 +101,7 @@ const sections = [
     icon: CheckCircle2,
     title: "Tu ruta del mes",
     description: "Mira primero qué debes completar y marca cada paso a medida que avanzas.",
-    message: "No tienes que hacerlo todo hoy: sigue esta ruta, un paso a la vez."
+    message: "Vamos paso a paso: tu plata no se ordenó sola, pero tampoco tienes que resolverla toda hoy."
   },
   {
     id: "configuracion",
@@ -109,7 +109,7 @@ const sections = [
     icon: LayoutDashboard,
     title: "Configura tu mes",
     description: "Comienza con tu nombre y decide si usarás la agenda de forma individual o compartida.",
-    message: "Paso 1: primero dale un nombre a tu espacio y elige cómo organizarás el mes."
+    message: "Primero pongámosle nombre al plan. Después vemos dónde se fue la plata."
   },
   {
     id: "ingresos",
@@ -117,7 +117,7 @@ const sections = [
     icon: Plus,
     title: "Ingresos",
     description: "Anota tus entradas de dinero y las fechas en que esperas recibirlas.",
-    message: "Este mes quiero saber dónde se fue mi plata, sin drama."
+    message: "Antes de preguntarnos dónde se fue, anotemos cuánto llegó."
   },
   {
     id: "pagos",
@@ -125,7 +125,7 @@ const sections = [
     icon: CheckCircle2,
     title: "Pagos del mes",
     description: "Marca lo que ya está pagado y deja a la vista lo que necesita atención.",
-    message: "Lo que se anota deja de dar vueltas en la cabeza."
+    message: "Lo que se anota deja de perseguirte por toda la casa."
   },
   {
     id: "hogar",
@@ -133,7 +133,7 @@ const sections = [
     icon: Heart,
     title: "Finanzas compartidas",
     description: "Divide gastos entre una y cuatro personas y descubre quién tiene saldo pendiente o a favor.",
-    message: "Compartir las cuentas también puede sentirse claro, justo y liviano."
+    message: "Cuentas claras, cariño intacto. Aquí cada peso encuentra su parte."
   },
   {
     id: "deudas",
@@ -141,7 +141,7 @@ const sections = [
     icon: TrendingDown,
     title: "Deudas",
     description: "Mira tus compromisos con claridad y define cuál atender primero.",
-    message: "Cada gasto cuenta una historia. Mirarlo con honestidad también es avanzar."
+    message: "Mirar la deuda de frente da menos miedo que imaginarla."
   },
   {
     id: "ahorro",
@@ -149,7 +149,7 @@ const sections = [
     icon: PiggyBank,
     title: "Ahorro",
     description: "Visualiza tu meta y celebra cada avance pequeño sin perder el hilo.",
-    message: "Ahorrar aunque sea poco sigue siendo elegirte."
+    message: "Aunque empieces de a poquito, ese poquito ya tiene destino."
   },
   {
     id: "gastos",
@@ -157,7 +157,7 @@ const sections = [
     icon: TrendingDown,
     title: "Gastos diarios",
     description: "Registra supermercado, transporte, salidas y compras pequeñas durante el mes.",
-    message: "Anotar sin juzgar te ayuda a entender tus hábitos y decidir mejor."
+    message: "Ese cafecito también cuenta. Sin culpa: aquí venimos a entender, no a retar."
   },
   {
     id: "presupuesto",
@@ -165,7 +165,7 @@ const sections = [
     icon: CircleDollarSign,
     title: "Tu presupuesto disponible",
     description: "Revisa cuánto entra, cuánto está comprometido y cuánto te va quedando.",
-    message: "Ahora que ya anotaste lo importante, puedes ver tu dinero con más claridad."
+    message: "Ajá… aquí empieza a aparecer dónde se fue tu plata."
   },
   {
     id: "calendario",
@@ -173,7 +173,7 @@ const sections = [
     icon: CalendarDays,
     title: "Calendario y pendientes",
     description: "Revisa pagos con fecha, recordatorios y tareas que aún necesitan atención.",
-    message: "Lo que tiene fecha pesa menos en la cabeza."
+    message: "Con fecha se ve menos monstruo y más plan."
   },
   {
     id: "cierre",
@@ -181,7 +181,7 @@ const sections = [
     icon: Heart,
     title: "Cierre mensual",
     description: "Registra aprendizajes, logros y ajustes para el próximo ciclo.",
-    message: "Mirar hacia atrás también te ayuda a avanzar."
+    message: "No fue perfecto; fue real. Y ahora sabes mucho más que al comenzar."
   }
 ];
 
@@ -192,7 +192,7 @@ const sectionBanners = {
   pagos: { image: paymentsBanner, alt: "Terminal de pago con tarjeta, efectivo y recibo" },
   hogar: { image: sharedBanner, alt: "Una persona entregando dinero a otra" },
   deudas: { image: debtBanner, alt: "Tarjeta, dinero y terminal de pago" },
-  ahorro: { image: savingsPig, alt: "Alcancía rosa sobre un plan de ahorro" },
+  ahorro: { image: savingsBanner, alt: "Alcancía rosa, frasco con monedas y progreso de ahorro en tonos pastel" },
   gastos: { image: dailyExpensesOriginal, alt: "Compras cotidianas, recibo, monedas y calculadora" },
   presupuesto: { image: budgetDistributionOriginal, alt: "Frascos pastel para distribuir el presupuesto" },
   calendario: { image: calendarBanner, alt: "Alcancía junto a plantas, monedas y gráficos" },
