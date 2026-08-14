@@ -772,6 +772,29 @@ code {
   overflow: hidden;
 }
 
+.planner-section-banner {
+  padding: clamp(12px, 2vw, 22px) clamp(12px, 2vw, 24px) 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-2) 45%, white), rgba(255, 255, 255, 0.42));
+}
+
+.planner-section-banner img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 6;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid var(--theme-line);
+  border-radius: var(--radius);
+}
+
+/* La ilustración ahora vive en el encabezado; conserva el contenido sin repetir el banner. */
+.panel-body > .stack > .visual-note:first-child,
+.panel-body > .form-grid > .visual-note:first-child,
+.panel-body > .setup-flow > .visual-note,
+.panel-body > .checklist-page > .visual-note:first-child {
+  display: none;
+}
+
 .panel-header {
   display: flex;
   justify-content: space-between;

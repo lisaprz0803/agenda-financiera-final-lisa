@@ -185,6 +185,20 @@ const sections = [
   }
 ];
 
+const sectionBanners = {
+  checklist: { image: monthRouteBanner, alt: "Camino financiero con etapas de hogar, equilibrio, crecimiento y meta" },
+  configuracion: { image: plannerBanner, alt: "Plan financiero con café, cuaderno y gráficos" },
+  ingresos: { image: incomeBanner, alt: "Entrega de dinero entre dos personas" },
+  pagos: { image: paymentsBanner, alt: "Terminal de pago con tarjeta, efectivo y recibo" },
+  hogar: { image: sharedBanner, alt: "Una persona entregando dinero a otra" },
+  deudas: { image: debtBanner, alt: "Tarjeta, dinero y terminal de pago" },
+  ahorro: { image: savingsPig, alt: "Alcancía rosa sobre un plan de ahorro" },
+  gastos: { image: dailyExpensesOriginal, alt: "Compras cotidianas, recibo, monedas y calculadora" },
+  presupuesto: { image: budgetDistributionOriginal, alt: "Frascos pastel para distribuir el presupuesto" },
+  calendario: { image: calendarBanner, alt: "Alcancía junto a plantas, monedas y gráficos" },
+  cierre: { image: closeBanner, alt: "Hoja de cierre mensual con estrella y líneas de reflexión" }
+};
+
 const quickStats = [
   { label: "Avance", value: "62%", helper: "8 secciones activas" },
   { label: "Meta", value: "$", helper: "Ahorro del mes" },
@@ -1265,6 +1279,7 @@ function Sidebar({ activeSection, month, year, progress, onMonth, onSection }) {
 function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, onPrepareNextMonth }) {
   const section = sections.find((item) => item.id === activeSection);
   const Icon = section.icon;
+  const banner = sectionBanners[activeSection];
 
   function continueToIncome() {
     onSection("ingresos");
@@ -1273,6 +1288,9 @@ function PlannerPanel({ activeSection, onSection, auth, sheetDb, month, year, on
 
   return (
     <article className="planner-panel page-transition">
+      <div className="planner-section-banner">
+        <img src={banner.image} alt={banner.alt} />
+      </div>
       <header className="panel-header">
         <div className="title-lockup">
           <div className="title-icon">
