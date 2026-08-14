@@ -2806,6 +2806,19 @@ select {
   margin-inline: auto;
 }
 
+@media (min-width: 761px) {
+  .simple-entry-grid select,
+  .shared-form-grid select,
+  .shared-status select {
+    width: min(100%, 340px);
+  }
+
+  .simple-entry-grid input[type="date"],
+  .shared-form-grid input[type="date"] {
+    width: min(100%, 270px);
+  }
+}
+
 /* Botones principales proporcionados al texto, sin barras innecesariamente largas. */
 .floating-add-action,
 .finish-entry,
@@ -2832,6 +2845,15 @@ select {
   .daily-form,
   .shared-expense-form {
     width: 100%;
+  }
+
+  .simple-entry-grid select,
+  .shared-form-grid select,
+  .shared-status select,
+  .simple-entry-grid input[type="date"],
+  .shared-form-grid input[type="date"] {
+    width: 100%;
+    max-width: none;
   }
   .share-summary-card .list-heading { align-items: stretch; flex-direction: column; }
   .toggle-share-summary { width: 100%; }

@@ -716,7 +716,9 @@ function parseSheetValues(payload) {
 
 function cleanDraftData(data = emptySheetData()) {
   return {
-    ingresos: normalizeRows(data.ingresos || [], 5),
+    ingresos: normalizeRows(data.ingresos || [], 5).filter(
+      (row) => String(row[0] || "").trim() || parseMoney(row[2]) || String(row[4] || "").trim()
+    ),
     pagos: normalizeRows(data.pagos || [], 8).filter(
       (row) => !normalizeText(row.join(" ")).includes("transferencia a mama")
     ),
@@ -1884,37 +1886,6 @@ function HouseholdSection({ sheetDb, month, year }) {
         </div>
       </section>
 
-      {formOpen ? <form className="shared-expense-form entry-form-reveal" onSubmit={submitExpense}>
-        <div className="list-heading"><div><h3>2. Agrega el gasto</h3><p>La agenda dividirá el monto automáticamente.</p></div></div>
-        <div className="shared-form-grid">
-          <label><span>Fecha</span><input type="date" value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
-          <label><span>¿Qué pagaron?</span><input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Ej: supermercado" required /></label>
-          <label><span>Categoría</span><select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>
-            {categoryOptions.map((option) => <option key={option}>{option}</option>)}
-          </select></label>
-          <label><span>Monto total</span><input value={form.amount} onChange={(event) => updateForm("amount", formatMoneyEntry(event.target.value))} placeholder="Ej: 100.000" inputMode="numeric" required /></label>
-          <label><span>¿Cómo lo pagaron?</span><select value={form.paymentMode} onChange={(event) => updateForm("paymentMode", event.target.value)}>
-            <option value="one">Una persona pagó todo</option>
-            <option value="shared">Cada persona pagó su parte</option>
-          </select></label>
-          {form.paymentMode === "one" ? <label><span>¿Quién pagó todo?</span><select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)}>
-            {household.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
-          </select></label> : <div className="paid-together-note"><CheckCircle2 size={18} /><span>No se calculará ninguna transferencia: quedará registrado que cada persona pagó su parte.</span></div>}
-        </div>
-        {household.members.length < 2 ? (
-          <div className="shared-help">Primero presiona <strong>Agregar persona</strong> y escribe el nombre de tu pareja.</div>
-        ) : previewAmount ? (
-          <div className="split-preview">
-            <span>{form.paymentMode === "shared" ? "Cada persona pagará esta parte:" : "Así quedará dividido:"}</span>
-            <div>{household.members.map((member, index) => <strong key={member.id}>{member.name}: {formatCurrency(index === household.members.length - 1 ? previewAmount - previewShare * (household.members.length - 1) : previewShare)}</strong>)}</div>
-          </div>
-        ) : null}
-        <button className="shared-submit" type="submit" disabled={household.members.length < 2 || !previewAmount || !form.concept.trim()}>
-          <Plus size={18} /> Dividir y agregar gasto
-        </button>
-        <button className="cancel-entry" type="button" onClick={() => setFormOpen(false)}>Cancelar</button>
-      </form> : null}
-
       <div className="shared-list">
         <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Puedes ajustar los montos si no se divide por igual.</p></div></div>
         {household.expenses.length ? household.expenses.map((expense) => {
@@ -1941,6 +1912,20 @@ function HouseholdSection({ sheetDb, month, year }) {
           );
         }) : <div className="empty-state">Todavía no hay gastos compartidos. Agrega el primero para ver los saldos.</div>}
       </div>
+      {formOpen ? <form className="shared-expense-form entry-form-reveal" onSubmit={submitExpense}>
+        <div className="list-heading"><div><h3>Agregar gasto compartido</h3><p>La agenda dividirá el monto automáticamente.</p></div></div>
+        <div className="shared-form-grid">
+          <label><span>Fecha</span><input type="date" value={form.date} onChange={(event) => updateForm("date", event.target.value)} /></label>
+          <label><span>¿Qué pagaron?</span><input value={form.concept} onChange={(event) => updateForm("concept", event.target.value)} placeholder="Ej: supermercado" required /></label>
+          <label><span>Categoría</span><select value={form.category} onChange={(event) => updateForm("category", event.target.value)}>{categoryOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+          <label><span>Monto total</span><input value={form.amount} onChange={(event) => updateForm("amount", formatMoneyEntry(event.target.value))} placeholder="Ej: 100.000" inputMode="numeric" required /></label>
+          <label><span>¿Cómo lo pagaron?</span><select value={form.paymentMode} onChange={(event) => updateForm("paymentMode", event.target.value)}><option value="one">Una persona pagó todo</option><option value="shared">Cada persona pagó su parte</option></select></label>
+          {form.paymentMode === "one" ? <label><span>¿Quién pagó todo?</span><select value={form.paidBy} onChange={(event) => updateForm("paidBy", event.target.value)}>{household.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select></label> : <div className="paid-together-note"><CheckCircle2 size={18} /><span>No se calculará ninguna transferencia: quedará registrado que cada persona pagó su parte.</span></div>}
+        </div>
+        {household.members.length < 2 ? <div className="shared-help">Primero presiona <strong>Agregar persona</strong> y escribe el nombre de tu pareja.</div> : previewAmount ? <div className="split-preview"><span>{form.paymentMode === "shared" ? "Cada persona pagará esta parte:" : "Así quedará dividido:"}</span><div>{household.members.map((member, index) => <strong key={member.id}>{member.name}: {formatCurrency(index === household.members.length - 1 ? previewAmount - previewShare * (household.members.length - 1) : previewShare)}</strong>)}</div></div> : null}
+        <button className="shared-submit" type="submit" disabled={household.members.length < 2 || !previewAmount || !form.concept.trim()}><Plus size={18} /> Dividir y agregar gasto</button>
+        <button className="cancel-entry" type="button" onClick={() => setFormOpen(false)}>Cancelar</button>
+      </form> : null}
       {household.expenses.length ? <section className="share-summary-card">
         <div className="list-heading"><div><h3><Heart size={19} /> Compartir resumen del mes</h3><p>Revisa la información y envíala sin guardar correos ni teléfonos.</p></div><button className="toggle-share-summary" type="button" onClick={() => setShareOpen((value) => !value)}>{shareOpen ? "Ocultar" : "Ver resumen"}</button></div>
         {shareOpen ? <div className="share-summary-content entry-form-reveal">
