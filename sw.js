@@ -3,8 +3,6 @@ const BASE_PATH = "/agenda-financiera-final-lisa/";
 const APP_SHELL = [
   BASE_PATH,
   `${BASE_PATH}manifest.webmanifest`,
-  `${BASE_PATH}auth-config.js`,
-  `${BASE_PATH}firebase-config.js`,
   `${BASE_PATH}icon-192.png`,
   `${BASE_PATH}icon-512.png`,
   `${BASE_PATH}apple-touch-icon.png`
