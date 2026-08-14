@@ -1901,7 +1901,11 @@ function BudgetSection({ sheetDb }) {
       <ReadOnlyCard label="Pagos mensuales" value={formatCurrency(summary.monthlyPayments)} helper="Total que te corresponde pagar" />
       <ReadOnlyCard label="Gastos diarios" value={formatCurrency(summary.dailyExpenses)} helper={`${dailyExpenses} registros`} />
       <ReadOnlyCard label="Meta de ahorro" value={formatCurrency(summary.savingsTarget)} helper="Todo lo que quieres separar este mes" />
-      <ReadOnlyCard label={`Tu parte compartida · ${personalMember?.name || "Yo"}`} value={formatCurrency(sharedCommitment)} helper="Tu parte de los gastos compartidos" />
+      <ReadOnlyCard
+        label={`Tu parte compartida · ${personalMember?.name || "Yo"}`}
+        value={formatCurrency(sharedCommitment)}
+        helper={sharedCommitment ? "Suma de los montos que te asignaron en Compartido" : "No tienes montos asignados en Compartido durante este mes"}
+      />
       <BudgetChart summary={summary} />
       <ReadOnlyCard
         label={balanceStatus.label}
