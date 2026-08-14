@@ -2928,6 +2928,56 @@ select {
   }
 }
 
+/* Los controles de respuesta breve no necesitan ocupar toda la tarjeta. */
+.simple-entry-grid select,
+.simple-entry-grid input[type="date"],
+.simple-entry-grid input[type="number"],
+.simple-entry-grid input[inputmode="numeric"],
+.shared-form-grid select,
+.shared-form-grid input[type="date"],
+.shared-form-grid input[type="number"],
+.shared-form-grid input[inputmode="numeric"] {
+  width: min(100%, 320px);
+  box-sizing: border-box;
+  justify-self: start;
+}
+
+/* Todas las acciones de agregar comparten tamaño y centrado. */
+.floating-add-action,
+.finish-entry,
+.add-bottom-action,
+.shared-submit,
+.save-action,
+.calendar-empty-action {
+  width: fit-content;
+  min-width: min(260px, 100%);
+  max-width: 100%;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
+  padding-inline: 24px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .simple-entry-grid select,
+  .simple-entry-grid input[type="date"],
+  .simple-entry-grid input[type="number"],
+  .simple-entry-grid input[inputmode="numeric"],
+  .shared-form-grid select,
+  .shared-form-grid input[type="date"],
+  .shared-form-grid input[type="number"],
+  .shared-form-grid input[inputmode="numeric"] {
+    width: min(100%, 290px);
+    max-width: 290px;
+  }
+}
+
 @media print {
   .share-summary-actions,
   .toggle-share-summary { display: none !important; }
