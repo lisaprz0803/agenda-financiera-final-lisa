@@ -1,6 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { initializeApp, getApps } from "firebase/app";
-import { doc, getDoc, getFirestore, setDoc } from "firebase/firestore";
 import { BACKUP_KEY, DATA_VERSION, createAutomaticBackup, migrateStore, readSafeStore } from "./dataSafety.js";
 import {
   ArrowLeft,
@@ -37,24 +35,24 @@ import coverPiggy from "../assets/cover-piggy.jpeg";
 import paymentTerminal from "../assets/payment-terminal.jpeg";
 import sharedMoney from "../assets/shared-money.jpeg";
 import budgetDesk from "../assets/budget-desk.jpeg";
-import savingsBanner from "../assets/savings-banner-v2.png";
+import savingsBanner from "../assets/savings-banner-v2.webp";
 import financePlan from "../assets/finance-plan.jpeg";
 import moneyHandoff from "../assets/money-handoff.jpeg";
 import cardTerminal from "../assets/card-terminal.jpeg";
 import piggyCalculator from "../assets/piggy-calculator.jpeg";
 import piggyPlant from "../assets/piggy-plant.jpeg";
 import plannerBanner from "../assets/planner-banner-v2.jpg";
-import heroCoverPremium from "../assets/hero-cover-premium.png";
+import heroCoverPremium from "../assets/hero-cover-premium.webp";
 import sharedBanner from "../assets/shared-banner-v2.jpg";
-import monthRouteBanner from "../assets/month-route-banner.png";
+import monthRouteBanner from "../assets/month-route-banner.webp";
 import incomeBanner from "../assets/income-banner.jpg";
 import paymentsBanner from "../assets/payments-banner.jpg";
 import debtBanner from "../assets/debt-banner.jpg";
 import dailyBanner from "../assets/daily-banner.jpg";
 import calendarBanner from "../assets/calendar-banner.jpg";
 import closeBanner from "../assets/close-banner.jpg";
-import dailyExpensesOriginal from "../assets/daily-expenses-original.png";
-import budgetDistributionOriginal from "../assets/budget-distribution-original.png";
+import dailyExpensesOriginal from "../assets/daily-expenses-original.webp";
+import budgetDistributionOriginal from "../assets/budget-distribution-original.webp";
 import visualBudget from "../assets/visual-budget.svg";
 import visualChecklist from "../assets/visual-checklist.svg";
 import visualClose from "../assets/visual-close.svg";
@@ -257,6 +255,24 @@ function CategorySticker({ category, compact = false }) {
   const sticker = categoryStickerMap[category] || categoryStickerMap.Otro;
   return <span className={`category-sticker ${sticker.tone} ${compact ? "compact" : ""}`} aria-label={`Categoría ${category || "Otro"}`} title={category || "Otro"}><i>{sticker.icon}</i>{compact ? null : <b>{category || "Otro"}</b>}</span>;
 }
+
+function MemberNameInput({ value, index, onChange, placeholder }) {
+  const [draftName, setDraftName] = useState(value);
+  const focusedRef = useRef(false);
+
+  useEffect(() => {
+    if (!focusedRef.current) setDraftName(value);
+  }, [value]);
+
+  function finishEditing() {
+    focusedRef.current = false;
+    const nextName = draftName.trim() || `Persona ${index + 1}`;
+    setDraftName(nextName);
+    onChange(nextName);
+  }
+
+  return <input value={draftName} onFocus={() => { focusedRef.current = true; }} onChange={(event) => { const nextName = event.target.value; setDraftName(nextName); if (nextName.trim()) onChange(nextName); }} onBlur={finishEditing} placeholder={placeholder || `Persona ${index + 1}`} />;
+}
 const paymentMethodOptions = ["Transferencia", "Débito", "Crédito", "Efectivo", "Cheques", "Pago web", "Otro"];
 const paymentDateOptions = [
   "Día 1",
@@ -380,18 +396,6 @@ function isConfigured(config) {
   const clientId = String(config?.googleClientId || "");
   const emails = normalizeEmails(config);
   return clientId && !clientId.includes("PEGA_AQUI") && emails.length > 0 && !emails.includes("tu-correo@gmail.com");
-}
-
-function isFirebaseConfigured(config) {
-  return Boolean(config?.apiKey && config?.projectId && !String(config.apiKey).includes("PEGA_AQUI"));
-}
-
-async function getFirebaseDb() {
-  await loadScript(`${import.meta.env.BASE_URL}firebase-config.js`).catch(() => {});
-  const config = window.AGENDA_FIREBASE_CONFIG || {};
-  if (!isFirebaseConfigured(config)) return null;
-  const app = getApps().length ? getApps()[0] : initializeApp(config);
-  return getFirestore(app);
 }
 
 function getMonthKey(month, year) {
@@ -759,7 +763,6 @@ function useSheetDatabase(auth, monthKey) {
     message: "Mes listo para registrar tus datos.",
     error: ""
   });
-  const storeRef = useRef({ db: null, ready: false });
 
   async function persistMonth(
     nextDraft = draft,
@@ -776,29 +779,13 @@ function useSheetDatabase(auth, monthKey) {
       updatedAt: new Date().toISOString()
     };
     writeLocalMonth(userKey, monthKey, payload);
-    if (auth.user?.email && !storeRef.current.ready) {
-      storeRef.current.db = await getFirebaseDb();
-      storeRef.current.ready = true;
-    }
-    if (storeRef.current.db) {
-      await setDoc(doc(storeRef.current.db, "agendaUsers", userKey, "months", monthKey), payload, { merge: true });
-    }
   }
 
   async function loadMonthData() {
     const userKey = getUserKey(auth);
     setStatus((current) => ({ ...current, loading: true, error: "", message: "Cargando mes..." }));
     try {
-      if (auth.user?.email && !storeRef.current.ready) {
-        storeRef.current.db = await getFirebaseDb();
-        storeRef.current.ready = true;
-      }
-      let payload = null;
-      if (storeRef.current.db) {
-        const snapshot = await getDoc(doc(storeRef.current.db, "agendaUsers", userKey, "months", monthKey));
-        payload = snapshot.exists() ? snapshot.data() : null;
-      }
-      payload = payload || readLocalMonth(userKey, monthKey);
+      const payload = readLocalMonth(userKey, monthKey);
       const nextDraft = cleanDraftData(payload?.draft || emptySheetData());
       setSheetData(nextDraft);
       setDraft(nextDraft);
@@ -1208,7 +1195,7 @@ function Cover({ onStart, onBudget }) {
   return (
     <section className="cover-screen page-transition">
       <div className="cover-media">
-        <img src={heroCoverPremium} alt="Agenda financiera, alcancía, sobres de presupuesto, calculadora y monedas en tonos pastel" />
+        <img src={heroCoverPremium} alt="Agenda financiera, alcancía, sobres de presupuesto, calculadora y monedas en tonos pastel" decoding="async" fetchPriority="high" />
       </div>
       <div className="cover-copy">
         <div className="icon-row" aria-hidden="true">
@@ -1488,7 +1475,7 @@ function SetupSection({ sheetDb, onContinue, month, year }) {
           {members.map((member, index) => (
             <label className="member-field" key={member.id}>
               <span>{index === 0 ? "Tu nombre" : `Persona ${index + 1}`}</span>
-              <input value={member.name} onChange={(event) => renameMember(member.id, event.target.value)} placeholder="Escribe un nombre" />
+              <MemberNameInput value={member.name} index={index} onChange={(name) => renameMember(member.id, name)} placeholder="Escribe un nombre" />
               {members.length > 1 ? <button type="button" onClick={() => removeMember(member.id)} aria-label={`Eliminar ${member.name}`}><Trash2 size={14} /></button> : null}
             </label>
           ))}
@@ -1863,7 +1850,7 @@ function HouseholdSection({ sheetDb, month, year }) {
           </div>
         ))}
       </div>
-      {household.expenses.length ? <div className="settlement-guide"><div><strong>¿Cómo quedaron las cuentas?</strong></div>{household.members.some((member) => balances[member.id] < 0) ? <><span>Según quién registró el pago, una persona adelantó más dinero que la otra.</span><button className="settled-together-button" type="button" onClick={markEveryonePaidTheirShare}><CheckCircle2 size={17} /> Cada uno ya pagó su parte</button><small>Presiona aquí si tú y Catriel pagaron al mismo tiempo o cada uno cubrió lo suyo.</small></> : <span className="settlement-ok">✓ Cada persona cubrió su parte. No hay ajustes pendientes.</span>}</div> : null}
+      {household.expenses.length ? <div className="settlement-guide"><div><strong>¿Cómo quedaron las cuentas?</strong></div>{household.members.some((member) => balances[member.id] < 0) ? <><span>Según quién registró el pago, una persona adelantó más dinero que la otra.</span><button className="settled-together-button" type="button" onClick={markEveryonePaidTheirShare}><CheckCircle2 size={17} /> Cada uno ya pagó su parte</button><small>Presiona aquí si las personas pagaron al mismo tiempo o cada una cubrió directamente su parte.</small></> : <span className="settlement-ok">✓ Cada persona cubrió su parte. No hay ajustes pendientes.</span>}</div> : null}
 
       <section className="member-card">
         <div className="list-heading">
@@ -1876,7 +1863,7 @@ function HouseholdSection({ sheetDb, month, year }) {
           {household.members.map((member, index) => (
             <label className="member-field" key={member.id}>
               <span>Persona {index + 1}</span>
-              <input value={member.name} onChange={(event) => renameMember(member.id, event.target.value)} />
+              <MemberNameInput value={member.name} index={index} onChange={(name) => renameMember(member.id, name)} />
               {household.members.length > 1 ? (
                 <button type="button" onClick={() => removeMember(member.id)} aria-label={`Eliminar a ${member.name}`}>
                   <Trash2 size={14} />
@@ -1888,7 +1875,7 @@ function HouseholdSection({ sheetDb, month, year }) {
       </section>
 
       <div className="shared-list">
-        <div className="list-heading"><div><h3>3. Resultado del reparto</h3><p>Puedes ajustar los montos si no se divide por igual.</p></div></div>
+        <div className="list-heading"><div><h3>2. Resultado del reparto</h3><p>Puedes ajustar los montos si no se divide por igual.</p></div></div>
         {household.expenses.length ? household.expenses.map((expense) => {
           const payer = household.members.find((member) => member.id === expense.paidBy);
           const shareTotal = Object.values(expense.shares).reduce((sum, value) => sum + Number(value || 0), 0);
@@ -2216,7 +2203,7 @@ function CloseSection({ sheetDb, onPrepareNextMonth }) {
 function VisualNote({ image, alt, title, text, wide = false }) {
   return (
     <div className={wide ? "visual-note wide" : "visual-note"}>
-      <img src={image} alt={alt} />
+      <img src={image} alt={alt} loading="lazy" decoding="async" />
       <div>
         <strong>{title}</strong>
         <p>{text}</p>

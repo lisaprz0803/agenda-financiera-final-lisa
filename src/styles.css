@@ -552,7 +552,7 @@ code {
   width: 100%;
   aspect-ratio: 16 / 9;
   max-height: 620px;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   background: #e7c7d4;
   border: 2px solid rgba(255, 235, 226, .78);
@@ -2495,7 +2495,7 @@ select {
   .mobile-bottom-nav button.active svg { background: #c878a5; color: white; transform: translateY(-1px); box-shadow: 0 5px 13px rgba(176, 88, 139, .24); }
   .mobile-bottom-nav .nav-step svg { border-radius: 10px; }
   .mobile-bottom-nav.mobile-step-nav {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(92px, 1fr) auto minmax(92px, 1fr);
     min-height: 58px;
     padding: 5px 18px calc(5px + env(safe-area-inset-bottom));
   }
@@ -2515,7 +2515,7 @@ select {
   .mobile-step-nav.last-page .nav-step { justify-self: center; }
   .cover-screen { min-height: auto; }
   .cover-media { display: block; }
-  .cover-media img { max-height: 210px; object-fit: cover; }
+  .cover-media img { max-height: 210px; object-fit: contain; }
   .cover-reassurance { padding: 0 18px; font-size: 15px; line-height: 1.45; }
   .cover-copy h1 { font-size: clamp(38px,12vw,58px); }
   .checklist-layout { grid-template-columns: 1fr; }
@@ -2738,6 +2738,36 @@ select {
 
 .closing-actions .copy-next-action,
 .closing-actions .pdf-action-wrap { margin: 0; width: 100%; }
+
+/* Mantiene las dos acciones del cierre parejas y legibles en teléfonos. */
+.closing-actions .copy-next-action,
+.closing-actions .export-action {
+  width: 100%;
+  min-height: 54px;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .closing-actions {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+
+  .closing-actions .copy-next-action,
+  .closing-actions .export-action {
+    width: min(100%, 310px);
+    min-height: 54px;
+    justify-self: center;
+    padding: 10px 16px;
+  }
+
+  .shared-row-head .shared-status select {
+    max-width: 100%;
+    font-size: 14px;
+  }
+}
 .share-summary-card {
   display: grid;
   gap: 14px;
